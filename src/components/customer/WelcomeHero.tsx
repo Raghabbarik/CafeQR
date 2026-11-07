@@ -1,11 +1,11 @@
 import React from 'react';
 import type { CafeInfo } from '../../types';
-import { Utensils, Shield, ArrowRight, Sparkles, Wifi } from 'lucide-react';
+import { Shield, ArrowRight, Sparkles, Wifi } from 'lucide-react';
 
 interface WelcomeHeroProps {
   cafe: CafeInfo;
   tableNumber: string;
-  onTableChange: (table: string) => void;
+  onTableChange?: (table: string) => void;
   onGetStarted: () => void;
   onSwitchToAdmin?: () => void;
 }
@@ -13,7 +13,6 @@ interface WelcomeHeroProps {
 export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
   cafe,
   tableNumber,
-  onTableChange,
   onGetStarted,
   onSwitchToAdmin,
 }) => {
@@ -33,48 +32,17 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
         <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
       </div>
 
-      {/* Top Floating Bar: Cafe Branding, Table Pill & Staff Portal */}
-      <div className="relative z-20 px-4 pt-4 flex items-center justify-between">
-        
-        {/* Cafe Mini Pill */}
-        <div className="flex items-center gap-2 bg-black/45 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/20 text-white shadow-lg">
-          <img
-            src={cafe.logo}
-            alt={cafe.name}
-            className="w-5 h-5 rounded-full object-cover border border-white/40"
-          />
-          <span className="text-xs font-bold tracking-tight drop-shadow-xs">{cafe.name}</span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Table Number Pill */}
-          <div className="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-xl flex items-center gap-1.5 border border-white/40">
-            <Utensils className="w-3.5 h-3.5 text-stone-700" />
-            <span className="text-[11px] font-bold text-stone-600 uppercase">Table</span>
-            <select
-              value={tableNumber}
-              onChange={(e) => onTableChange(e.target.value)}
-              className="bg-stone-100 text-stone-900 font-extrabold text-xs px-1.5 py-0.5 rounded cursor-pointer border-none outline-none"
-            >
-              {Array.from({ length: cafe.tablesCount || 12 }, (_, i) => i + 1).map((num) => (
-                <option key={num} value={num}>
-                  #{num}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Staff Mode Switcher */}
-          {onSwitchToAdmin && (
-            <button
-              onClick={onSwitchToAdmin}
-              className="p-2 rounded-full bg-black/40 backdrop-blur-md text-white/90 hover:text-white border border-white/20 shadow-lg cursor-pointer transition-colors"
-              title="Staff Portal"
-            >
-              <Shield className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
+      {/* Top Bar (Cafe & Table pills removed as requested, subtle staff button top-right) */}
+      <div className="relative z-20 px-4 pt-4 flex items-center justify-end">
+        {onSwitchToAdmin && (
+          <button
+            onClick={onSwitchToAdmin}
+            className="p-2 rounded-full bg-black/20 hover:bg-black/50 backdrop-blur-xs text-white/50 hover:text-white transition-colors cursor-pointer"
+            title="Staff Portal"
+          >
+            <Shield className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
 
       {/* Center Hero Heading directly on image (matches screenshot: ✦ NEW + ICED MATCHA LATTE) */}
