@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { CafeInfo, MenuItem, CartItem, Order, StaffAlert, OrderStatus } from './types';
+import type { CafeInfo, MenuItem, CartItem, Order, StaffAlert, OrderStatus, StaffMember, DiningOption } from './types';
 import { api } from './services/api';
 import { socket } from './services/socket';
 import { sound } from './services/sound';
@@ -7,38 +7,52 @@ import { sound } from './services/sound';
 // Customer Components
 import { WelcomeHero } from './components/customer/WelcomeHero';
 import { Navbar } from './components/customer/Navbar';
-import { CategoryBar } from './components/customer/CategoryBar';
+import { FilterSidebar, DesktopFilterSidebar } from './components/customer/FilterSidebar';
 import { MenuItemCard } from './components/customer/MenuItemCard';
 import { ProductDetailsModal } from './components/customer/ProductDetailsModal';
 import { CartDrawer } from './components/customer/CartDrawer';
 import { CustomerCheckoutModal } from './components/customer/CustomerCheckoutModal';
 import { BillReceiptView } from './components/customer/BillReceiptView';
-import { CallWaiterModal } from './components/customer/CallWaiterModal';
+import { BillLookupModal } from './components/customer/BillLookupModal';
 
 // Admin Components
-import { AdminHeader } from './components/admin/AdminHeader';
-import { LiveKDSView } from './components/admin/LiveKDSView';
-import { MenuManagerView } from './components/admin/MenuManagerView';
-import { TableQRGenerator } from './components/admin/TableQRGenerator';
-import { CafeSettingsView } from './components/admin/CafeSettingsView';
-import { AnalyticsView } from './components/admin/AnalyticsView';
+import { AdminDashboard } from './components/admin/AdminDashboard';
+import { AdminLoginView } from './components/admin/AdminLoginView';
+import type { AdminTab } from './components/admin/AdminSidebar';
 
-import { Loader2 } from 'lucide-react';
+// Staff & TV Display Components
+import { StaffLoginView } from './components/staff/StaffLoginView';
+import { StaffDashboard } from './components/staff/StaffDashboard';
+import { OrderDisplayBoard } from './components/display/OrderDisplayBoard';
+
+import { Loader2, WifiOff, ArrowLeft } from 'lucide-react';
 
 export function App() {
-  // App Mode: 'customer' or 'admin'
-  const [mode, setMode] = useState<'customer' | 'admin'>('customer');
+  // App Mode: 'customer' | 'admin' | 'staff' | 'display'
+  const [mode, setMode] = useState<'customer' | 'admin' | 'staff' | 'display'>('customer');
+
+  // Online / Offline connectivity tracker
+  const [isOnline, setIsOnline] = useState<boolean>(() => {
+    return typeof navigator !== 'undefined' ? navigator.onLine : true;
+  });
+
+  // Admin JWT Authentication State
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(false);
+
+  // Staff JWT Authentication State
+  const [isStaffAuthenticated, setIsStaffAuthenticated] = useState<boolean>(false);
+  const [currentStaff, setCurrentStaff] = useState<StaffMember | null>(null);
 
   // Customer Step: 'welcome' | 'menu' | 'bill'
   const [customerStep, setCustomerStep] = useState<'welcome' | 'menu' | 'bill'>('welcome');
+
+  // Dining option: 'dine_in' (Eat Now) or 'parcel' (Takeaway)
+  const [diningOption, setDiningOption] = useState<DiningOption>('dine_in');
 
   // Cafe data
   const [cafe, setCafe] = useState<CafeInfo | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-
-  // Table number from URL query (e.g. ?table=3) or default to 1
-  const [tableNumber, setTableNumber] = useState<string>('1');
 
   // Cart & Checkout state
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -51,7 +65,7 @@ export function App() {
   const [selectedProduct, setSelectedProduct] = useState<MenuItem | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
-  const [isWaiterModalOpen, setIsWaiterModalOpen] = useState(false);
+  const [isBillLookupOpen, setIsBillLookupOpen] = useState(false);
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
 
   // Filters, Sort & Search
@@ -63,7 +77,7 @@ export function App() {
   const [sortBy, setSortBy] = useState<'featured' | 'price_low' | 'price_high' | 'rating'>('featured');
 
   // Admin State
-  const [adminTab, setAdminTab] = useState<'orders' | 'menu' | 'tables' | 'settings' | 'analytics'>('orders');
+  const [adminTab, setAdminTab] = useState<AdminTab>('orders');
   const [orders, setOrders] = useState<Order[]>([]);
   const [alerts, setAlerts] = useState<StaffAlert[]>([]);
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -71,18 +85,46 @@ export function App() {
   // Loading
   const [isLoading, setIsLoading] = useState(true);
 
-  // 1. Read table from URL and check if initial path is /admin or #admin
+  // Navigation helpers for /admin, /staff, /orderdisplay routing
+  const navigateToAdmin = () => {
+    if (typeof window !== 'undefined') {
+      window.history.pushState(null, '', '/admin');
+    }
+    setMode('admin');
+  };
+
+  const navigateToStaff = () => {
+    if (typeof window !== 'undefined') {
+      window.history.pushState(null, '', '/staff');
+    }
+    setMode('staff');
+  };
+
+  const navigateToCustomer = () => {
+    if (typeof window !== 'undefined') {
+      window.history.pushState(null, '', '/');
+    }
+    setMode('customer');
+  };
+
+  const handleAdminLogout = () => {
+    api.logoutAdmin();
+    setIsAdminAuthenticated(false);
+  };
+
+  const handleStaffLogout = () => {
+    api.logoutStaff();
+    setIsStaffAuthenticated(false);
+    setCurrentStaff(null);
+  };
+
+  // 1. Network connectivity, routes (/admin, /staff, /orderdisplay), and JWT token verification
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const tbl = params.get('table');
-      if (tbl) {
-        setTableNumber(tbl);
-        sessionStorage.setItem('cafeqr_table', tbl);
-      } else {
-        const savedTbl = sessionStorage.getItem('cafeqr_table');
-        if (savedTbl) setTableNumber(savedTbl);
-      }
+      const handleOnline = () => setIsOnline(true);
+      const handleOffline = () => setIsOnline(false);
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
 
       // Check if user had an active order before reload
       const savedOrderId = sessionStorage.getItem('cafeqr_active_order_id');
@@ -94,27 +136,85 @@ export function App() {
           .catch(() => {});
       }
 
-      if (window.location.pathname.includes('/admin') || window.location.hash.includes('admin')) {
-        setMode('admin');
+      const syncRouteFromLocation = () => {
+        const path = window.location.pathname.toLowerCase();
+        const hash = window.location.hash.toLowerCase();
+
+        if (path.startsWith('/admin') || hash.includes('admin')) {
+          setMode('admin');
+        } else if (path.startsWith('/staff') || hash.includes('staff')) {
+          setMode('staff');
+        } else if (path.startsWith('/orderdisplay') || hash.includes('orderdisplay')) {
+          setMode('display');
+        } else {
+          setMode('customer');
+        }
+      };
+
+      window.addEventListener('popstate', syncRouteFromLocation);
+      syncRouteFromLocation();
+
+      // Check existing Admin JWT Token in localStorage
+      const adminToken = api.getAdminToken();
+      if (adminToken) {
+        api.verifyAdminToken(adminToken).then((res) => {
+          setIsAdminAuthenticated(res.valid);
+        });
       }
+
+      // Check existing Staff JWT Token in localStorage
+      const staffToken = api.getStaffToken();
+      if (staffToken) {
+        api.verifyStaffToken(staffToken).then((res) => {
+          if (res.valid && res.staff) {
+            setIsStaffAuthenticated(true);
+            setCurrentStaff(res.staff);
+          }
+        });
+      }
+
+      return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+        window.removeEventListener('popstate', syncRouteFromLocation);
+      };
     }
   }, []);
 
-  // 2. Fetch Initial Cafe & Menu Data
+  // 2. Fetch Initial Cafe & Menu Data (with resilient offline cache fallback)
   useEffect(() => {
     async function initData() {
       try {
         const cafeRes = await api.getCafe();
         setCafe(cafeRes.cafe);
         setCategories(cafeRes.categories);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('cafeqr_cached_cafe', JSON.stringify(cafeRes.cafe));
+          localStorage.setItem('cafeqr_cached_categories', JSON.stringify(cafeRes.categories));
+        }
 
         const menuRes = await api.getMenu();
         setMenuItems(menuRes.items);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('cafeqr_cached_menu', JSON.stringify(menuRes.items));
+        }
 
         const ordersRes = await api.getOrders();
         setOrders(ordersRes);
       } catch (err) {
-        console.error('Failed to load cafe data:', err);
+        console.warn('Network offline or failed, attempting local cache fallback:', err);
+        if (typeof window !== 'undefined') {
+          try {
+            const cachedCafe = localStorage.getItem('cafeqr_cached_cafe');
+            const cachedCats = localStorage.getItem('cafeqr_cached_categories');
+            const cachedMenu = localStorage.getItem('cafeqr_cached_menu');
+            if (cachedCafe) setCafe(JSON.parse(cachedCafe));
+            if (cachedCats) setCategories(JSON.parse(cachedCats));
+            if (cachedMenu) setMenuItems(JSON.parse(cachedMenu));
+          } catch {
+            // cache read ignored
+          }
+        }
       } finally {
         setIsLoading(false);
       }
@@ -170,6 +270,29 @@ export function App() {
       socket.off('cafe:updated');
     };
   }, [soundEnabled]);
+
+  // 4. Background polling fallback for Vercel Serverless (when WebSockets are disconnected)
+  useEffect(() => {
+    const pollTimer = setInterval(() => {
+      if (!socket.connected) {
+        if (mode === 'admin' || mode === 'staff') {
+          api.getOrders().then(setOrders).catch(() => {});
+        }
+        if (currentOrder && currentOrder.orderStatus !== 'completed' && currentOrder.orderStatus !== 'cancelled') {
+          api.getOrder(currentOrder.id)
+            .then((fresh) => {
+              if (fresh && fresh.orderStatus !== currentOrder.orderStatus) {
+                if (soundEnabled) sound.playStatusChime();
+                setCurrentOrder(fresh);
+              }
+            })
+            .catch(() => {});
+        }
+      }
+    }, 5000);
+
+    return () => clearInterval(pollTimer);
+  }, [mode, currentOrder, soundEnabled]);
 
   // Cart operations
   const handleAddToCart = (item: MenuItem) => {
@@ -251,14 +374,20 @@ export function App() {
       // Ensure SDK is ready
       const isLoaded = await loadRazorpaySDK();
       if (!isLoaded || !(window as any).Razorpay) {
-        alert('Could not load official Razorpay SDK. Please check your internet connection or disable ad-blockers for checkout.razorpay.com.');
+        const confirmPlace = window.confirm(
+          'Could not load the online payment gateway (network or ad-blocker detected).\n\nWould you like to confirm the order and pay via UPI / Cash at the counter?'
+        );
+        if (confirmPlace) {
+          setIsCheckoutModalOpen(false);
+          await handlePaymentSuccess(`counter_${Date.now()}`);
+        }
         setIsPaymentLoading(false);
         return;
       }
 
-      // 1. Create real order on backend through Razorpay SDK
+      // 1. Create order on backend (fail-safe fallback prevents "Failed to fetch")
       const rzpOrder = await api.createRazorpayOrder(cartTotal);
-      console.log('✅ Real Razorpay order received from backend:', rzpOrder);
+      console.log('✅ Razorpay order prepared:', rzpOrder);
 
       // Close guest modal
       setIsCheckoutModalOpen(false);
@@ -272,8 +401,8 @@ export function App() {
         amount: rzpOrder.amount, // in paise
         currency: rzpOrder.currency || 'INR',
         name: cafe?.name || 'The Roasted Bean Cafe',
-        description: `Table #${tableNumber} - Order Total: ₹${cartTotal}`,
-        image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=200&auto=format&fit=crop&q=80',
+        description: `${diningOption === 'parcel' ? 'Parcel Takeaway' : 'Eat in Cafe'} - Order Total: ₹${cartTotal}`,
+        image: cafe?.logo || 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=200&auto=format&fit=crop&q=80',
         order_id: hasRealOrderId ? rzpOrder.id : undefined,
         prefill: {
           name: customerName.trim() || 'Guest',
@@ -312,7 +441,12 @@ export function App() {
       rzp.open();
     } catch (err: any) {
       console.error('Razorpay initiation error:', err);
-      alert('Razorpay Payment Error: ' + (err.message || 'Could not initiate payment'));
+      const confirmPlace = window.confirm(
+        `Payment could not be completed (${err.message || 'Connection issue'}).\n\nWould you like to confirm this order and pay via UPI / Cash at the counter?`
+      );
+      if (confirmPlace) {
+        await handlePaymentSuccess(`counter_${Date.now()}`);
+      }
     } finally {
       setIsPaymentLoading(false);
     }
@@ -321,7 +455,8 @@ export function App() {
   const handlePaymentSuccess = async (paymentId: string) => {
     try {
       const orderPayload = {
-        tableNumber,
+        diningOption,
+        tableNumber: diningOption === 'parcel' ? 'Parcel' : 'Eat Now',
         customerName,
         customerPhone,
         items: cart.map((i) => ({
@@ -387,92 +522,169 @@ export function App() {
     );
   }
 
-  // ---------------- ADMIN / CAFE STAFF VIEW ----------------
-  if (mode === 'admin') {
-    const activeOrdersCount = orders.filter(
-      (o) => o.orderStatus !== 'completed' && o.orderStatus !== 'cancelled'
-    ).length;
-
+  // ---------------- TV ORDER DISPLAY BOARD (/orderdisplay) ----------------
+  if (mode === 'display') {
     return (
-      <div className="min-h-screen bg-stone-100 flex flex-col">
-        <AdminHeader
-          cafe={cafe}
-          activeTab={adminTab}
-          onTabChange={setAdminTab}
-          activeOrdersCount={activeOrdersCount}
-          soundEnabled={soundEnabled}
-          onToggleSound={() => setSoundEnabled(!soundEnabled)}
-          onExitAdmin={() => setMode('customer')}
-        />
-
-        <main className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6">
-          {adminTab === 'orders' && (
-            <LiveKDSView
-              orders={orders}
-              alerts={alerts}
-              onDismissAlert={(id) => setAlerts((prev) => prev.filter((a) => a.id !== id))}
-              onUpdateStatus={handleUpdateOrderStatus}
-            />
-          )}
-
-          {adminTab === 'analytics' && (
-            <AnalyticsView orders={orders} cafe={cafe} />
-          )}
-
-          {adminTab === 'menu' && (
-            <MenuManagerView
-              categories={categories}
-              items={menuItems}
-              onAddItem={handleAddMenuItem}
-              onUpdateItem={handleUpdateMenuItem}
-              onDeleteItem={handleDeleteMenuItem}
-              onAddCategory={handleAddCategory}
-            />
-          )}
-
-          {adminTab === 'tables' && (
-            <TableQRGenerator
-              cafe={cafe}
-              onSelectTableForTest={(tbl) => {
-                setTableNumber(tbl);
-                setMode('customer');
-                setCustomerStep('welcome');
-              }}
-              onUpdateTablesCount={async (count) => {
-                await api.updateCafe({ tablesCount: count });
-              }}
-            />
-          )}
-
-          {adminTab === 'settings' && (
-            <CafeSettingsView cafe={cafe} onSave={handleUpdateCafeSettings} />
-          )}
-        </main>
-      </div>
+      <OrderDisplayBoard
+        cafe={cafe}
+        onExitToCustomer={navigateToCustomer}
+      />
     );
   }
+
+  // ---------------- STAFF PORTAL (/staff) ----------------
+  if (mode === 'staff') {
+    if (!isStaffAuthenticated) {
+      return (
+        <StaffLoginView
+          cafe={cafe}
+          onLoginSuccess={(staff) => {
+            setIsStaffAuthenticated(true);
+            setCurrentStaff(staff);
+          }}
+          onExitToCustomer={navigateToCustomer}
+          onGoToAdmin={navigateToAdmin}
+        />
+      );
+    }
+
+    return (
+      <StaffDashboard
+        cafe={cafe}
+        currentStaff={currentStaff}
+        orders={orders}
+        alerts={alerts}
+        categories={categories}
+        menuItems={menuItems}
+        soundEnabled={soundEnabled}
+        onToggleSound={() => setSoundEnabled(!soundEnabled)}
+        onExitStaff={navigateToCustomer}
+        onLogout={handleStaffLogout}
+        onDismissAlert={(id) => setAlerts((prev) => prev.filter((a) => a.id !== id))}
+        onUpdateOrderStatus={handleUpdateOrderStatus}
+        onAddItem={handleAddMenuItem}
+        onUpdateItem={handleUpdateMenuItem}
+        onDeleteItem={handleDeleteMenuItem}
+        onAddCategory={handleAddCategory}
+      />
+    );
+  }
+
+  // ---------------- ADMIN / CAFE MANAGER VIEW (/admin) ----------------
+  if (mode === 'admin') {
+    if (!isAdminAuthenticated) {
+      return (
+        <AdminLoginView
+          cafe={cafe}
+          onLoginSuccess={() => {
+            setIsAdminAuthenticated(true);
+          }}
+          onExitToCustomer={navigateToCustomer}
+          onGoToStaff={navigateToStaff}
+        />
+      );
+    }
+
+    return (
+      <AdminDashboard
+        cafe={cafe}
+        adminTab={adminTab}
+        setAdminTab={setAdminTab}
+        orders={orders}
+        alerts={alerts}
+        categories={categories}
+        menuItems={menuItems}
+        soundEnabled={soundEnabled}
+        onToggleSound={() => setSoundEnabled(!soundEnabled)}
+        onExitAdmin={navigateToCustomer}
+        onLogout={handleAdminLogout}
+        onDismissAlert={(id) => setAlerts((prev) => prev.filter((a) => a.id !== id))}
+        onUpdateOrderStatus={handleUpdateOrderStatus}
+        onAddItem={handleAddMenuItem}
+        onUpdateItem={handleUpdateMenuItem}
+        onDeleteItem={handleDeleteMenuItem}
+        onAddCategory={handleAddCategory}
+        onUpdateCafeSettings={handleUpdateCafeSettings}
+      />
+    );
+  }
+
+  // Customer Selects a Past Order from Lookup Modal
+  const handleSelectLookupOrder = (order: Order) => {
+    setCurrentOrder(order);
+    sessionStorage.setItem('cafeqr_active_order_id', order.id);
+    setCustomerStep('bill');
+    setIsBillLookupOpen(false);
+  };
 
   // ---------------- CUSTOMER VIEW: STEP 1 (WELCOME) ----------------
   if (customerStep === 'welcome') {
     return (
-      <WelcomeHero
-        cafe={cafe}
-        tableNumber={tableNumber}
-        onTableChange={setTableNumber}
-        onGetStarted={() => setCustomerStep('menu')}
-        onSwitchToAdmin={() => setMode('admin')}
-      />
+      <>
+        {!isOnline && (
+          <div className="bg-amber-600 text-white text-xs font-bold text-center py-2 px-4 sticky top-0 z-50 flex items-center justify-center gap-2 shadow-md">
+            <WifiOff className="w-3.5 h-3.5 animate-pulse" />
+            <span>Offline Mode: Internet disconnected. Menu items are loaded from local cache.</span>
+          </div>
+        )}
+        <WelcomeHero
+          cafe={cafe || {
+            name: 'The Roasted Bean Cafe',
+            tagline: 'Artisanal Coffee & Fresh Gourmet Bites',
+            address: '128 Brewmaster Ave, Ground Floor, Indiranagar',
+            phone: '+91 98765 43210',
+            email: 'hello@roastedbean.cafe',
+            gstNumber: '29ABCDE1234F1Z5',
+            fssaiNumber: '11223344556677',
+            taxRate: 5,
+            currency: '₹',
+            themeColor: '#78350f',
+            logo: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=200&auto=format&fit=crop&q=80',
+            coverImage: 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=1400&auto=format&fit=crop&q=85',
+            wifiSsid: 'RoastedBean-Guest',
+            wifiPass: 'freshcoffee',
+            hero: {
+              badge: 'NEW',
+              title: 'ICED\nMATCHA\nLATTE',
+              cardTitle: 'Welcome Back',
+              cardSubtitle: 'Explore our Fall menu & order online',
+              buttonText: 'Order Now',
+            },
+          }}
+          onGetStarted={() => setCustomerStep('menu')}
+          onCheckBill={() => setIsBillLookupOpen(true)}
+        />
+        <BillLookupModal
+          isOpen={isBillLookupOpen}
+          onClose={() => setIsBillLookupOpen(false)}
+          onSelectOrder={handleSelectLookupOrder}
+          currentOrder={currentOrder}
+          initialPhone={customerPhone}
+          initialName={customerName}
+        />
+      </>
     );
   }
 
   // ---------------- CUSTOMER VIEW: STEP 3 (BILL & STATUS TRACKER) ----------------
   if (customerStep === 'bill' && currentOrder) {
     return (
-      <BillReceiptView
-        order={currentOrder}
-        cafe={cafe}
-        onOrderMore={() => setCustomerStep('menu')}
-      />
+      <>
+        <BillReceiptView
+          order={currentOrder}
+          cafe={cafe}
+          onOrderMore={() => setCustomerStep('menu')}
+          onLookupBills={() => setIsBillLookupOpen(true)}
+        />
+        <BillLookupModal
+          isOpen={isBillLookupOpen}
+          onClose={() => setIsBillLookupOpen(false)}
+          onSelectOrder={handleSelectLookupOrder}
+          currentOrder={currentOrder}
+          initialPhone={customerPhone}
+          initialName={customerName}
+        />
+      </>
     );
   }
 
@@ -504,22 +716,52 @@ export function App() {
     return list;
   })();
 
+  const categoryItemCounts = menuItems.reduce((acc, item) => {
+    acc[item.category] = (acc[item.category] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
   return (
     <div className="min-h-screen bg-[#f8f9fa] pb-28">
+      {!isOnline && (
+        <div className="bg-amber-600 text-white text-xs font-bold text-center py-2 px-4 sticky top-0 z-50 flex items-center justify-center gap-2 shadow-md">
+          <WifiOff className="w-3.5 h-3.5 animate-pulse" />
+          <span>Offline Mode: Internet disconnected. Menu items are loaded from local cache.</span>
+        </div>
+      )}
       {/* Sticky Top Navbar */}
       <Navbar
-        cafe={cafe}
-        tableNumber={tableNumber}
+        cafe={cafe || {
+          name: 'The Roasted Bean Cafe',
+          tagline: 'Artisanal Coffee & Fresh Gourmet Bites',
+          address: '128 Brewmaster Ave, Ground Floor, Indiranagar',
+          phone: '+91 98765 43210',
+          email: 'hello@roastedbean.cafe',
+          gstNumber: '29ABCDE1234F1Z5',
+          fssaiNumber: '11223344556677',
+          taxRate: 5,
+          currency: '₹',
+          themeColor: '#78350f',
+          logo: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=200&auto=format&fit=crop&q=80',
+          coverImage: 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=1400&auto=format&fit=crop&q=85',
+        }}
         totalCartItems={totalCartItems}
+        onBackToHome={() => setCustomerStep('welcome')}
         onOpenCart={() => setIsCartOpen(true)}
-        onOpenWaiter={() => setIsWaiterModalOpen(true)}
+        onOpenBill={() => {
+          if (currentOrder) {
+            setCustomerStep('bill');
+          } else {
+            setIsBillLookupOpen(true);
+          }
+        }}
+        hasActiveOrder={Boolean(currentOrder)}
         onToggleSearch={() => setIsSearchOpen(!isSearchOpen)}
         isSearchOpen={isSearchOpen}
-        onSwitchToAdmin={() => setMode('admin')}
       />
 
-      {/* Top Search & Filter Bar (matches mock) */}
-      <CategoryBar
+      {/* Top Search & Filter Bar (with mobile slide-out drawer) */}
+      <FilterSidebar
         categories={categories}
         selectedCategory={selectedCategory}
         onSelectCategory={setSelectedCategory}
@@ -531,88 +773,125 @@ export function App() {
         onSortByChange={setSortBy}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        categoryItemCounts={categoryItemCounts}
+        totalItemsCount={menuItems.length}
       />
 
-      {/* Active Order Tracker Pill (If customer placed an order & is ordering more) */}
-      {currentOrder && (
-        <div className="max-w-4xl mx-auto px-4 pt-2.5">
-          <div
-            onClick={() => setCustomerStep('bill')}
-            className="p-3 rounded-2xl bg-[#133e2c] text-white shadow-md flex items-center justify-between cursor-pointer hover:bg-[#0e2c20] transition-all active:scale-[0.99] border border-emerald-500/30"
-          >
-            <div className="flex items-center gap-2.5">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-              </span>
-              <div className="text-xs">
-                <span className="font-extrabold text-amber-300 mr-1.5">{currentOrder.id}:</span>
-                <span className="font-medium text-stone-200">
-                  {currentOrder.orderStatus === 'completed'
-                    ? 'Fulfilled & Served ✅'
-                    : currentOrder.orderStatus === 'ready'
-                    ? 'Ready to Serve 🔔'
-                    : currentOrder.orderStatus === 'preparing'
-                    ? 'In Kitchen (Preparing 👨‍🍳)'
-                    : 'Order Confirmed'}
+      {/* Main Layout: Small Sidebar on Desktop + Menu Products Grid */}
+      <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col lg:flex-row items-start gap-6">
+        
+        {/* Desktop Small Filter Sidebar */}
+        <div className="hidden lg:block">
+          <DesktopFilterSidebar
+            categories={categories}
+            selectedCategory={selectedCategory}
+            onSelectCategory={setSelectedCategory}
+            filterVeg={filterVeg}
+            onFilterVegChange={setFilterVeg}
+            onlyBestsellers={onlyBestsellers}
+            onToggleBestsellers={() => setOnlyBestsellers(!onlyBestsellers)}
+            sortBy={sortBy}
+            onSortByChange={setSortBy}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            categoryItemCounts={categoryItemCounts}
+            totalItemsCount={menuItems.length}
+          />
+        </div>
+
+        {/* Products Column */}
+        <div className="flex-1 min-w-0 w-full space-y-3.5">
+          {/* Active Order Tracker Pill (If customer placed an order & is ordering more) */}
+          {currentOrder && (
+            <div>
+              <div
+                onClick={() => setCustomerStep('bill')}
+                className="p-3 rounded-2xl bg-[#133e2c] text-white shadow-md flex items-center justify-between cursor-pointer hover:bg-[#0e2c20] transition-all active:scale-[0.99] border border-emerald-500/30"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                  </span>
+                  <div className="text-xs">
+                    <span className="font-extrabold text-amber-300 mr-1.5">{currentOrder.id}:</span>
+                    <span className="font-medium text-stone-200">
+                      {currentOrder.orderStatus === 'completed'
+                        ? 'Fulfilled & Served ✅'
+                        : currentOrder.orderStatus === 'ready'
+                        ? 'Ready to Serve 🔔'
+                        : currentOrder.orderStatus === 'preparing'
+                        ? 'In Kitchen (Preparing 👨‍🍳)'
+                        : 'Order Confirmed'}
+                    </span>
+                  </div>
+                </div>
+
+                <span className="text-[11px] font-bold text-emerald-200 bg-white/15 px-2.5 py-1 rounded-lg">
+                  View Live Bill →
                 </span>
               </div>
             </div>
+          )}
 
-            <span className="text-[11px] font-bold text-emerald-200 bg-white/15 px-2.5 py-1 rounded-lg">
-              View Live Bill →
-            </span>
+          {/* Back to Home Quick Link */}
+          <div className="flex items-center justify-between pb-0.5">
+            <button
+              onClick={() => setCustomerStep('welcome')}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-800 hover:text-amber-950 transition-colors cursor-pointer group py-0.5 px-2 rounded-lg hover:bg-amber-50"
+              title="Return to Welcome / Cover Screen"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform text-amber-700" />
+              <span>← Back to Home</span>
+            </button>
           </div>
+
+          {/* Section Header */}
+          <div className="flex items-center justify-between pb-1 pt-1">
+            <div>
+              <h2 className="text-base sm:text-lg font-black text-stone-900 tracking-tight">
+                {selectedCategory === 'All' || selectedCategory === 'All Items' ? 'Fresh Items' : selectedCategory}
+              </h2>
+              <p className="text-[11px] text-stone-400">
+                {filteredMenuItems.length} item{filteredMenuItems.length === 1 ? '' : 's'} available
+              </p>
+            </div>
+
+            <button
+              onClick={() => setSelectedCategory('All Items')}
+              className={`text-xs font-bold transition-colors cursor-pointer ${
+                selectedCategory !== 'All' && selectedCategory !== 'All Items'
+                  ? 'text-[#133e2c] hover:underline'
+                  : 'text-stone-400'
+              }`}
+            >
+              See All
+            </button>
+          </div>
+
+          {/* 2-Column Product Cards Grid (compact & responsive) */}
+          {filteredMenuItems.length === 0 ? (
+            <div className="py-16 text-center text-stone-400 space-y-2">
+              <p className="font-bold text-stone-600 text-sm">No items found</p>
+              <p className="text-xs text-stone-400">Try adjusting your filters or search keywords.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-3">
+              {filteredMenuItems.map((item) => (
+                <MenuItemCard
+                  key={item.id}
+                  item={item}
+                  quantity={getItemQuantity(item.id)}
+                  onAddToCart={handleAddToCart}
+                  onRemoveFromCart={handleRemoveFromCart}
+                  onOpenDetails={(item) => setSelectedProduct(item)}
+                />
+              ))}
+            </div>
+          )}
         </div>
-      )}
 
-      {/* Menu Item 2-Column Responsive Grid (matches mock right screen) */}
-      <main className="max-w-4xl mx-auto px-4 py-4 space-y-3.5">
-        
-        {/* Section Header */}
-        <div className="flex items-center justify-between pb-1 pt-1">
-          <div>
-            <h2 className="text-base sm:text-lg font-black text-stone-900 tracking-tight">
-              {selectedCategory === 'All' || selectedCategory === 'All Items' ? 'Fresh Items' : selectedCategory}
-            </h2>
-            <p className="text-[11px] text-stone-400">
-              {filteredMenuItems.length} item{filteredMenuItems.length === 1 ? '' : 's'} available
-            </p>
-          </div>
-
-          <button
-            onClick={() => setSelectedCategory('All')}
-            className={`text-xs font-bold transition-colors cursor-pointer ${
-              selectedCategory !== 'All' && selectedCategory !== 'All Items'
-                ? 'text-[#133e2c] hover:underline'
-                : 'text-stone-400'
-            }`}
-          >
-            See All
-          </button>
-        </div>
-
-        {/* 2-Column Product Cards Grid (compact & responsive) */}
-        {filteredMenuItems.length === 0 ? (
-          <div className="py-16 text-center text-stone-400 space-y-2">
-            <p className="font-bold text-stone-600 text-sm">No items found</p>
-            <p className="text-xs text-stone-400">Try adjusting your filters or search keywords.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 sm:gap-3">
-            {filteredMenuItems.map((item) => (
-              <MenuItemCard
-                key={item.id}
-                item={item}
-                quantity={getItemQuantity(item.id)}
-                onAddToCart={handleAddToCart}
-                onRemoveFromCart={handleRemoveFromCart}
-                onOpenDetails={(item) => setSelectedProduct(item)}
-              />
-            ))}
-          </div>
-        )}
-      </main>
+      </div>
 
       {/* Product Details Sheet / Modal (matches mock left screen) */}
       <ProductDetailsModal
@@ -640,7 +919,9 @@ export function App() {
               </div>
               <div className="text-left leading-tight">
                 <p className="font-extrabold text-sm">View Cart</p>
-                <p className="text-[11px] text-amber-200">Table #{tableNumber}</p>
+                <p className="text-[11px] text-amber-200">
+                  {diningOption === 'parcel' ? 'Takeaway Parcel 🛍️' : 'Eat in Cafe 🍽️'}
+                </p>
               </div>
             </div>
 
@@ -659,8 +940,20 @@ export function App() {
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
         cartItems={cart}
-        cafe={cafe}
-        tableNumber={tableNumber}
+        cafe={cafe || {
+          name: 'The Roasted Bean Cafe',
+          tagline: 'Artisanal Coffee & Fresh Gourmet Bites',
+          address: '128 Brewmaster Ave, Ground Floor, Indiranagar',
+          phone: '+91 98765 43210',
+          email: 'hello@roastedbean.cafe',
+          gstNumber: '29ABCDE1234F1Z5',
+          fssaiNumber: '11223344556677',
+          taxRate: 5,
+          currency: '₹',
+          themeColor: '#78350f',
+          logo: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=200&auto=format&fit=crop&q=80',
+          coverImage: 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=1400&auto=format&fit=crop&q=85',
+        }}
         notes={notes}
         onNotesChange={setNotes}
         onAddToCart={handleAddToCart}
@@ -669,25 +962,31 @@ export function App() {
         onProceedToCheckout={handleProceedToCheckout}
       />
 
-      {/* Customer Info Modal (Asks Name & Phone Number) */}
+      {/* Customer Info Modal (Asks Eat Now vs Parcel, Name, Phone & Notes) */}
       <CustomerCheckoutModal
         isOpen={isCheckoutModalOpen}
         onClose={() => setIsCheckoutModalOpen(false)}
         totalAmount={cartTotal}
-        tableNumber={tableNumber}
+        diningOption={diningOption}
+        onDiningOptionChange={setDiningOption}
         customerName={customerName}
         customerPhone={customerPhone}
+        notes={notes}
+        onNotesChange={setNotes}
         onNameChange={setCustomerName}
         onPhoneChange={setCustomerPhone}
         onProceedToRazorpay={handleOpenRazorpay}
         isLoading={isPaymentLoading}
       />
 
-      {/* Call Waiter / Assistance Modal */}
-      <CallWaiterModal
-        isOpen={isWaiterModalOpen}
-        onClose={() => setIsWaiterModalOpen(false)}
-        tableNumber={tableNumber}
+      {/* Bill Lookup Modal (Search past bills by phone & name) */}
+      <BillLookupModal
+        isOpen={isBillLookupOpen}
+        onClose={() => setIsBillLookupOpen(false)}
+        onSelectOrder={handleSelectLookupOrder}
+        currentOrder={currentOrder}
+        initialPhone={customerPhone}
+        initialName={customerName}
       />
     </div>
   );

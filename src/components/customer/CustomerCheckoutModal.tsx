@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
-import { User, Phone, X, ShieldCheck, ArrowRight, Loader2 } from 'lucide-react';
+import type { DiningOption } from '../../types';
+import { User, Phone, X, ShieldCheck, ArrowRight, Loader2, MessageSquare, UtensilsCrossed, Package } from 'lucide-react';
 
 interface CustomerCheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
   totalAmount: number;
-  tableNumber: string;
+  diningOption: DiningOption;
+  onDiningOptionChange: (option: DiningOption) => void;
   customerName: string;
   customerPhone: string;
   onNameChange: (name: string) => void;
   onPhoneChange: (phone: string) => void;
+  notes?: string;
+  onNotesChange?: (notes: string) => void;
   onProceedToRazorpay: () => void;
   isLoading?: boolean;
 }
@@ -18,11 +22,14 @@ export const CustomerCheckoutModal: React.FC<CustomerCheckoutModalProps> = ({
   isOpen,
   onClose,
   totalAmount,
-  tableNumber,
+  diningOption,
+  onDiningOptionChange,
   customerName,
   customerPhone,
   onNameChange,
   onPhoneChange,
+  notes = '',
+  onNotesChange,
   onProceedToRazorpay,
   isLoading = false,
 }) => {
@@ -47,25 +54,70 @@ export const CustomerCheckoutModal: React.FC<CustomerCheckoutModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl relative border border-stone-200">
+      <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl relative border border-stone-200 max-h-[92vh] overflow-y-auto">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 text-stone-400 hover:text-stone-700 rounded-full hover:bg-stone-100 transition-colors"
+          className="absolute top-4 right-4 p-1.5 text-stone-400 hover:text-stone-700 rounded-full hover:bg-stone-100 transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <div className="text-center mb-6">
-          <div className="w-12 h-12 bg-amber-100 text-amber-800 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner">
+        <div className="text-center mb-5">
+          <div className="w-12 h-12 bg-amber-100 text-amber-800 rounded-2xl flex items-center justify-center mx-auto mb-2.5 shadow-xs">
             <User className="w-6 h-6" />
           </div>
-          <h3 className="text-lg font-extrabold text-stone-900">Guest Information</h3>
+          <h3 className="text-lg font-extrabold text-stone-900">Order Checkout</h3>
           <p className="text-xs text-stone-500 mt-0.5">
-            Table #{tableNumber} • Amount to Pay: <span className="font-bold text-amber-800">₹{totalAmount}</span>
+            Total Payable: <span className="font-bold text-amber-800">₹{totalAmount}</span>
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          
+          {/* Order Type: Eat Now vs Parcel (Takeaway) */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-black text-stone-800 uppercase tracking-wider">
+              Dining Preference <span className="text-rose-500">*</span>
+            </label>
+            <div className="grid grid-cols-2 gap-2.5">
+              
+              {/* Eat Now (Dine-in) */}
+              <button
+                type="button"
+                onClick={() => onDiningOptionChange('dine_in')}
+                className={`p-3 rounded-2xl border-2 flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
+                  diningOption === 'dine_in'
+                    ? 'border-amber-700 bg-amber-50 text-amber-950 font-black shadow-xs ring-2 ring-amber-500/20'
+                    : 'border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-600 font-bold'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 text-sm font-black">
+                  <UtensilsCrossed className="w-4 h-4 text-amber-700" />
+                  <span>Eat Now</span>
+                </div>
+                <span className="text-[10px] text-stone-500 font-medium">Dine-In (Cafe)</span>
+              </button>
+
+              {/* Parcel (Takeaway) */}
+              <button
+                type="button"
+                onClick={() => onDiningOptionChange('parcel')}
+                className={`p-3 rounded-2xl border-2 flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
+                  diningOption === 'parcel'
+                    ? 'border-emerald-700 bg-emerald-50 text-emerald-950 font-black shadow-xs ring-2 ring-emerald-500/20'
+                    : 'border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-600 font-bold'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 text-sm font-black">
+                  <Package className="w-4 h-4 text-emerald-700" />
+                  <span>Parcel</span>
+                </div>
+                <span className="text-[10px] text-stone-500 font-medium">Takeaway Pack</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Full Name */}
           <div>
             <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
               Your Full Name
@@ -81,11 +133,12 @@ export const CustomerCheckoutModal: React.FC<CustomerCheckoutModalProps> = ({
                   if (error) setError('');
                 }}
                 placeholder="e.g. Rahul Sharma"
-                className="w-full pl-10 pr-3 py-2.5 bg-stone-50 rounded-xl text-sm text-stone-900 border border-stone-300 outline-none focus:border-amber-600 focus:bg-white transition-all shadow-inner"
+                className="w-full pl-10 pr-3 py-2.5 bg-stone-50 rounded-xl text-sm text-stone-900 border border-stone-300 outline-none focus:border-amber-600 focus:bg-white transition-all shadow-inner font-medium"
               />
             </div>
           </div>
 
+          {/* Phone Number */}
           <div>
             <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
               Phone Number
@@ -105,13 +158,30 @@ export const CustomerCheckoutModal: React.FC<CustomerCheckoutModalProps> = ({
                   if (error) setError('');
                 }}
                 placeholder="9876543210"
-                className="w-full pl-17 pr-3 py-2.5 bg-stone-50 rounded-xl text-sm text-stone-900 border border-stone-300 outline-none focus:border-amber-600 focus:bg-white transition-all shadow-inner font-mono"
+                className="w-full pl-17 pr-3 py-2.5 bg-stone-50 rounded-xl text-sm text-stone-900 border border-stone-300 outline-none focus:border-amber-600 focus:bg-white transition-all shadow-inner font-mono font-medium"
               />
             </div>
             <p className="text-[11px] text-stone-400 mt-1">
               Your digital bill receipt will be generated under this number.
             </p>
           </div>
+
+          {/* Kitchen Message / Special Request */}
+          {onNotesChange && (
+            <div>
+              <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                <MessageSquare className="w-3.5 h-3.5 text-amber-600" />
+                <span>Message for Kitchen (Optional)</span>
+              </label>
+              <input
+                type="text"
+                value={notes}
+                onChange={(e) => onNotesChange(e.target.value)}
+                placeholder="e.g. Less sugar, extra hot milk, no onions..."
+                className="w-full px-3 py-2.5 bg-stone-50 rounded-xl text-xs text-stone-900 border border-stone-300 outline-none focus:border-amber-600 focus:bg-white transition-all shadow-inner"
+              />
+            </div>
+          )}
 
           {error && (
             <p className="text-xs text-red-600 font-semibold bg-red-50 p-2 rounded-lg border border-red-200">
@@ -132,7 +202,9 @@ export const CustomerCheckoutModal: React.FC<CustomerCheckoutModalProps> = ({
                 </>
               ) : (
                 <>
-                  <span>Pay ₹{totalAmount} via Razorpay</span>
+                  <span>
+                    Pay ₹{totalAmount} ({diningOption === 'parcel' ? 'Parcel' : 'Eat Now'})
+                  </span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}

@@ -15,19 +15,22 @@ import {
   Copy,
   Check,
   ShieldCheck,
-  Hash
+  Hash,
+  Receipt
 } from 'lucide-react';
 
 interface BillReceiptViewProps {
   order: Order;
   cafe: CafeInfo;
   onOrderMore: () => void;
+  onLookupBills?: () => void;
 }
 
 export const BillReceiptView: React.FC<BillReceiptViewProps> = ({
   order,
   cafe,
   onOrderMore,
+  onLookupBills,
 }) => {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -58,11 +61,12 @@ export const BillReceiptView: React.FC<BillReceiptViewProps> = ({
   };
 
   const handleShareWhatsApp = () => {
+    const isParcel = order.diningOption === 'parcel' || String(order.tableNumber).toLowerCase().includes('parcel');
     const itemsList = order.items
       .map((i) => `• ${i.quantity}x ${i.name} - ₹${i.price * i.quantity}`)
       .join('\n');
 
-    const message = `🧾 *${cafe.name}*\n"${cafe.tagline}"\n\n*Unique Order ID:* ${order.id}\n*Razorpay Payment ID:* ${order.paymentId}\n*Table:* #${order.tableNumber}\n*Customer:* ${order.customerName}\n\n*Items Ordered:*\n${itemsList}\n\nSubtotal: ₹${order.subtotal}\nGST (${order.taxRate}%): ₹${order.tax}\n*Total Paid:* ₹${order.total} (Razorpay)\n*Status:* ${order.orderStatus.toUpperCase()}\n\nThank you for dining with us! ☕`;
+    const message = `🧾 *${cafe.name}*\n"${cafe.tagline}"\n\n*Unique Order ID:* ${order.id}\n*Razorpay Payment ID:* ${order.paymentId}\n*Order Type:* ${isParcel ? '🛍️ Parcel (Takeaway)' : '🍽️ Eat Now (Dine-In)'}\n*Customer:* ${order.customerName}\n\n*Items Ordered:*\n${itemsList}\n\nSubtotal: ₹${order.subtotal}\nGST (${order.taxRate}%): ₹${order.tax}\n*Total Paid:* ₹${order.total} (Razorpay)\n*Status:* ${order.orderStatus.toUpperCase()}\n\nThank you for dining with us! ☕`;
 
     const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
@@ -92,13 +96,26 @@ export const BillReceiptView: React.FC<BillReceiptViewProps> = ({
       <div className="max-w-md mx-auto space-y-4">
         {/* Navigation & Actions (Hidden when printing) */}
         <div className="flex items-center justify-between no-print">
-          <button
-            onClick={onOrderMore}
-            className="flex items-center gap-1.5 text-xs font-bold text-stone-600 hover:text-stone-900 bg-white px-3 py-1.5 rounded-xl border border-stone-200 shadow-2xs transition-colors cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Order More</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onOrderMore}
+              className="flex items-center gap-1.5 text-xs font-bold text-stone-600 hover:text-stone-900 bg-white px-3 py-1.5 rounded-xl border border-stone-200 shadow-2xs transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Menu</span>
+            </button>
+
+            {onLookupBills && (
+              <button
+                onClick={onLookupBills}
+                className="flex items-center gap-1.5 text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-xl border border-amber-200 shadow-2xs transition-colors cursor-pointer"
+                title="Search all your bills"
+              >
+                <Receipt className="w-3.5 h-3.5 text-amber-700" />
+                <span>All Bills</span>
+              </button>
+            )}
+          </div>
 
           <div className="flex items-center gap-2">
             <button
@@ -249,14 +266,28 @@ export const BillReceiptView: React.FC<BillReceiptViewProps> = ({
                 </div>
               </div>
 
-              <div className="bg-amber-50/80 p-2.5 rounded-xl border border-amber-200 text-right flex flex-col justify-between">
-                <span className="text-amber-800 block text-[10px] uppercase font-bold tracking-wider">
-                  Dining Table
-                </span>
-                <span className="font-extrabold text-amber-950 text-sm">
-                  Table #{order.tableNumber}
-                </span>
-              </div>
+              {/* Dining Preference: Eat Now vs Parcel */}
+              {(() => {
+                const isParcel = order.diningOption === 'parcel' || String(order.tableNumber).toLowerCase().includes('parcel');
+                return (
+                  <div className={`p-2.5 rounded-xl border text-right flex flex-col justify-between ${
+                    isParcel
+                      ? 'bg-emerald-50 border-emerald-200'
+                      : 'bg-amber-50/80 border-amber-200'
+                  }`}>
+                    <span className={`block text-[10px] uppercase font-bold tracking-wider ${
+                      isParcel ? 'text-emerald-800' : 'text-amber-800'
+                    }`}>
+                      Order Type
+                    </span>
+                    <span className={`font-extrabold text-sm ${
+                      isParcel ? 'text-emerald-950' : 'text-amber-950'
+                    }`}>
+                      {isParcel ? '🛍️ Parcel' : '🍽️ Eat Now'}
+                    </span>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Razorpay Payment ID Box */}
@@ -352,31 +383,8 @@ export const BillReceiptView: React.FC<BillReceiptViewProps> = ({
             </div>
           </div>
 
-          {/* Payment & Order Status */}
-          <div className="pt-3.5 space-y-2">
-            <div className="p-3 rounded-2xl bg-emerald-50/80 border border-emerald-200/90 text-xs space-y-1.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-emerald-800 font-extrabold">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>PAID via Razorpay Gateway</span>
-                </div>
-                <span className="text-[10px] font-black uppercase text-emerald-700 bg-emerald-200/60 px-2 py-0.5 rounded">
-                  Success
-                </span>
-              </div>
-
-              <div className="pt-1 border-t border-emerald-200/50 flex flex-col gap-1 text-[11px]">
-                <div className="flex items-center justify-between text-stone-600">
-                  <span className="font-medium">Unique Order ID:</span>
-                  <span className="font-mono font-bold text-stone-900">{order.id}</span>
-                </div>
-                <div className="flex items-center justify-between text-stone-600">
-                  <span className="font-medium">Razorpay Payment ID:</span>
-                  <span className="font-mono font-bold text-emerald-900">{order.paymentId}</span>
-                </div>
-              </div>
-            </div>
-
+          {/* Kitchen Order Status */}
+          <div className="pt-3.5">
             <div className="flex items-center justify-between text-xs bg-amber-50 p-3 rounded-2xl border border-amber-200/80">
               <span className="font-bold text-stone-700">Kitchen Order Status</span>
               <span className="font-black uppercase tracking-wider text-amber-950 text-xs bg-amber-200/70 px-2.5 py-0.5 rounded-lg">

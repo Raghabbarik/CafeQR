@@ -1,17 +1,37 @@
+export interface HeroConfig {
+  badge: string;
+  title: string;
+  cardTitle: string;
+  cardSubtitle: string;
+  buttonText: string;
+}
+
+export interface StaffMember {
+  id: string;
+  name: string;
+  email: string;
+  password?: string;
+  role: 'staff';
+  createdAt: string;
+}
+
 export interface CafeInfo {
   name: string;
   tagline: string;
   logo: string;
   coverImage: string;
-  address: string;
-  phone: string;
-  wifiSsid: string;
-  wifiPassword: string;
+  address?: string;
+  phone?: string;
+  wifiSsid?: string;
+  wifiPassword?: string;
   currency: string;
   taxRate: number;
   razorpayKeyId: string;
-  upiId: string;
+  upiId?: string;
   tablesCount: number;
+  hero?: HeroConfig;
+  staff?: StaffMember[];
+  orderDisplayCode?: string;
 }
 
 export interface MenuItem {
@@ -45,9 +65,12 @@ export interface OrderItem {
   isVeg: boolean;
 }
 
+export type DiningOption = 'dine_in' | 'parcel';
+
 export interface Order {
   id: string;
-  tableNumber: string;
+  tableNumber?: string;
+  diningOption?: DiningOption;
   customerName: string;
   customerPhone: string;
   items: OrderItem[];

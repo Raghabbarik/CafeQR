@@ -7,7 +7,6 @@ interface CartDrawerProps {
   onClose: () => void;
   cartItems: CartItem[];
   cafe: CafeInfo;
-  tableNumber: string;
   notes: string;
   onNotesChange: (notes: string) => void;
   onAddToCart: (item: CartItem) => void;
@@ -21,7 +20,6 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   onClose,
   cartItems,
   cafe,
-  tableNumber,
   notes,
   onNotesChange,
   onAddToCart,
@@ -54,7 +52,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               </div>
               <div>
                 <h2 className="text-base font-bold text-stone-900">Your Order Cart</h2>
-                <p className="text-xs text-stone-500">Table #{tableNumber} • {cafe.name}</p>
+                <p className="text-xs text-stone-500">{cafe.name}</p>
               </div>
             </div>
 

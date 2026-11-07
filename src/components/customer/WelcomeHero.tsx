@@ -1,29 +1,36 @@
 import React from 'react';
 import type { CafeInfo } from '../../types';
-import { Shield, ArrowRight, Sparkles, Wifi } from 'lucide-react';
+import { Sparkles, Wifi, Receipt } from 'lucide-react';
+import { SlideToOrder } from './SlideToOrder';
 
 interface WelcomeHeroProps {
   cafe: CafeInfo;
-  tableNumber: string;
-  onTableChange?: (table: string) => void;
   onGetStarted: () => void;
-  onSwitchToAdmin?: () => void;
+  onCheckBill?: () => void;
 }
 
 export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
   cafe,
-  tableNumber,
   onGetStarted,
-  onSwitchToAdmin,
+  onCheckBill,
 }) => {
+  const heroBadge = cafe.hero?.badge || 'NEW';
+  const heroTitle = cafe.hero?.title || 'ICED\nMATCHA\nLATTE';
+  const heroCardTitle = cafe.hero?.cardTitle || 'Welcome Back';
+  const heroCardSubtitle = cafe.hero?.cardSubtitle || 'Explore our Fall menu';
+  const heroButtonText = cafe.hero?.buttonText || 'Order Now';
+  const heroImage = cafe.coverImage || 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=1400&auto=format&fit=crop&q=85';
+
+  const titleLines = heroTitle.split('\n');
+
   return (
     <div className="min-h-screen bg-stone-900 flex flex-col justify-between relative overflow-hidden select-none">
       
-      {/* Full-Bleed Sky & Matcha Latte Hero Background (matching reference screenshot) */}
+      {/* Full-Bleed Sky & Matcha Latte Hero Background (editable from admin) */}
       <div className="absolute inset-0 z-0">
         <img
-          src="https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=1400&auto=format&fit=crop&q=85"
-          alt="Iced Matcha Latte"
+          src={heroImage}
+          alt={heroCardTitle}
           className="w-full h-full object-cover object-center brightness-95 scale-102 transition-transform duration-1000"
         />
         {/* Soft top gradient for header readability */}
@@ -32,85 +39,85 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
         <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
       </div>
 
-      {/* Top Bar (Cafe & Table pills removed as requested, subtle staff button top-right) */}
-      <div className="relative z-20 px-4 pt-4 flex items-center justify-end">
-        {onSwitchToAdmin && (
-          <button
-            onClick={onSwitchToAdmin}
-            className="p-2 rounded-full bg-black/20 hover:bg-black/50 backdrop-blur-xs text-white/50 hover:text-white transition-colors cursor-pointer"
-            title="Staff Portal"
-          >
-            <Shield className="w-3.5 h-3.5" />
-          </button>
-        )}
-      </div>
-
       {/* Center Hero Heading directly on image: Centered Cafe Logo + ✦ NEW + Headline */}
       <div className="relative z-10 flex flex-col items-center text-center px-4 pt-4 pb-10 my-auto">
         
-        {/* Centered Cafe Logo */}
+        {/* Centered Cafe Logo (Enlarged logo size + decreased text size as requested) */}
         <div className="mb-4 flex flex-col items-center animate-in fade-in zoom-in-95 duration-500">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full p-1 bg-white/25 backdrop-blur-md border-2 border-white/50 shadow-2xl overflow-hidden">
+          <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full p-1 bg-white/25 backdrop-blur-md border-2 border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.35)] overflow-hidden transition-transform hover:scale-105">
             <img
               src={cafe.logo}
               alt={cafe.name}
               className="w-full h-full rounded-full object-cover"
             />
           </div>
-          <p className="text-white text-xs sm:text-sm font-black uppercase tracking-widest mt-2 drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)]">
+          <p className="text-white/95 text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.22em] mt-2.5 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
             {cafe.name}
           </p>
         </div>
 
-        {/* Pastel Lime/Yellow "✦ NEW" Badge */}
-        <div className="inline-flex items-center gap-1.5 bg-[#eaf49f] text-[#2c3e1e] font-black text-xs px-3.5 py-1 rounded-full uppercase tracking-wider shadow-md mb-3 animate-in fade-in zoom-in-90 duration-300">
-          <Sparkles className="w-3 h-3 fill-current" />
-          <span>NEW</span>
-        </div>
+        {/* Pastel Lime/Yellow Badge (Editable: e.g. ✦ NEW) */}
+        {heroBadge && (
+          <div className="inline-flex items-center gap-1.5 bg-[#eaf49f] text-[#2c3e1e] font-black text-xs px-3.5 py-1 rounded-full uppercase tracking-wider shadow-md mb-3 animate-in fade-in zoom-in-90 duration-300">
+            <Sparkles className="w-3 h-3 fill-current" />
+            <span>{heroBadge}</span>
+          </div>
+        )}
 
-        {/* Big Crisp All-Caps Headline */}
-        <h1 className="text-4xl sm:text-5xl font-black text-white tracking-widest leading-[1.05] uppercase drop-shadow-[0_4px_14px_rgba(0,0,0,0.45)]">
-          ICED<br />
-          MATCHA<br />
-          LATTE
+        {/* Big Crisp All-Caps Headline (Editable) */}
+        <h1 className="text-3xl sm:text-5xl font-black text-white tracking-widest leading-[1.08] uppercase drop-shadow-[0_4px_16px_rgba(0,0,0,0.5)]">
+          {titleLines.map((line, idx) => (
+            <React.Fragment key={idx}>
+              {line}
+              {idx < titleLines.length - 1 && <br />}
+            </React.Fragment>
+          ))}
         </h1>
       </div>
 
-      {/* Bottom Sheet Card (matches exact reference screenshot: Welcome Back / Explore our Fall menu / Order Now) */}
+      {/* Bottom Sheet Card (Editable: Welcome Back / Explore our Fall menu / Order Now) */}
       <div className="relative z-20 w-full max-w-md mx-auto">
-        <div className="bg-white rounded-t-[36px] sm:rounded-3xl p-6 sm:p-7 shadow-[0_-12px_40px_rgba(0,0,0,0.18)] flex flex-col items-center text-center space-y-4 animate-in slide-in-from-bottom duration-300">
+        <div className="bg-white rounded-t-[36px] sm:rounded-3xl pt-5 pb-6 px-6 sm:px-7 shadow-[0_-12px_40px_rgba(0,0,0,0.18)] flex flex-col items-center text-center space-y-3.5 animate-in slide-in-from-bottom duration-300">
           
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111111] tracking-tight">
-              Welcome Back
+              {heroCardTitle}
             </h2>
-            <p className="text-sm font-medium text-stone-500">
-              Explore our Fall menu
+            <p className="text-xs sm:text-sm font-medium text-stone-500">
+              {heroCardSubtitle}
             </p>
           </div>
 
-          {/* Pill Action Button: "Order Now" with arrow (matches screenshot) */}
-          <button
-            onClick={onGetStarted}
-            className="w-full bg-[#111111] hover:bg-black text-white rounded-full py-4 px-6 flex items-center justify-between shadow-xl active:scale-[0.98] transition-all cursor-pointer group"
-          >
-            <span className="font-bold text-base pl-2 tracking-wide">
-              Order Now
-            </span>
-            <div className="w-9 h-9 rounded-full bg-white/15 group-hover:bg-white/25 flex items-center justify-center transition-colors">
-              <ArrowRight className="w-4 h-4 text-white group-hover:translate-x-0.5 transition-transform" />
-            </div>
-          </button>
-
-          {/* Table & Guest Wi-Fi info */}
-          <div className="flex items-center justify-center gap-3 text-[11px] text-stone-400 font-medium pt-0.5">
-            <span className="font-semibold text-stone-600">Table #{tableNumber}</span>
-            <span>•</span>
-            <span className="flex items-center gap-1">
-              <Wifi className="w-3 h-3 text-emerald-600" />
-              <span>Wi-Fi: {cafe.wifiSsid}</span>
-            </span>
+          {/* Slide Arrow to Order Button (Slightly moved upward for optimal ergonomics) */}
+          <div className="w-full -mt-0.5">
+            <SlideToOrder
+              label={heroButtonText}
+              onComplete={onGetStarted}
+            />
           </div>
+
+          {/* Check Bill Button (Underneath Order Now as requested) */}
+          {onCheckBill && (
+            <button
+              onClick={onCheckBill}
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-stone-50 hover:bg-stone-100 active:scale-[0.99] border border-stone-200 text-stone-700 font-bold text-xs shadow-2xs transition-all cursor-pointer"
+            >
+              <Receipt className="w-4 h-4 text-amber-800" />
+              <span>Check Bill / View Past Orders</span>
+            </button>
+          )}
+
+          {/* Guest Wi-Fi info */}
+          {cafe.wifiSsid ? (
+            <div className="flex items-center justify-center gap-1.5 text-[11px] text-stone-400 font-medium pt-0.5">
+              <Wifi className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Complimentary Guest Wi-Fi: {cafe.wifiSsid}</span>
+            </div>
+          ) : (
+            <p className="text-[11px] text-stone-400 font-medium pt-0.5">
+              Freshly brewed coffee & gourmet artisanal bites
+            </p>
+          )}
         </div>
       </div>
     </div>

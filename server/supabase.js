@@ -23,30 +23,115 @@ export async function dbGetCafe() {
     if (error) console.error('dbGetCafe error:', error.message);
     return null;
   }
+
+  let plainTagline = data.tagline || 'Artisanal Coffee & Fresh Gourmet Bites';
+  let heroConfig = {
+    badge: 'NEW',
+    title: 'ICED\nMATCHA\nLATTE',
+    cardTitle: 'Welcome Back',
+    cardSubtitle: 'Explore our Fall menu',
+    buttonText: 'Order Now',
+  };
+  let staffList = [];
+  let orderDisplayCode = '8899';
+
+  try {
+    if (data.tagline && data.tagline.trim().startsWith('{')) {
+      const parsed = JSON.parse(data.tagline);
+      if (parsed && typeof parsed === 'object') {
+        if (parsed.tagline) plainTagline = parsed.tagline;
+        if (parsed.hero) {
+          heroConfig = { ...heroConfig, ...parsed.hero };
+        } else {
+          if (parsed.heroBadge) heroConfig.badge = parsed.heroBadge;
+          if (parsed.heroTitle) heroConfig.title = parsed.heroTitle;
+          if (parsed.heroCardTitle) heroConfig.cardTitle = parsed.heroCardTitle;
+          if (parsed.heroCardSubtitle) heroConfig.cardSubtitle = parsed.heroCardSubtitle;
+          if (parsed.heroButtonText) heroConfig.buttonText = parsed.heroButtonText;
+        }
+        if (Array.isArray(parsed.staff)) {
+          staffList = parsed.staff;
+        }
+        if (parsed.orderDisplayCode) {
+          orderDisplayCode = String(parsed.orderDisplayCode);
+        }
+      }
+    }
+  } catch (e) {
+    // tagline is plain string
+  }
+
   return {
     name: data.name,
-    tagline: data.tagline,
+    tagline: plainTagline,
     logo: data.logo,
     coverImage: data.cover_image,
     taxRate: Number(data.tax_rate),
     currency: data.currency,
     tablesCount: Number(data.tables_count),
     razorpayKeyId: data.razorpay_key_id,
+    hero: heroConfig,
+    staff: staffList,
+    orderDisplayCode: orderDisplayCode,
   };
 }
 
 export async function dbUpdateCafe(updates) {
+  // First get existing row to preserve tagline or hero if partially updated
+  const { data: existing } = await supabase.from('cafe').select('*').limit(1).single();
+  
+  let currentHero = {
+    badge: 'NEW',
+    title: 'ICED\nMATCHA\nLATTE',
+    cardTitle: 'Welcome Back',
+    cardSubtitle: 'Explore our Fall menu',
+    buttonText: 'Order Now',
+  };
+  let currentPlainTagline = existing?.tagline || 'Artisanal Coffee & Fresh Gourmet Bites';
+  let currentStaff = [];
+  let currentOrderDisplayCode = '8899';
+  
+  if (existing?.tagline && existing.tagline.trim().startsWith('{')) {
+    try {
+      const parsed = JSON.parse(existing.tagline);
+      if (parsed.tagline) currentPlainTagline = parsed.tagline;
+      if (parsed.hero) currentHero = { ...currentHero, ...parsed.hero };
+      if (Array.isArray(parsed.staff)) currentStaff = parsed.staff;
+      if (parsed.orderDisplayCode) currentOrderDisplayCode = String(parsed.orderDisplayCode);
+    } catch (e) {}
+  }
+
   const payload = {
     updated_at: new Date().toISOString(),
   };
+
   if (updates.name !== undefined) payload.name = updates.name;
-  if (updates.tagline !== undefined) payload.tagline = updates.tagline;
   if (updates.logo !== undefined) payload.logo = updates.logo;
   if (updates.coverImage !== undefined) payload.cover_image = updates.coverImage;
   if (updates.taxRate !== undefined) payload.tax_rate = updates.taxRate;
   if (updates.currency !== undefined) payload.currency = updates.currency;
   if (updates.tablesCount !== undefined) payload.tables_count = updates.tablesCount;
   if (updates.razorpayKeyId !== undefined) payload.razorpay_key_id = updates.razorpayKeyId;
+
+  // If hero, tagline, staff, or orderDisplayCode is provided, encode into tagline JSON
+  if (
+    updates.hero !== undefined ||
+    updates.tagline !== undefined ||
+    updates.staff !== undefined ||
+    updates.orderDisplayCode !== undefined
+  ) {
+    const newTagline = updates.tagline !== undefined ? updates.tagline : currentPlainTagline;
+    const newHero = updates.hero !== undefined ? { ...currentHero, ...updates.hero } : currentHero;
+    const newStaff = updates.staff !== undefined ? updates.staff : currentStaff;
+    const newCode = updates.orderDisplayCode !== undefined ? updates.orderDisplayCode : currentOrderDisplayCode;
+    
+    payload.tagline = JSON.stringify({
+      tagline: newTagline,
+      hero: newHero,
+      staff: newStaff,
+      orderDisplayCode: newCode,
+    });
+  }
 
   const { data, error } = await supabase
     .from('cafe')
@@ -60,6 +145,50 @@ export async function dbUpdateCafe(updates) {
     throw new Error(error.message);
   }
   return data;
+}
+
+// ---------------- STAFF HELPERS ----------------
+export async function dbGetStaff() {
+  const cafe = await dbGetCafe();
+  return cafe?.staff || [];
+}
+
+export async function dbAddStaff(newStaff) {
+  const cafe = await dbGetCafe();
+  const currentStaff = cafe?.staff || [];
+  
+  // check if email already exists
+  const existingIndex = currentStaff.findIndex(
+    (s) => s.email.toLowerCase().trim() === newStaff.email.toLowerCase().trim()
+  );
+  let updatedStaff;
+  if (existingIndex >= 0) {
+    updatedStaff = [...currentStaff];
+    updatedStaff[existingIndex] = { ...updatedStaff[existingIndex], ...newStaff };
+  } else {
+    updatedStaff = [...currentStaff, newStaff];
+  }
+
+  await dbUpdateCafe({ staff: updatedStaff });
+  return updatedStaff;
+}
+
+export async function dbDeleteStaff(staffId) {
+  const cafe = await dbGetCafe();
+  const currentStaff = cafe?.staff || [];
+  const updatedStaff = currentStaff.filter((s) => s.id !== staffId);
+  await dbUpdateCafe({ staff: updatedStaff });
+  return updatedStaff;
+}
+
+export async function dbGetOrderDisplayCode() {
+  const cafe = await dbGetCafe();
+  return cafe?.orderDisplayCode || '8899';
+}
+
+export async function dbUpdateOrderDisplayCode(code) {
+  await dbUpdateCafe({ orderDisplayCode: String(code).trim() });
+  return String(code).trim();
 }
 
 // ---------------- CATEGORIES ----------------
@@ -182,22 +311,26 @@ export async function dbGetOrders() {
     if (error) console.error('dbGetOrders error:', error.message);
     return [];
   }
-  return data.map((o) => ({
-    id: o.id,
-    tableNumber: o.table_number,
-    customerName: o.customer_name,
-    customerPhone: o.customer_phone,
-    items: o.items,
-    subtotal: Number(o.subtotal),
-    tax: Number(o.tax),
-    total: Number(o.total),
-    paymentMethod: o.payment_method,
-    paymentId: o.payment_id,
-    orderStatus: o.order_status,
-    notes: o.notes,
-    createdAt: o.created_at,
-    updatedAt: o.updated_at,
-  }));
+  return data.map((o) => {
+    const isParcel = String(o.table_number || '').toLowerCase().includes('parcel') || String(o.table_number || '').toLowerCase().includes('takeaway');
+    return {
+      id: o.id,
+      tableNumber: isParcel ? 'Parcel' : 'Eat Now',
+      diningOption: isParcel ? 'parcel' : 'dine_in',
+      customerName: o.customer_name,
+      customerPhone: o.customer_phone,
+      items: o.items,
+      subtotal: Number(o.subtotal),
+      tax: Number(o.tax),
+      total: Number(o.total),
+      paymentMethod: o.payment_method,
+      paymentId: o.payment_id,
+      orderStatus: o.order_status,
+      notes: o.notes,
+      createdAt: o.created_at,
+      updatedAt: o.updated_at,
+    };
+  });
 }
 
 export async function dbGetOrder(id) {
@@ -206,9 +339,11 @@ export async function dbGetOrder(id) {
     if (error) console.error('dbGetOrder error:', error.message);
     return null;
   }
+  const isParcel = String(data.table_number || '').toLowerCase().includes('parcel') || String(data.table_number || '').toLowerCase().includes('takeaway');
   return {
     id: data.id,
-    tableNumber: data.table_number,
+    tableNumber: isParcel ? 'Parcel' : 'Eat Now',
+    diningOption: isParcel ? 'parcel' : 'dine_in',
     customerName: data.customer_name,
     customerPhone: data.customer_phone,
     items: data.items,
@@ -225,9 +360,11 @@ export async function dbGetOrder(id) {
 }
 
 export async function dbCreateOrder(order) {
+  const isParcel = order.diningOption === 'parcel' || String(order.tableNumber || '').toLowerCase().includes('parcel');
+  const tableVal = isParcel ? 'Parcel' : 'Eat Now';
   const row = {
     id: order.id,
-    table_number: String(order.tableNumber),
+    table_number: tableVal,
     customer_name: order.customerName,
     customer_phone: order.customerPhone,
     items: order.items,
