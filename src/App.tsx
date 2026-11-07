@@ -12,7 +12,6 @@ import { MenuItemCard } from './components/customer/MenuItemCard';
 import { ProductDetailsModal } from './components/customer/ProductDetailsModal';
 import { CartDrawer } from './components/customer/CartDrawer';
 import { CustomerCheckoutModal } from './components/customer/CustomerCheckoutModal';
-import { RazorpaySimulatorModal } from './components/customer/RazorpaySimulatorModal';
 import { BillReceiptView } from './components/customer/BillReceiptView';
 import { CallWaiterModal } from './components/customer/CallWaiterModal';
 
@@ -52,7 +51,6 @@ export function App() {
   const [selectedProduct, setSelectedProduct] = useState<MenuItem | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
-  const [isRazorpayModalOpen, setIsRazorpayModalOpen] = useState(false);
   const [isWaiterModalOpen, setIsWaiterModalOpen] = useState(false);
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
 
@@ -205,76 +203,101 @@ export function App() {
     setIsCheckoutModalOpen(true);
   };
 
+  // Dynamic helper to ensure Razorpay official checkout SDK is loaded in DOM
+  const loadRazorpaySDK = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (typeof window === 'undefined') return resolve(false);
+      if ((window as any).Razorpay) return resolve(true);
+
+      const existing = document.querySelector('script[src*="checkout.razorpay.com"]');
+      if (existing) {
+        existing.addEventListener('load', () => resolve(true));
+        existing.addEventListener('error', () => resolve(false));
+        setTimeout(() => {
+          if ((window as any).Razorpay) resolve(true);
+        }, 500);
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   const handleOpenRazorpay = async () => {
     try {
       setIsPaymentLoading(true);
 
+      // Ensure SDK is ready
+      const isLoaded = await loadRazorpaySDK();
+      if (!isLoaded || !(window as any).Razorpay) {
+        alert('Could not load official Razorpay SDK. Please check your internet connection or disable ad-blockers for checkout.razorpay.com.');
+        setIsPaymentLoading(false);
+        return;
+      }
+
       // 1. Create real order on backend through Razorpay SDK
       const rzpOrder = await api.createRazorpayOrder(cartTotal);
-      console.log('✅ Real Razorpay order created:', rzpOrder);
+      console.log('✅ Real Razorpay order received from backend:', rzpOrder);
+
+      // Close guest modal
+      setIsCheckoutModalOpen(false);
 
       // 2. Open official Razorpay Checkout popup directly
-      if (typeof window !== 'undefined' && (window as any).Razorpay) {
-        setIsCheckoutModalOpen(false);
+      const options: any = {
+        key: rzpOrder.keyId || cafe?.razorpayKeyId || 'rzp_test_TxJ87ji7k95ncJ',
+        amount: rzpOrder.amount, // in paise
+        currency: rzpOrder.currency || 'INR',
+        name: cafe?.name || 'The Roasted Bean Cafe',
+        description: `Table #${tableNumber} - Order Total: ₹${cartTotal}`,
+        image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=200&auto=format&fit=crop&q=80',
+        order_id: rzpOrder.id,
+        prefill: {
+          name: customerName,
+          contact: customerPhone,
+        },
+        theme: {
+          color: '#133e2c',
+        },
+        handler: async function (response: any) {
+          console.log('✅ Official Razorpay payment succeeded:', response);
+          try {
+            const verifyRes = await api.verifyRazorpayPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            await handlePaymentSuccess(verifyRes.paymentId || response.razorpay_payment_id);
+          } catch {
+            await handlePaymentSuccess(response.razorpay_payment_id || `pay_${Date.now()}`);
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setIsPaymentLoading(false);
+          },
+        },
+      };
 
-        const options: any = {
-          key: rzpOrder.keyId || cafe?.razorpayKeyId || 'rzp_test_TxJ87ji7k95ncJ',
-          amount: rzpOrder.amount,
-          currency: rzpOrder.currency || 'INR',
-          name: cafe?.name || 'The Roasted Bean Cafe',
-          description: `Table #${tableNumber} - Order Total: ₹${cartTotal}`,
-          image: cafe?.logo || '',
-          order_id: rzpOrder.isReal ? rzpOrder.id : undefined,
-          prefill: {
-            name: customerName,
-            contact: customerPhone,
-          },
-          theme: {
-            color: '#133e2c',
-          },
-          handler: async function (response: any) {
-            console.log('✅ Official Razorpay payment succeeded:', response);
-            try {
-              const verifyRes = await api.verifyRazorpayPayment({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              });
-              await handlePaymentSuccess(verifyRes.paymentId || response.razorpay_payment_id);
-            } catch {
-              await handlePaymentSuccess(response.razorpay_payment_id || `pay_${Date.now()}`);
-            }
-          },
-          modal: {
-            ondismiss: function () {
-              setIsPaymentLoading(false);
-            },
-          },
-        };
-
-        const rzp = new (window as any).Razorpay(options);
-        rzp.on('payment.failed', function (resp: any) {
-          alert('Payment Failed: ' + (resp.error?.description || 'Declined'));
-          setIsPaymentLoading(false);
-        });
-        rzp.open();
-      } else {
-        // Fallback to simulator modal if script is blocked
-        setIsCheckoutModalOpen(false);
-        setIsRazorpayModalOpen(true);
-      }
-    } catch (err) {
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', function (resp: any) {
+        alert('Payment Failed: ' + (resp.error?.description || 'Declined'));
+        setIsPaymentLoading(false);
+      });
+      rzp.open();
+    } catch (err: any) {
       console.error('Razorpay initiation error:', err);
-      setIsCheckoutModalOpen(false);
-      setIsRazorpayModalOpen(true);
+      alert('Razorpay Payment Error: ' + (err.message || 'Could not initiate payment'));
     } finally {
       setIsPaymentLoading(false);
     }
   };
 
   const handlePaymentSuccess = async (paymentId: string) => {
-    setIsRazorpayModalOpen(false);
-
     try {
       const orderPayload = {
         tableNumber,
@@ -486,7 +509,6 @@ export function App() {
         onSortByChange={setSortBy}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        onGoBackWelcome={() => setCustomerStep('welcome')}
       />
 
       {/* Active Order Tracker Pill (If customer placed an order & is ordering more) */}
@@ -548,14 +570,14 @@ export function App() {
           </button>
         </div>
 
-        {/* 2-Column Product Cards Grid */}
+        {/* 2-Column Product Cards Grid (compact & responsive) */}
         {filteredMenuItems.length === 0 ? (
           <div className="py-16 text-center text-stone-400 space-y-2">
             <p className="font-bold text-stone-600 text-sm">No items found</p>
             <p className="text-xs text-stone-400">Try adjusting your filters or search keywords.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 sm:gap-3">
             {filteredMenuItems.map((item) => (
               <MenuItemCard
                 key={item.id}
@@ -637,18 +659,6 @@ export function App() {
         onPhoneChange={setCustomerPhone}
         onProceedToRazorpay={handleOpenRazorpay}
         isLoading={isPaymentLoading}
-      />
-
-      {/* Razorpay Payment Simulator / Gateway Modal */}
-      <RazorpaySimulatorModal
-        isOpen={isRazorpayModalOpen}
-        onClose={() => setIsRazorpayModalOpen(false)}
-        cafe={cafe}
-        amount={cartTotal}
-        customerName={customerName}
-        customerPhone={customerPhone}
-        tableNumber={tableNumber}
-        onSuccess={handlePaymentSuccess}
       />
 
       {/* Call Waiter / Assistance Modal */}

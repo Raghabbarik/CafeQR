@@ -31,15 +31,14 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
   return (
     <div
       onClick={handleCardClick}
-      className={`relative bg-white rounded-2xl border border-stone-200/70 p-3 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between cursor-pointer group ${
+      className={`relative bg-white rounded-2xl border border-stone-200/80 p-2 sm:p-2.5 shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col justify-between cursor-pointer group active:scale-[0.99] ${
         !item.isAvailable ? 'opacity-60 grayscale-[40%]' : ''
       }`}
     >
-      {/* Top Bar: Veg/Non-Veg icon (optional subtle) & Wishlist Heart */}
-      <div className="flex items-center justify-between w-full mb-1">
-        {/* Subtle Veg / Non-Veg badge */}
+      {/* Top Bar: Veg / Non-Veg badge + Wishlist Heart */}
+      <div className="flex items-center justify-between w-full mb-0.5">
         <div
-          className={`w-3.5 h-3.5 rounded-xs border-2 flex items-center justify-center ${
+          className={`w-3 h-3 rounded-xs border flex items-center justify-center ${
             item.isVeg ? 'border-emerald-600' : 'border-red-600'
           }`}
           title={item.isVeg ? 'Vegetarian' : 'Non-Vegetarian'}
@@ -47,23 +46,23 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
           <div className={`w-1.5 h-1.5 rounded-full ${item.isVeg ? 'bg-emerald-600' : 'bg-red-600'}`} />
         </div>
 
-        {/* Heart Wishlist Icon */}
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
             setIsLiked(!isLiked);
           }}
-          className={`action-btn p-1 rounded-full text-stone-300 hover:text-red-500 transition-colors cursor-pointer ${
+          className={`action-btn p-0.5 rounded-full text-stone-300 hover:text-red-500 transition-colors cursor-pointer ${
             isLiked ? 'text-red-500' : ''
           }`}
+          title="Add to favorites"
         >
-          <Heart className={`w-4 h-4 ${isLiked ? 'fill-red-500' : ''}`} />
+          <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-red-500' : ''}`} />
         </button>
       </div>
 
-      {/* Center: Product Image */}
-      <div className="w-full h-28 sm:h-32 flex items-center justify-center p-1 overflow-hidden">
+      {/* Center: Product Image (compact height h-20 sm:h-24) */}
+      <div className="w-full h-20 sm:h-24 flex items-center justify-center p-0.5 overflow-hidden">
         <img
           src={item.image}
           alt={item.name}
@@ -73,55 +72,56 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
       </div>
 
       {/* Product Information */}
-      <div className="pt-2 flex flex-col flex-1 justify-between">
+      <div className="pt-1.5 flex flex-col flex-1 justify-between">
         <div>
-          {/* Light-blue Portion / Size badge */}
-          <span className="bg-sky-50 text-sky-700 text-[10px] font-bold px-2 py-0.5 rounded-md inline-block">
+          {/* Portion / Size badge */}
+          <span className="bg-sky-50 text-sky-700 text-[9px] font-bold px-1.5 py-0.5 rounded inline-block">
             {portion}
           </span>
 
           {/* Product Title */}
-          <h3 className="font-bold text-stone-900 text-xs sm:text-sm line-clamp-1 mt-1 leading-snug">
+          <h3 className="font-bold text-stone-900 text-xs line-clamp-1 mt-0.5 leading-tight">
             {item.name}
           </h3>
 
           {/* Prep Time */}
-          <div className="flex items-center gap-1 text-[10px] text-stone-400 font-medium mt-0.5">
-            <Clock className="w-3 h-3 text-stone-400" />
+          <div className="flex items-center gap-1 text-[9px] text-stone-400 font-medium mt-0.5">
+            <Clock className="w-2.5 h-2.5 text-stone-400" />
             <span>{item.prepTime || '10 MINS'}</span>
           </div>
         </div>
 
         {/* Bottom Price & Add to Cart Row */}
-        <div className="flex items-center justify-between pt-2 mt-1.5 border-t border-stone-100">
+        <div className="flex items-center justify-between pt-1.5 mt-1 border-t border-stone-100">
           <div className="flex items-baseline gap-1">
-            <span className="font-black text-[#133e2c] text-sm sm:text-base">
+            <span className="font-black text-[#133e2c] text-xs sm:text-sm">
               ₹{item.price}
             </span>
-            <span className="text-[10px] text-stone-400 line-through">
-              MRP ₹{mrp}
+            <span className="text-[9px] text-stone-400 line-through">
+              ₹{mrp}
             </span>
           </div>
 
-          {/* Round Dark Green / Espresso + Button or Controller */}
+          {/* Add button / Stepper */}
           <div className="action-btn">
             {!item.isAvailable ? (
-              <span className="text-[10px] font-bold text-stone-400 bg-stone-100 px-2 py-0.5 rounded-md">
+              <span className="text-[9px] font-bold text-stone-400 bg-stone-100 px-1.5 py-0.5 rounded">
                 Sold Out
               </span>
             ) : quantity > 0 ? (
-              <div className="flex items-center bg-[#133e2c] text-white rounded-full px-1.5 py-0.5 text-xs font-bold shadow-xs">
+              <div className="flex items-center bg-[#133e2c] text-white rounded-full px-1 py-0.5 text-[11px] font-bold shadow-xs">
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     onRemoveFromCart(item);
                   }}
-                  className="p-1 hover:bg-black/20 rounded-full active:scale-90 transition-transform cursor-pointer"
+                  className="p-0.5 hover:bg-black/20 rounded-full active:scale-90 transition-transform cursor-pointer"
+                  title="Remove one"
                 >
-                  <Minus className="w-3 h-3" />
+                  <Minus className="w-2.5 h-2.5" />
                 </button>
-                <span className="px-1.5 min-w-[16px] text-center font-bold text-xs">
+                <span className="px-1 min-w-[14px] text-center font-bold text-[11px]">
                   {quantity}
                 </span>
                 <button
@@ -130,9 +130,10 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
                     e.stopPropagation();
                     onAddToCart(item);
                   }}
-                  className="p-1 hover:bg-black/20 rounded-full active:scale-90 transition-transform cursor-pointer"
+                  className="p-0.5 hover:bg-black/20 rounded-full active:scale-90 transition-transform cursor-pointer"
+                  title="Add one"
                 >
-                  <Plus className="w-3 h-3" />
+                  <Plus className="w-2.5 h-2.5" />
                 </button>
               </div>
             ) : (
@@ -142,10 +143,10 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
                   e.stopPropagation();
                   onAddToCart(item);
                 }}
-                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#133e2c] hover:bg-[#0e2c20] text-white flex items-center justify-center font-bold shadow-xs hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-[#133e2c] hover:bg-[#0e2c20] text-white flex items-center justify-center font-bold shadow-xs hover:scale-105 active:scale-95 transition-all cursor-pointer"
                 title="Add to cart"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3.5 h-3.5" />
               </button>
             )}
           </div>

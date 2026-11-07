@@ -13,7 +13,6 @@ interface CategoryBarProps {
   onSortByChange: (sort: 'featured' | 'price_low' | 'price_high' | 'rating') => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
-  onGoBackWelcome?: () => void;
 }
 
 export const CategoryBar: React.FC<CategoryBarProps> = ({
@@ -28,7 +27,6 @@ export const CategoryBar: React.FC<CategoryBarProps> = ({
   onSortByChange,
   searchQuery,
   onSearchChange,
-  onGoBackWelcome,
 }) => {
   const [isSortOpen, setIsSortOpen] = React.useState(false);
   const [isCatPickerOpen, setIsCatPickerOpen] = React.useState(false);
@@ -39,38 +37,24 @@ export const CategoryBar: React.FC<CategoryBarProps> = ({
     <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-stone-100 shadow-2xs pb-2.5 pt-3">
       <div className="max-w-4xl mx-auto px-4 space-y-2.5">
         
-        {/* Top Search Bar (matches right screen: arrow left + rounded search input) */}
-        <div className="flex items-center gap-2.5">
-          {onGoBackWelcome && (
+        {/* Top Search Bar (full-width rounded search input, arrow completely removed) */}
+        <div className="relative">
+          <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Search for coffee, food, desserts..."
+            className="w-full pl-10 pr-9 py-2.5 bg-stone-100/90 rounded-full text-xs sm:text-sm text-stone-800 placeholder-stone-400 outline-none border border-transparent focus:border-stone-300 focus:bg-white transition-all shadow-inner"
+          />
+          {searchQuery && (
             <button
-              onClick={onGoBackWelcome}
-              className="w-10 h-10 rounded-full bg-stone-100 hover:bg-stone-200 flex items-center justify-center text-stone-700 shrink-0 transition-colors cursor-pointer"
-              title="Cafe Info"
+              onClick={() => onSearchChange('')}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 text-stone-400 hover:text-stone-600 cursor-pointer"
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
+              <X className="w-3.5 h-3.5" />
             </button>
           )}
-
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Search for coffee, food, desserts..."
-              className="w-full pl-10 pr-9 py-2.5 bg-stone-100/90 rounded-full text-xs sm:text-sm text-stone-800 placeholder-stone-400 outline-none border border-transparent focus:border-stone-300 focus:bg-white transition-all shadow-inner"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => onSearchChange('')}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 text-stone-400 hover:text-stone-600 cursor-pointer"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
         </div>
 
         {/* Filter Pills Row (matches: Filter icon, Sort By, Category, Offers) */}
