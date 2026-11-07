@@ -307,6 +307,32 @@
   ],
   "orders": [
     {
+      "id": "ORD-7452",
+      "tableNumber": "4",
+      "customerName": "hnstn",
+      "customerPhone": "7205376243",
+      "items": [
+        {
+          "id": "item_1",
+          "name": "Signature Spanish Latte",
+          "price": 240,
+          "quantity": 1,
+          "isVeg": true
+        }
+      ],
+      "subtotal": 240,
+      "taxRate": 5,
+      "tax": 12,
+      "total": 252,
+      "notes": "",
+      "paymentMethod": "Razorpay",
+      "paymentId": "pay_TxKWhzJILJTVtz",
+      "paymentStatus": "PAID",
+      "orderStatus": "received",
+      "createdAt": "2026-11-07T15:11:20.841Z",
+      "updatedAt": "2026-11-07T15:11:20.841Z"
+    },
+    {
       "id": "ORD-6034",
       "tableNumber": "4",
       "customerName": "entnjetn",

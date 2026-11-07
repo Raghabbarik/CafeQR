@@ -48,14 +48,18 @@ export const LiveKDSView: React.FC<LiveKDSViewProps> = ({
 
   const filteredOrders = getFilteredOrders();
 
-  const getElapsedTime = (isoDate: string) => {
+  const getElapsedInfo = (isoDate: string) => {
     const diffMs = Date.now() - new Date(isoDate).getTime();
     const diffMins = Math.floor(diffMs / (1000 * 60));
-    if (diffMins < 1) return 'Just now';
-    if (diffMins === 1) return '1 min ago';
-    if (diffMins < 60) return `${diffMins} mins ago`;
-    const diffHours = Math.floor(diffMins / 60);
-    return `${diffHours}h ${diffMins % 60}m ago`;
+    let text = 'Just now';
+    if (diffMins === 1) text = '1m ago';
+    else if (diffMins < 60) text = `${diffMins}m ago`;
+    else text = `${Math.floor(diffMins / 60)}h ${diffMins % 60}m ago`;
+
+    const isUrgent = diffMins >= 10;
+    const isWarning = diffMins >= 5 && diffMins < 10;
+
+    return { text, diffMins, isUrgent, isWarning };
   };
 
   return (
@@ -177,10 +181,33 @@ export const LiveKDSView: React.FC<LiveKDSViewProps> = ({
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-1.5 text-xs text-stone-500 font-medium">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>{getElapsedTime(order.createdAt)}</span>
-                  </div>
+                  {(() => {
+                    const elapsed = getElapsedInfo(order.createdAt);
+                    return (
+                      <div className="flex items-center gap-1.5 text-xs font-semibold">
+                        <Clock className="w-3.5 h-3.5 text-stone-400" />
+                        {order.orderStatus !== 'completed' && order.orderStatus !== 'cancelled' ? (
+                          <span
+                            className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${
+                              elapsed.isUrgent
+                                ? 'bg-red-500 text-white animate-pulse'
+                                : elapsed.isWarning
+                                ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                                : 'bg-emerald-50 text-emerald-800'
+                            }`}
+                          >
+                            {elapsed.isUrgent
+                              ? `🔥 ${elapsed.text}`
+                              : elapsed.isWarning
+                              ? `⚠️ ${elapsed.text}`
+                              : elapsed.text}
+                          </span>
+                        ) : (
+                          <span className="text-stone-400 text-[11px]">{elapsed.text}</span>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Body: Guest details & Item list */}
