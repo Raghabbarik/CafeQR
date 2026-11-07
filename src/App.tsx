@@ -22,6 +22,7 @@ import { LiveKDSView } from './components/admin/LiveKDSView';
 import { MenuManagerView } from './components/admin/MenuManagerView';
 import { TableQRGenerator } from './components/admin/TableQRGenerator';
 import { CafeSettingsView } from './components/admin/CafeSettingsView';
+import { AnalyticsView } from './components/admin/AnalyticsView';
 
 import { Loader2 } from 'lucide-react';
 
@@ -63,7 +64,7 @@ export function App() {
   const [sortBy, setSortBy] = useState<'featured' | 'price_low' | 'price_high' | 'rating'>('featured');
 
   // Admin State
-  const [adminTab, setAdminTab] = useState<'orders' | 'menu' | 'tables' | 'settings'>('orders');
+  const [adminTab, setAdminTab] = useState<'orders' | 'menu' | 'tables' | 'settings' | 'analytics'>('orders');
   const [orders, setOrders] = useState<Order[]>([]);
   const [alerts, setAlerts] = useState<StaffAlert[]>([]);
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -304,6 +305,10 @@ export function App() {
               onDismissAlert={(id) => setAlerts((prev) => prev.filter((a) => a.id !== id))}
               onUpdateStatus={handleUpdateOrderStatus}
             />
+          )}
+
+          {adminTab === 'analytics' && (
+            <AnalyticsView orders={orders} cafe={cafe} />
           )}
 
           {adminTab === 'menu' && (

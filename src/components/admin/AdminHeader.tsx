@@ -8,13 +8,16 @@ import {
   Volume2, 
   VolumeX, 
   ArrowLeft,
-  Coffee
+  Coffee,
+  BarChart3,
+  BellRing
 } from 'lucide-react';
+import { sound } from '../../services/sound';
 
 interface AdminHeaderProps {
   cafe: CafeInfo;
-  activeTab: 'orders' | 'menu' | 'tables' | 'settings';
-  onTabChange: (tab: 'orders' | 'menu' | 'tables' | 'settings') => void;
+  activeTab: 'orders' | 'menu' | 'tables' | 'settings' | 'analytics';
+  onTabChange: (tab: 'orders' | 'menu' | 'tables' | 'settings' | 'analytics') => void;
   activeOrdersCount: number;
   soundEnabled: boolean;
   onToggleSound: () => void;
@@ -62,6 +65,15 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Test Kitchen Sound */}
+            <button
+              onClick={() => sound.playOrderBell()}
+              className="p-2 rounded-xl bg-stone-800 text-stone-300 hover:text-white border border-stone-700 transition-colors cursor-pointer"
+              title="Test Kitchen Sound"
+            >
+              <BellRing className="w-4 h-4 text-amber-400" />
+            </button>
+
             {/* Audio chime toggle */}
             <button
               onClick={onToggleSound}
@@ -94,6 +106,18 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                 {activeOrdersCount}
               </span>
             )}
+          </button>
+
+          <button
+            onClick={() => onTabChange('analytics')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'analytics'
+                ? 'bg-amber-600 text-white shadow-xs'
+                : 'text-stone-300 hover:bg-stone-800 hover:text-white'
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            <span>Sales & Analytics</span>
           </button>
 
           <button

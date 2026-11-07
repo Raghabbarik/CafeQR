@@ -119,7 +119,7 @@ export const api = {
     amount: number;
     keyId: string;
     receipt: string;
-    isTest: boolean;
+    isReal?: boolean;
   }> {
     const res = await fetch('/api/razorpay/order', {
       method: 'POST',
@@ -127,6 +127,20 @@ export const api = {
       body: JSON.stringify({ amount }),
     });
     if (!res.ok) throw new Error('Failed to initiate Razorpay payment');
+    return res.json();
+  },
+
+  async verifyRazorpayPayment(payload: {
+    razorpay_order_id?: string;
+    razorpay_payment_id: string;
+    razorpay_signature?: string;
+  }): Promise<{ success: boolean; paymentId: string }> {
+    const res = await fetch('/api/razorpay/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error('Verification request failed');
     return res.json();
   },
 };
