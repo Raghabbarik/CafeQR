@@ -48,6 +48,8 @@ export const BillReceiptView: React.FC<BillReceiptViewProps> = ({
     }
   }, []);
 
+  const isParcel = order.diningOption === 'parcel' || String(order.tableNumber).toLowerCase().includes('parcel');
+
   const handlePrint = () => {
     window.print();
   };
@@ -61,7 +63,6 @@ export const BillReceiptView: React.FC<BillReceiptViewProps> = ({
   };
 
   const handleShareWhatsApp = () => {
-    const isParcel = order.diningOption === 'parcel' || String(order.tableNumber).toLowerCase().includes('parcel');
     const itemsList = order.items
       .map((i) => `• ${i.quantity}x ${i.name} - ₹${i.price * i.quantity}`)
       .join('\n');
@@ -75,7 +76,7 @@ export const BillReceiptView: React.FC<BillReceiptViewProps> = ({
   const statusSteps: { key: OrderStatus; label: string; desc: string }[] = [
     { key: 'received', label: 'Order Received', desc: 'Sent to Kitchen' },
     { key: 'preparing', label: 'Preparing', desc: 'Chef is cooking' },
-    { key: 'ready', label: 'Ready to Serve', desc: 'On its way to table' },
+    { key: 'ready', label: 'Ready to Serve', desc: isParcel ? 'Ready at Counter' : 'Ready to serve' },
     { key: 'completed', label: 'Completed', desc: 'Enjoy your meal!' },
   ];
 

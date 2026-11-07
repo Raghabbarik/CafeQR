@@ -417,9 +417,7 @@ export const HeroCustomizerView: React.FC<HeroCustomizerViewProps> = ({
                     </span>
                   </div>
 
-                  <div className="text-[9px] text-stone-400 font-medium pt-0.5 flex items-center gap-2">
-                    <span>Table #1</span>
-                    <span>•</span>
+                  <div className="text-[9px] text-stone-400 font-medium pt-0.5 flex items-center justify-center gap-1.5">
                     <span>Wi-Fi: {cafe.wifiSsid || 'Active'}</span>
                   </div>
                 </div>

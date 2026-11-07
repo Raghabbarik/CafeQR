@@ -22,7 +22,7 @@ export const CallWaiterModal: React.FC<CallWaiterModalProps> = ({
   const options = [
     { label: 'Drinking Water', icon: Droplets, desc: 'Bring fresh drinking water' },
     { label: 'Cutlery & Napkins', icon: Utensils, desc: 'Extra spoons, forks, tissue' },
-    { label: 'Server Assistance', icon: Bell, desc: 'Call staff to Table #' + tableNumber },
+    { label: 'Server Assistance', icon: Bell, desc: 'Call staff for assistance' },
     { label: 'Physical Bill / Receipt', icon: FileText, desc: 'Request paper receipt' },
   ];
 
@@ -55,9 +55,9 @@ export const CallWaiterModal: React.FC<CallWaiterModalProps> = ({
           <div className="w-12 h-12 bg-amber-100 text-amber-800 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner">
             <Bell className="w-6 h-6 animate-swing" />
           </div>
-          <h3 className="text-lg font-extrabold text-stone-900">Call Table Staff</h3>
+          <h3 className="text-lg font-extrabold text-stone-900">Call Staff</h3>
           <p className="text-xs text-stone-500 mt-0.5">
-            Table #{tableNumber} • A staff member will arrive shortly.
+            A staff member will assist you shortly.
           </p>
         </div>
 
@@ -65,7 +65,7 @@ export const CallWaiterModal: React.FC<CallWaiterModalProps> = ({
           <div className="py-8 text-center space-y-2">
             <CheckCircle className="w-12 h-12 text-emerald-600 mx-auto animate-bounce" />
             <h4 className="font-bold text-stone-900 text-base">Server Notified!</h4>
-            <p className="text-xs text-stone-500">Staff is on the way to Table #{tableNumber}.</p>
+            <p className="text-xs text-stone-500">Staff is on the way to assist you.</p>
           </div>
         ) : (
           <div className="space-y-4">

@@ -24,7 +24,7 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
   const titleLines = heroTitle.split('\n');
 
   return (
-    <div className="min-h-screen h-[100dvh] bg-stone-900 flex flex-col justify-end relative overflow-hidden select-none">
+    <div className="min-h-screen h-[100dvh] bg-stone-900 flex flex-col justify-between relative overflow-hidden select-none">
       
       {/* Full-Bleed Sky & Matcha Latte Hero Background (editable from admin) */}
       <div className="absolute inset-0 z-0">
@@ -40,10 +40,10 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
       </div>
 
       {/* Center Hero Heading directly on image: Centered Cafe Logo + ✦ NEW + Headline */}
-      <div className="relative z-10 flex flex-col items-center text-center px-4 pt-4 sm:pt-8 pb-2 sm:pb-3 mt-auto mb-2.5 sm:mb-4">
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-4 py-4 my-auto">
         
         {/* Centered Cafe Logo */}
-        <div className="mb-2 flex flex-col items-center animate-in fade-in zoom-in-95 duration-500">
+        <div className="mb-2.5 flex flex-col items-center animate-in fade-in zoom-in-95 duration-500">
           <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full p-1 bg-white/25 backdrop-blur-md border-2 border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.35)] overflow-hidden transition-transform hover:scale-105">
             <img
               src={cafe.logo}
@@ -58,7 +58,7 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
 
         {/* Pastel Lime/Yellow Badge (Editable: e.g. ✦ NEW) */}
         {heroBadge && (
-          <div className="inline-flex items-center gap-1.5 bg-[#eaf49f] text-[#2c3e1e] font-black text-xs px-3.5 py-1 rounded-full uppercase tracking-wider shadow-md mb-2 animate-in fade-in zoom-in-90 duration-300">
+          <div className="inline-flex items-center gap-1.5 bg-[#eaf49f] text-[#2c3e1e] font-black text-xs px-3.5 py-1 rounded-full uppercase tracking-wider shadow-md mb-2.5 animate-in fade-in zoom-in-90 duration-300">
             <Sparkles className="w-3 h-3 fill-current" />
             <span>{heroBadge}</span>
           </div>
@@ -76,7 +76,7 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
       </div>
 
       {/* Bottom Sheet Card (Editable: Welcome Back / Explore our Fall menu / Order Now) */}
-      <div className="relative z-20 w-full max-w-md mx-auto">
+      <div className="relative z-20 w-full max-w-md mx-auto shrink-0">
         <div className="bg-white rounded-t-[36px] sm:rounded-3xl pt-4 sm:pt-5 pb-5 sm:pb-6 px-5 sm:px-7 shadow-[0_-12px_40px_rgba(0,0,0,0.18)] flex flex-col items-center text-center space-y-3 animate-in slide-in-from-bottom duration-300">
           
           <div className="space-y-0.5">

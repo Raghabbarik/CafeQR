@@ -483,7 +483,7 @@ export const OrderDisplayBoard: React.FC<OrderDisplayBoardProps> = ({ cafe, onEx
                 <h2 className="text-xl sm:text-2xl font-black text-emerald-900 tracking-tight uppercase">
                   Ready to Serve
                 </h2>
-                <p className="text-xs text-stone-500 font-medium">Please Collect at Counter or Table</p>
+                <p className="text-xs text-stone-500 font-medium">Please Collect at Counter or Service Area</p>
               </div>
             </div>
 

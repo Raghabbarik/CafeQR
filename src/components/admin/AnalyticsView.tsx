@@ -53,12 +53,12 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ orders, cafe }) =>
 
   // Export to CSV
   const handleExportCSV = () => {
-    const headers = ['Order ID', 'Date', 'Time', 'Table', 'Customer Name', 'Customer Phone', 'Items', 'Subtotal', 'Tax', 'Total (INR)', 'Payment Ref', 'Status'];
+    const headers = ['Order ID', 'Date', 'Time', 'Order Type', 'Customer Name', 'Customer Phone', 'Items', 'Subtotal', 'Tax', 'Total (INR)', 'Payment Ref', 'Status'];
     const rows = orders.map((o) => [
       o.id,
       new Date(o.createdAt).toLocaleDateString(),
       new Date(o.createdAt).toLocaleTimeString(),
-      `Table #${o.tableNumber}`,
+      o.diningOption === 'parcel' || String(o.tableNumber).toLowerCase().includes('parcel') ? 'Parcel' : (o.tableNumber ? String(o.tableNumber) : 'Eat Now'),
       `"${o.customerName}"`,
       `'${o.customerPhone}`,
       `"${o.items.map((i) => `${i.quantity}x ${i.name}`).join(', ')}"`,
@@ -129,7 +129,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ orders, cafe }) =>
             <TrendingUp className="w-4 h-4 text-amber-600" />
           </div>
           <p className="text-2xl font-black text-stone-900">₹{averageOrderValue}</p>
-          <p className="text-[10px] text-stone-500 font-semibold">Per guest table tab</p>
+          <p className="text-[10px] text-stone-500 font-semibold">Per order average</p>
         </div>
 
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200 shadow-xs space-y-1">

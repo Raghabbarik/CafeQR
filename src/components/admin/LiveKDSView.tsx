@@ -148,7 +148,7 @@ export const LiveKDSView: React.FC<LiveKDSViewProps> = ({
                 <div>
                   <p className="text-sm">
                     <span className="bg-stone-900 text-white px-2 py-0.5 rounded-md mr-2 font-mono">
-                      Table #{alert.tableNumber}
+                      {alert.tableNumber ? alert.tableNumber : 'Customer'}
                     </span>
                     Requested: <span className="underline">{alert.type}</span>
                   </p>
@@ -528,7 +528,7 @@ export const LiveKDSView: React.FC<LiveKDSViewProps> = ({
                     <div className="p-4 bg-white rounded-2xl border border-stone-200 flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <p className="text-xs font-bold text-stone-700">Update Order Progress:</p>
-                        <p className="text-[11px] text-stone-400">Updates the customer's digital bill and table tracker in real-time</p>
+                        <p className="text-[11px] text-stone-400">Updates the customer's digital bill and order tracker in real-time</p>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2">
