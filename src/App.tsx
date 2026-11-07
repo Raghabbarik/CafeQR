@@ -470,7 +470,6 @@ export function App() {
         onOpenWaiter={() => setIsWaiterModalOpen(true)}
         onToggleSearch={() => setIsSearchOpen(!isSearchOpen)}
         isSearchOpen={isSearchOpen}
-        onGoBackWelcome={() => setCustomerStep('welcome')}
         onSwitchToAdmin={() => setMode('admin')}
       />
 
