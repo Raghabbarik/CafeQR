@@ -22,10 +22,14 @@ export interface CafeInfo {
   coverImage: string;
   address?: string;
   phone?: string;
+  email?: string;
+  gstNumber?: string;
+  fssaiNumber?: string;
   wifiSsid?: string;
   wifiPassword?: string;
   currency: string;
   taxRate: number;
+  themeColor?: string;
   razorpayKeyId: string;
   upiId?: string;
   tablesCount: number;

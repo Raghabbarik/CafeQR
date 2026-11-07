@@ -1,33 +1,45 @@
 import type { CafeInfo, MenuItem, Order, StaffMember, DiningOption } from '../types';
 
-// Dynamic backend URL fallback if relative fetch fails (e.g. accessed via LAN IP 10.10.3.27 or adblockers)
+// Dynamic backend URL fallback if relative fetch fails (only for local dev on port 3000 -> 5000)
 const getBackendDirectUrl = () => {
   if (typeof window !== 'undefined') {
-    return `${window.location.protocol}//${window.location.hostname}:5000`;
+    const host = window.location.hostname;
+    const isLocalDev = host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.') || host.startsWith('10.');
+    if (isLocalDev && window.location.port === '3000') {
+      return `${window.location.protocol}//${host}:5000`;
+    }
+    // In production (Vercel, custom domain), use relative same-origin URL!
+    return '';
   }
-  return 'http://127.0.0.1:5000';
+  return '';
 };
 
 async function requestApi(url: string, options?: RequestInit): Promise<Response> {
   try {
     const res = await fetch(url, options);
-    // If relative proxy returns 404/502/504, try direct backend fallback
+    // If relative proxy returns 404/502/504 in local dev, try direct backend fallback
     if (!res.ok && (res.status === 404 || res.status === 502 || res.status === 504) && url.startsWith('/api')) {
-      const fallbackUrl = `${getBackendDirectUrl()}${url}`;
-      console.warn(`[API] Fetch to ${url} returned ${res.status}, retrying directly to ${fallbackUrl}`);
-      return await fetch(fallbackUrl, options);
+      const fallbackPrefix = getBackendDirectUrl();
+      if (fallbackPrefix) {
+        const fallbackUrl = `${fallbackPrefix}${url}`;
+        console.warn(`[API] Fetch to ${url} returned ${res.status}, retrying directly to ${fallbackUrl}`);
+        return await fetch(fallbackUrl, options);
+      }
     }
     return res;
   } catch (err: any) {
     if (url.startsWith('/api')) {
-      const fallbackUrl = `${getBackendDirectUrl()}${url}`;
-      console.warn(`[API] Fetch to ${url} failed (${err.message}), retrying directly to ${fallbackUrl}`);
-      try {
-        const fallbackRes = await fetch(fallbackUrl, options);
-        return fallbackRes;
-      } catch (fallbackErr: any) {
-        console.error(`[API] Direct fallback to ${fallbackUrl} also failed:`, fallbackErr);
-        throw fallbackErr;
+      const fallbackPrefix = getBackendDirectUrl();
+      if (fallbackPrefix) {
+        const fallbackUrl = `${fallbackPrefix}${url}`;
+        console.warn(`[API] Fetch to ${url} failed (${err.message}), retrying directly to ${fallbackUrl}`);
+        try {
+          const fallbackRes = await fetch(fallbackUrl, options);
+          return fallbackRes;
+        } catch (fallbackErr: any) {
+          console.error(`[API] Direct fallback to ${fallbackUrl} also failed:`, fallbackErr);
+          throw fallbackErr;
+        }
       }
     }
     throw err;

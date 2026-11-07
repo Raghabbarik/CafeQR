@@ -25,7 +25,10 @@ import { StaffLoginView } from './components/staff/StaffLoginView';
 import { StaffDashboard } from './components/staff/StaffDashboard';
 import { OrderDisplayBoard } from './components/display/OrderDisplayBoard';
 
-import { Loader2, WifiOff, ArrowLeft } from 'lucide-react';
+// Initial resilient fallback data (eliminates blocking loading screens on Vercel)
+import { DEFAULT_CAFE, DEFAULT_CATEGORIES, DEFAULT_MENU_ITEMS } from './data/initialMenuData';
+
+import { WifiOff, ArrowLeft } from 'lucide-react';
 
 export function App() {
   // App Mode: 'customer' | 'admin' | 'staff' | 'display'
@@ -49,10 +52,10 @@ export function App() {
   // Dining option: 'dine_in' (Eat Now) or 'parcel' (Takeaway)
   const [diningOption, setDiningOption] = useState<DiningOption>('dine_in');
 
-  // Cafe data
-  const [cafe, setCafe] = useState<CafeInfo | null>(null);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  // Cafe data (Instant ready-to-render defaults; updates live from API)
+  const [cafe, setCafe] = useState<CafeInfo>(DEFAULT_CAFE);
+  const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(DEFAULT_MENU_ITEMS);
 
   // Cart & Checkout state
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -81,9 +84,6 @@ export function App() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [alerts, setAlerts] = useState<StaffAlert[]>([]);
   const [soundEnabled, setSoundEnabled] = useState(true);
-
-  // Loading
-  const [isLoading, setIsLoading] = useState(true);
 
   // Navigation helpers for /admin, /staff, /orderdisplay routing
   const navigateToAdmin = () => {
@@ -181,42 +181,29 @@ export function App() {
     }
   }, []);
 
-  // 2. Fetch Initial Cafe & Menu Data (with resilient offline cache fallback)
+  // 2. Fetch Initial Cafe & Menu Data (updates in background; never blocks screen)
   useEffect(() => {
     async function initData() {
       try {
         const cafeRes = await api.getCafe();
-        setCafe(cafeRes.cafe);
-        setCategories(cafeRes.categories);
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('cafeqr_cached_cafe', JSON.stringify(cafeRes.cafe));
-          localStorage.setItem('cafeqr_cached_categories', JSON.stringify(cafeRes.categories));
+        if (cafeRes && cafeRes.cafe) {
+          setCafe(cafeRes.cafe);
+          if (Array.isArray(cafeRes.categories) && cafeRes.categories.length) {
+            setCategories(cafeRes.categories);
+          }
         }
 
         const menuRes = await api.getMenu();
-        setMenuItems(menuRes.items);
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('cafeqr_cached_menu', JSON.stringify(menuRes.items));
+        if (menuRes && Array.isArray(menuRes.items) && menuRes.items.length) {
+          setMenuItems(menuRes.items);
         }
 
         const ordersRes = await api.getOrders();
-        setOrders(ordersRes);
-      } catch (err) {
-        console.warn('Network offline or failed, attempting local cache fallback:', err);
-        if (typeof window !== 'undefined') {
-          try {
-            const cachedCafe = localStorage.getItem('cafeqr_cached_cafe');
-            const cachedCats = localStorage.getItem('cafeqr_cached_categories');
-            const cachedMenu = localStorage.getItem('cafeqr_cached_menu');
-            if (cachedCafe) setCafe(JSON.parse(cachedCafe));
-            if (cachedCats) setCategories(JSON.parse(cachedCats));
-            if (cachedMenu) setMenuItems(JSON.parse(cachedMenu));
-          } catch {
-            // cache read ignored
-          }
+        if (Array.isArray(ordersRes)) {
+          setOrders(ordersRes);
         }
-      } finally {
-        setIsLoading(false);
+      } catch (err) {
+        console.warn('Initial cloud sync notice (using cached/fallback menu):', err);
       }
     }
     initData();
@@ -512,15 +499,6 @@ export function App() {
   const handleUpdateCafeSettings = async (updates: Partial<CafeInfo>) => {
     await api.updateCafe(updates);
   };
-
-  if (isLoading || !cafe) {
-    return (
-      <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center p-4">
-        <Loader2 className="w-10 h-10 text-amber-700 animate-spin mb-3" />
-        <p className="font-bold text-stone-700 text-sm">Preparing your Cafe Menu...</p>
-      </div>
-    );
-  }
 
   // ---------------- TV ORDER DISPLAY BOARD (/orderdisplay) ----------------
   if (mode === 'display') {
