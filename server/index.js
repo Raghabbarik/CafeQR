@@ -514,7 +514,8 @@ app.post('/api/orders', (req, res) => {
   const tax = Math.round((subtotal * taxRate) / 100);
   const total = subtotal + tax;
 
-  const orderId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+  const uniqueSuffix = `${Date.now().toString().slice(-5)}-${Math.floor(100 + Math.random() * 900)}`;
+  const orderId = `ORD-${uniqueSuffix}`;
 
   const newOrder = {
     id: orderId,
