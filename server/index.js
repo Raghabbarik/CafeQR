@@ -8,6 +8,22 @@ import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import Razorpay from 'razorpay';
 import dotenv from 'dotenv';
+import {
+  checkSupabaseHealth,
+  dbGetCafe,
+  dbUpdateCafe,
+  dbGetCategories,
+  dbAddCategory,
+  dbGetMenuItems,
+  dbAddMenuItem,
+  dbUpdateMenuItem,
+  dbDeleteMenuItem,
+  dbGetOrders,
+  dbGetOrder,
+  dbCreateOrder,
+  dbUpdateOrderStatus,
+  dbCreateAlert,
+} from './supabase.js';
 
 dotenv.config();
 
@@ -377,13 +393,40 @@ function saveData(data) {
   }
 }
 
-// In-memory reference for fast access
+// In-memory reference for fast access & offline resilience
 let db = loadData();
+
+// Check Supabase connection on startup
+let isSupabaseActive = false;
+async function checkAndSyncSupabase() {
+  const healthy = await checkSupabaseHealth();
+  if (healthy) {
+    isSupabaseActive = true;
+    console.log('🚀 Supabase Connected: Live Cloud Database connected!');
+  } else {
+    console.log('📁 Local File Storage Active: Run supabase/schema.sql in Supabase SQL Editor to link tables.');
+  }
+}
+checkAndSyncSupabase();
 
 // ---------------- REST API ROUTES ----------------
 
 // Get Cafe Info & Settings
-app.get('/api/cafe', (req, res) => {
+app.get('/api/cafe', async (req, res) => {
+  if (isSupabaseActive) {
+    try {
+      const cafe = await dbGetCafe();
+      const categories = await dbGetCategories();
+      if (cafe) {
+        return res.json({
+          cafe,
+          categories: categories && categories.length > 0 ? categories : db.categories,
+        });
+      }
+    } catch (err) {
+      console.warn('Supabase getCafe fallback:', err.message);
+    }
+  }
   res.json({
     cafe: db.cafe,
     categories: db.categories,
@@ -391,7 +434,14 @@ app.get('/api/cafe', (req, res) => {
 });
 
 // Update Cafe Info & Settings
-app.put('/api/cafe', (req, res) => {
+app.put('/api/cafe', async (req, res) => {
+  if (isSupabaseActive) {
+    try {
+      await dbUpdateCafe(req.body);
+    } catch (err) {
+      console.warn('Supabase updateCafe warning:', err.message);
+    }
+  }
   db.cafe = { ...db.cafe, ...req.body };
   saveData(db);
   io.emit('cafe:updated', db.cafe);
@@ -399,7 +449,21 @@ app.put('/api/cafe', (req, res) => {
 });
 
 // Get Menu Items
-app.get('/api/menu', (req, res) => {
+app.get('/api/menu', async (req, res) => {
+  if (isSupabaseActive) {
+    try {
+      const items = await dbGetMenuItems();
+      const categories = await dbGetCategories();
+      if (items && items.length > 0) {
+        return res.json({
+          categories: categories && categories.length > 0 ? categories : db.categories,
+          items,
+        });
+      }
+    } catch (err) {
+      console.warn('Supabase getMenu fallback:', err.message);
+    }
+  }
   res.json({
     categories: db.categories,
     items: db.menu,
@@ -407,7 +471,7 @@ app.get('/api/menu', (req, res) => {
 });
 
 // Add Menu Item
-app.post('/api/menu/items', (req, res) => {
+app.post('/api/menu/items', async (req, res) => {
   const { name, category, price, mrp, portion, description, whyLoveIt, image, isVeg, isBestseller, prepTime, rating } = req.body;
   if (!name || !price) {
     return res.status(400).json({ error: 'Name and price are required' });
@@ -424,7 +488,7 @@ app.post('/api/menu/items', (req, res) => {
     description: description || '',
     whyLoveIt: Array.isArray(whyLoveIt) ? whyLoveIt : [
       "Crafted with fresh premium ingredients",
-      "Prepared to order by our kitchen team",
+      "Prepared to order by our master kitchen",
       "Authentic cafe recipe"
     ],
     image: image || 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600&auto=format&fit=crop&q=80',
@@ -434,6 +498,14 @@ app.post('/api/menu/items', (req, res) => {
     prepTime: prepTime || '10 mins',
     rating: rating ? Number(rating) : 4.8,
   };
+
+  if (isSupabaseActive) {
+    try {
+      await dbAddMenuItem(newItem);
+    } catch (err) {
+      console.warn('Supabase addMenuItem warning:', err.message);
+    }
+  }
 
   db.menu.unshift(newItem);
   if (!db.categories.includes(newItem.category)) {
@@ -445,11 +517,19 @@ app.post('/api/menu/items', (req, res) => {
 });
 
 // Update Menu Item (e.g. stock toggle, price, details)
-app.put('/api/menu/items/:id', (req, res) => {
+app.put('/api/menu/items/:id', async (req, res) => {
   const { id } = req.params;
   const index = db.menu.findIndex(item => item.id === id);
   if (index === -1) {
     return res.status(400).json({ error: 'Item not found' });
+  }
+
+  if (isSupabaseActive) {
+    try {
+      await dbUpdateMenuItem(id, req.body);
+    } catch (err) {
+      console.warn('Supabase updateMenuItem warning:', err.message);
+    }
   }
 
   db.menu[index] = { ...db.menu[index], ...req.body };
@@ -459,8 +539,16 @@ app.put('/api/menu/items/:id', (req, res) => {
 });
 
 // Delete Menu Item
-app.delete('/api/menu/items/:id', (req, res) => {
+app.delete('/api/menu/items/:id', async (req, res) => {
   const { id } = req.params;
+  if (isSupabaseActive) {
+    try {
+      await dbDeleteMenuItem(id);
+    } catch (err) {
+      console.warn('Supabase deleteMenuItem warning:', err.message);
+    }
+  }
+
   db.menu = db.menu.filter(item => item.id !== id);
   saveData(db);
   io.emit('menu:updated', { categories: db.categories, items: db.menu });
@@ -468,9 +556,18 @@ app.delete('/api/menu/items/:id', (req, res) => {
 });
 
 // Add Category
-app.post('/api/categories', (req, res) => {
+app.post('/api/categories', async (req, res) => {
   const { name } = req.body;
   if (!name) return res.status(400).json({ error: 'Category name required' });
+  
+  if (isSupabaseActive) {
+    try {
+      await dbAddCategory(name);
+    } catch (err) {
+      console.warn('Supabase addCategory warning:', err.message);
+    }
+  }
+
   if (!db.categories.includes(name)) {
     db.categories.push(name);
     saveData(db);
@@ -480,21 +577,38 @@ app.post('/api/categories', (req, res) => {
 });
 
 // Get All Orders (Admin / Staff)
-app.get('/api/orders', (req, res) => {
-  // sort newest first
+app.get('/api/orders', async (req, res) => {
+  if (isSupabaseActive) {
+    try {
+      const orders = await dbGetOrders();
+      if (orders && orders.length > 0) {
+        return res.json(orders);
+      }
+    } catch (err) {
+      console.warn('Supabase getOrders fallback:', err.message);
+    }
+  }
   const sorted = [...db.orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   res.json(sorted);
 });
 
 // Get Single Order (For Customer Bill & Tracking)
-app.get('/api/orders/:id', (req, res) => {
+app.get('/api/orders/:id', async (req, res) => {
+  if (isSupabaseActive) {
+    try {
+      const order = await dbGetOrder(req.params.id);
+      if (order) return res.json(order);
+    } catch (err) {
+      console.warn('Supabase getOrder fallback:', err.message);
+    }
+  }
   const order = db.orders.find(o => o.id === req.params.id);
   if (!order) return res.status(404).json({ error: 'Order not found' });
   res.json(order);
 });
 
 // Create Order (After Razorpay Payment)
-app.post('/api/orders', (req, res) => {
+app.post('/api/orders', async (req, res) => {
   const {
     tableNumber,
     customerName,
@@ -536,6 +650,15 @@ app.post('/api/orders', (req, res) => {
     updatedAt: new Date().toISOString(),
   };
 
+  if (isSupabaseActive) {
+    try {
+      await dbCreateOrder(newOrder);
+      console.log('✅ Order synced to Supabase Cloud:', newOrder.id);
+    } catch (err) {
+      console.warn('Supabase createOrder warning:', err.message);
+    }
+  }
+
   db.orders.unshift(newOrder);
   saveData(db);
 
@@ -546,13 +669,21 @@ app.post('/api/orders', (req, res) => {
 });
 
 // Update Order Status (Admin / Kitchen Staff)
-app.patch('/api/orders/:id/status', (req, res) => {
+app.patch('/api/orders/:id/status', async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
 
   const validStatuses = ['received', 'preparing', 'ready', 'completed', 'cancelled'];
   if (!validStatuses.includes(status)) {
     return res.status(400).json({ error: 'Invalid status' });
+  }
+
+  if (isSupabaseActive) {
+    try {
+      await dbUpdateOrderStatus(id, status);
+    } catch (err) {
+      console.warn('Supabase updateOrderStatus warning:', err.message);
+    }
   }
 
   const orderIndex = db.orders.findIndex(o => o.id === id);
@@ -574,7 +705,7 @@ app.patch('/api/orders/:id/status', (req, res) => {
 });
 
 // Call Waiter / Assistance ping
-app.post('/api/assistance', (req, res) => {
+app.post('/api/assistance', async (req, res) => {
   const { tableNumber, type = 'Assistance / Water' } = req.body;
   const alert = {
     id: `alert_${Date.now()}`,
@@ -582,6 +713,12 @@ app.post('/api/assistance', (req, res) => {
     type,
     time: new Date().toISOString(),
   };
+
+  if (isSupabaseActive) {
+    try {
+      await dbCreateAlert(alert);
+    } catch (err) {}
+  }
 
   io.emit('staff:alert', alert);
   res.json({ success: true, message: 'Staff notified' });
