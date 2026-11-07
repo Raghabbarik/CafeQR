@@ -76,7 +76,23 @@ export function App() {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tbl = params.get('table');
-      if (tbl) setTableNumber(tbl);
+      if (tbl) {
+        setTableNumber(tbl);
+        sessionStorage.setItem('cafeqr_table', tbl);
+      } else {
+        const savedTbl = sessionStorage.getItem('cafeqr_table');
+        if (savedTbl) setTableNumber(savedTbl);
+      }
+
+      // Check if user had an active order before reload
+      const savedOrderId = sessionStorage.getItem('cafeqr_active_order_id');
+      if (savedOrderId) {
+        api.getOrder(savedOrderId)
+          .then((ord) => {
+            if (ord) setCurrentOrder(ord);
+          })
+          .catch(() => {});
+      }
 
       if (window.location.pathname.includes('/admin') || window.location.hash.includes('admin')) {
         setMode('admin');
@@ -247,6 +263,9 @@ export function App() {
       // Close guest modal
       setIsCheckoutModalOpen(false);
 
+      // Only pass order_id if it's a real order id from Razorpay API
+      const hasRealOrderId = rzpOrder.isReal && rzpOrder.id && !rzpOrder.id.startsWith('order_rzp_');
+
       // 2. Open official Razorpay Checkout popup directly
       const options: any = {
         key: rzpOrder.keyId || cafe?.razorpayKeyId || 'rzp_test_TxJ87ji7k95ncJ',
@@ -255,10 +274,10 @@ export function App() {
         name: cafe?.name || 'The Roasted Bean Cafe',
         description: `Table #${tableNumber} - Order Total: ₹${cartTotal}`,
         image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=200&auto=format&fit=crop&q=80',
-        order_id: rzpOrder.id,
+        order_id: hasRealOrderId ? rzpOrder.id : undefined,
         prefill: {
-          name: customerName,
-          contact: customerPhone,
+          name: customerName.trim() || 'Guest',
+          contact: customerPhone.replace(/\D/g, '').slice(-10) || '9876543210',
         },
         theme: {
           color: '#133e2c',
@@ -285,7 +304,9 @@ export function App() {
 
       const rzp = new (window as any).Razorpay(options);
       rzp.on('payment.failed', function (resp: any) {
-        alert('Payment Failed: ' + (resp.error?.description || 'Declined'));
+        console.warn('Razorpay payment failed:', resp);
+        const desc = resp.error?.description || resp.error?.reason || 'Transaction was declined or cancelled.';
+        alert(`Payment Not Completed: ${desc}\n\nTip: In Razorpay Test Mode, select "Success" to simulate a completed payment.`);
         setIsPaymentLoading(false);
       });
       rzp.open();
@@ -317,6 +338,7 @@ export function App() {
 
       const created = await api.createOrder(orderPayload);
       setCurrentOrder(created);
+      sessionStorage.setItem('cafeqr_active_order_id', created.id);
       setCart([]);
       setNotes('');
       setCustomerStep('bill');
