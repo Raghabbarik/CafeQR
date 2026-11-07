@@ -40,25 +40,25 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
       </div>
 
       {/* Center Hero Heading directly on image: Centered Cafe Logo + ✦ NEW + Headline */}
-      <div className="relative z-10 flex flex-col items-center text-center px-4 pt-4 pb-10 my-auto">
+      <div className="relative z-10 flex flex-col items-center text-center px-4 pt-2 sm:pt-4 pb-6 mt-1 sm:mt-2 mb-auto">
         
-        {/* Centered Cafe Logo (Enlarged logo size + decreased text size as requested) */}
-        <div className="mb-4 flex flex-col items-center animate-in fade-in zoom-in-95 duration-500">
-          <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full p-1 bg-white/25 backdrop-blur-md border-2 border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.35)] overflow-hidden transition-transform hover:scale-105">
+        {/* Centered Cafe Logo */}
+        <div className="mb-2 sm:mb-3 flex flex-col items-center animate-in fade-in zoom-in-95 duration-500">
+          <div className="w-22 h-22 sm:w-26 sm:h-26 rounded-full p-1 bg-white/25 backdrop-blur-md border-2 border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.35)] overflow-hidden transition-transform hover:scale-105">
             <img
               src={cafe.logo}
               alt={cafe.name}
               className="w-full h-full rounded-full object-cover"
             />
           </div>
-          <p className="text-white/95 text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.22em] mt-2.5 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+          <p className="text-white/95 text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.22em] mt-1.5 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
             {cafe.name}
           </p>
         </div>
 
         {/* Pastel Lime/Yellow Badge (Editable: e.g. ✦ NEW) */}
         {heroBadge && (
-          <div className="inline-flex items-center gap-1.5 bg-[#eaf49f] text-[#2c3e1e] font-black text-xs px-3.5 py-1 rounded-full uppercase tracking-wider shadow-md mb-3 animate-in fade-in zoom-in-90 duration-300">
+          <div className="inline-flex items-center gap-1.5 bg-[#eaf49f] text-[#2c3e1e] font-black text-xs px-3.5 py-1 rounded-full uppercase tracking-wider shadow-md mb-2.5 animate-in fade-in zoom-in-90 duration-300">
             <Sparkles className="w-3 h-3 fill-current" />
             <span>{heroBadge}</span>
           </div>
