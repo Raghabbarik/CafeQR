@@ -1,12 +1,13 @@
 import React from 'react';
 import type { CafeInfo } from '../../types';
-import { Utensils, Wifi, MapPin, ArrowRight, Coffee, Sparkles } from 'lucide-react';
+import { Utensils, Wifi, Shield } from 'lucide-react';
 
 interface WelcomeHeroProps {
   cafe: CafeInfo;
   tableNumber: string;
   onTableChange: (table: string) => void;
   onGetStarted: () => void;
+  onSwitchToAdmin?: () => void;
 }
 
 export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
@@ -14,114 +15,151 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
   tableNumber,
   onTableChange,
   onGetStarted,
+  onSwitchToAdmin,
 }) => {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50 via-stone-50 to-white flex flex-col justify-between">
-      {/* Top Banner & Cafe Photo */}
-      <div className="relative h-72 sm:h-80 w-full overflow-hidden shadow-md">
-        <img
-          src={cafe.coverImage}
-          alt={cafe.name}
-          className="w-full h-full object-cover brightness-75 scale-105 transition-transform duration-700 hover:scale-100"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/20" />
+    <div className="min-h-screen bg-white flex flex-col justify-between relative overflow-hidden select-none">
+      
+      {/* Top Half: Dark Studio Gradient with Food Hero Bowl & Hotspots */}
+      <div className="relative w-full h-[54vh] sm:h-[58vh] bg-gradient-to-b from-[#2b2d30] via-[#41454a] to-white flex items-center justify-center overflow-hidden">
+        
+        {/* Subtle radial glow */}
+        <div className="absolute inset-0 bg-radial from-white/10 via-transparent to-transparent opacity-60" />
 
-        {/* Floating Table Badge */}
-        <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded-full shadow-lg flex items-center gap-2 border border-amber-200">
-          <Utensils className="w-4 h-4 text-amber-700" />
-          <span className="text-xs font-semibold text-stone-700 uppercase tracking-wider">Table</span>
-          <select
-            value={tableNumber}
-            onChange={(e) => onTableChange(e.target.value)}
-            className="bg-amber-100/80 text-amber-900 font-bold text-sm px-2 py-0.5 rounded cursor-pointer border-none outline-none"
-          >
-            {Array.from({ length: cafe.tablesCount || 12 }, (_, i) => i + 1).map((num) => (
-              <option key={num} value={num}>
-                #{num}
-              </option>
-            ))}
-          </select>
+        {/* Top Status & Table Selector Bar */}
+        <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between">
+          {/* Cafe Mini Badge */}
+          <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/15 text-white">
+            <img
+              src={cafe.logo}
+              alt={cafe.name}
+              className="w-5 h-5 rounded-full object-cover"
+            />
+            <span className="text-xs font-bold tracking-tight">{cafe.name}</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Table Number Pill */}
+            <div className="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 border border-stone-200">
+              <Utensils className="w-3.5 h-3.5 text-stone-700" />
+              <span className="text-[11px] font-bold text-stone-600 uppercase">Table</span>
+              <select
+                value={tableNumber}
+                onChange={(e) => onTableChange(e.target.value)}
+                className="bg-stone-100 text-stone-900 font-extrabold text-xs px-1.5 py-0.5 rounded cursor-pointer border-none outline-none"
+              >
+                {Array.from({ length: cafe.tablesCount || 12 }, (_, i) => i + 1).map((num) => (
+                  <option key={num} value={num}>
+                    #{num}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Quick staff mode toggle */}
+            {onSwitchToAdmin && (
+              <button
+                onClick={onSwitchToAdmin}
+                className="p-2 rounded-full bg-black/40 backdrop-blur-md text-white/80 hover:text-white border border-white/15 cursor-pointer"
+                title="Staff Portal"
+              >
+                <Shield className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Cafe Logo & Title on Banner */}
-        <div className="absolute bottom-4 left-4 right-4 flex items-end gap-3.5">
+        {/* Big Gourmet Overhead Food Bowl */}
+        <div className="relative w-76 h-76 sm:w-92 sm:h-92 mt-4 flex items-center justify-center">
+          
+          {/* Circular Dotted Orbit Line */}
+          <div className="absolute inset-2 border-2 border-dashed border-white/40 rounded-full animate-spin-slow pointer-events-none" />
+
+          {/* Center Gourmet Bowl Photo */}
           <img
-            src={cafe.logo}
-            alt="Logo"
-            className="w-20 h-20 rounded-2xl object-cover border-2 border-white shadow-xl bg-white"
+            src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900&auto=format&fit=crop&q=80"
+            alt="Chef Special Bowl"
+            className="w-68 h-68 sm:w-80 sm:h-80 rounded-full object-cover shadow-2xl ring-6 ring-white/10 drop-shadow-[0_20px_25px_rgba(0,0,0,0.45)]"
           />
-          <div className="text-white pb-1">
-            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-500/80 backdrop-blur-sm text-xs font-medium tracking-wide mb-1">
-              <Sparkles className="w-3 h-3" />
-              <span>Digital QR Menu</span>
+
+          {/* Floating Ingredient Hotspot 1 (Top-Right: Cucumber / Fresh) */}
+          <div className="absolute top-6 right-6 z-10 w-9 h-9 rounded-full bg-white/90 backdrop-blur-md shadow-lg flex items-center justify-center border border-white/40 animate-pulse">
+            <span className="text-base">🥒</span>
+          </div>
+
+          {/* Floating Ingredient Hotspot 2 (Mid-Left: Fresh Greens) */}
+          <div className="absolute left-3 top-24 z-10 w-9 h-9 rounded-full bg-white/90 backdrop-blur-md shadow-lg flex items-center justify-center border border-white/40 animate-bounce duration-1000">
+            <span className="text-base">🥬</span>
+          </div>
+
+          {/* Floating Ingredient Hotspot 3 (Bottom-Left: Fresh Salad / Poke) */}
+          <div className="absolute bottom-10 left-10 z-10 w-9 h-9 rounded-full bg-white/90 backdrop-blur-md shadow-lg flex items-center justify-center border border-white/40">
+            <span className="text-base">🥗</span>
+          </div>
+
+          {/* Frosted Glass Floating Card (Matches 'Elements Foods' from screenshot) */}
+          <div className="absolute right-2 top-20 z-10 bg-white/20 backdrop-blur-md border border-white/35 rounded-2xl py-2 px-3.5 shadow-2xl flex items-center gap-2.5 text-white animate-in fade-in duration-500">
+            <div className="w-8 h-8 rounded-xl bg-white/30 backdrop-blur-sm flex items-center justify-center text-sm shadow-xs">
+              🍳
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight drop-shadow-sm">
-              {cafe.name}
-            </h1>
+            <div className="leading-tight">
+              <p className="text-xs font-black tracking-tight text-white drop-shadow-xs">Elements</p>
+              <p className="text-[11px] text-white/80 font-medium">Foods</p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="px-5 py-6 max-w-lg mx-auto w-full flex-1 flex flex-col justify-between">
-        <div className="space-y-5">
-          {/* Tagline / Small Line */}
-          <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/60 shadow-sm text-center">
-            <p className="text-amber-950 font-serif italic text-base sm:text-lg">
-              "{cafe.tagline}"
-            </p>
+      {/* Bottom Half: Typography, Subtitle & Black Pill Button */}
+      <div className="px-6 pb-8 pt-2 max-w-md mx-auto w-full flex-1 flex flex-col justify-between">
+        
+        {/* Multitone Headline matching exact example typography */}
+        <div className="space-y-1">
+          {/* Line 1: Solid Black */}
+          <h1 className="text-4xl sm:text-5xl font-black text-[#1c1c1e] tracking-tight leading-none">
+            Cooking
+          </h1>
+          
+          {/* Line 2: Soft Light Gray */}
+          <h2 className="text-4xl sm:text-5xl font-black text-stone-300 tracking-tight leading-none">
+            Delicious
+          </h2>
+          
+          {/* Line 3: Medium Gray with Underline Bar */}
+          <div className="relative inline-block">
+            <h2 className="text-4xl sm:text-5xl font-black text-stone-300 tracking-tight leading-none">
+              Like a Chef
+            </h2>
+            {/* Solid underline bar directly beneath 'Like a Chef' */}
+            <div className="h-1 bg-[#1c1c1e] w-full mt-2 rounded-full" />
           </div>
 
-          {/* Quick Info Grid */}
-          <div className="grid grid-cols-2 gap-3 text-xs text-stone-600">
-            <div className="bg-white p-3 rounded-xl border border-stone-200/70 shadow-xs flex items-start gap-2.5">
-              <MapPin className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold text-stone-800">Address</p>
-                <p className="text-stone-500 line-clamp-2 mt-0.5">{cafe.address}</p>
-              </div>
-            </div>
+          {/* Subtitle Paragraph */}
+          <p className="text-xs sm:text-sm text-stone-400 font-medium leading-relaxed pt-3">
+            This digital dining app offers a wide selection of diverse, artisanal dishes and handcrafted coffees suitable for all taste buds!
+          </p>
 
-            <div className="bg-white p-3 rounded-xl border border-stone-200/70 shadow-xs flex items-start gap-2.5">
-              <Wifi className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold text-stone-800">Free Wi-Fi</p>
-                <p className="text-stone-500 truncate mt-0.5">{cafe.wifiSsid}</p>
-                <p className="text-[10px] text-stone-400 font-mono">Key: {cafe.wifiPassword}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Highlights */}
-          <div className="bg-white p-4 rounded-xl border border-stone-200/70 shadow-xs space-y-2.5">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-stone-400">How It Works</h3>
-            <div className="flex items-center gap-3 text-sm text-stone-700">
-              <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-800 font-bold flex items-center justify-center text-xs shrink-0">1</span>
-              <span>Browse our fresh chef-curated menu</span>
-            </div>
-            <div className="flex items-center gap-3 text-sm text-stone-700">
-              <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-800 font-bold flex items-center justify-center text-xs shrink-0">2</span>
-              <span>Add items to cart & pay securely via Razorpay</span>
-            </div>
-            <div className="flex items-center gap-3 text-sm text-stone-700">
-              <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-800 font-bold flex items-center justify-center text-xs shrink-0">3</span>
-              <span>Get instant digital bill & track your live order</span>
-            </div>
+          {/* Subtle Cafe & Wi-Fi info pill */}
+          <div className="pt-2 flex items-center gap-3 text-[11px] text-stone-400 font-medium">
+            <span className="flex items-center gap-1">
+              <Wifi className="w-3 h-3 text-emerald-600" />
+              <span>Wi-Fi: {cafe.wifiSsid}</span>
+            </span>
+            <span>•</span>
+            <span>Table #{tableNumber}</span>
           </div>
         </div>
 
-        {/* Big Get Started Button */}
-        <div className="pt-6 pb-2">
+        {/* Big Solid Black Pill 'Get Started' Button (matches screenshot) */}
+        <div className="pt-6">
           <button
             onClick={onGetStarted}
-            className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-white font-bold text-lg shadow-xl shadow-amber-900/20 active:scale-[0.98] transition-all flex items-center justify-center gap-3 cursor-pointer group"
+            className="w-full py-4 px-6 rounded-full bg-[#18181b] hover:bg-black text-white font-extrabold text-base shadow-2xl active:scale-[0.98] transition-all flex items-center justify-center cursor-pointer tracking-wide"
           >
-            <Coffee className="w-5 h-5 text-amber-200 group-hover:rotate-12 transition-transform" />
-            <span>Get Started & View Menu</span>
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            <span>Get Started</span>
           </button>
-          <p className="text-center text-[11px] text-stone-400 mt-2">
-            Table #{tableNumber} • Contactless Dining Experience
+          <p className="text-center text-[10px] text-stone-400 mt-2 font-medium">
+            {cafe.name} • {cafe.tagline}
           </p>
         </div>
       </div>

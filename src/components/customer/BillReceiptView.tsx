@@ -10,7 +10,8 @@ import {
   PartyPopper,
   ArrowLeft,
   Phone,
-  User
+  User,
+  Share2
 } from 'lucide-react';
 
 interface BillReceiptViewProps {
@@ -42,6 +43,17 @@ export const BillReceiptView: React.FC<BillReceiptViewProps> = ({
     window.print();
   };
 
+  const handleShareWhatsApp = () => {
+    const itemsList = order.items
+      .map((i) => `• ${i.quantity}x ${i.name} - ₹${i.price * i.quantity}`)
+      .join('\n');
+
+    const message = `🧾 *${cafe.name}*\n"${cafe.tagline}"\n\n*Order ID:* ${order.id}\n*Table:* #${order.tableNumber}\n*Customer:* ${order.customerName}\n\n*Items Ordered:*\n${itemsList}\n\nSubtotal: ₹${order.subtotal}\nGST (${order.taxRate}%): ₹${order.tax}\n*Total Paid:* ₹${order.total} (Razorpay)\n*Status:* ${order.orderStatus.toUpperCase()}\n\nThank you for visiting! ☕`;
+
+    const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
+
   const statusSteps: { key: OrderStatus; label: string; desc: string }[] = [
     { key: 'received', label: 'Order Received', desc: 'Sent to Kitchen' },
     { key: 'preparing', label: 'Preparing', desc: 'Chef is cooking' },
@@ -64,7 +76,7 @@ export const BillReceiptView: React.FC<BillReceiptViewProps> = ({
   return (
     <div className="min-h-screen bg-stone-100 py-6 px-4">
       <div className="max-w-md mx-auto space-y-4">
-        {/* Navigation & Print Actions (Hidden when printing) */}
+        {/* Navigation & Actions (Hidden when printing) */}
         <div className="flex items-center justify-between no-print">
           <button
             onClick={onOrderMore}
@@ -74,13 +86,24 @@ export const BillReceiptView: React.FC<BillReceiptViewProps> = ({
             <span>Order More</span>
           </button>
 
-          <button
-            onClick={handlePrint}
-            className="flex items-center gap-1.5 text-xs font-bold text-amber-900 hover:text-amber-950 bg-amber-100 hover:bg-amber-200 px-3.5 py-1.5 rounded-xl border border-amber-300 shadow-2xs transition-colors cursor-pointer"
-          >
-            <Printer className="w-4 h-4 text-amber-800" />
-            <span>Print Bill</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleShareWhatsApp}
+              className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl border border-emerald-300 shadow-2xs transition-colors cursor-pointer"
+              title="Share Bill via WhatsApp"
+            >
+              <Share2 className="w-3.5 h-3.5 text-emerald-600" />
+              <span>WhatsApp</span>
+            </button>
+
+            <button
+              onClick={handlePrint}
+              className="flex items-center gap-1.5 text-xs font-bold text-stone-800 bg-white hover:bg-stone-50 px-3 py-1.5 rounded-xl border border-stone-300 shadow-2xs transition-colors cursor-pointer"
+            >
+              <Printer className="w-3.5 h-3.5 text-stone-700" />
+              <span>Print</span>
+            </button>
+          </div>
         </div>
 
         {/* Live Order Status Banner (No-print) */}

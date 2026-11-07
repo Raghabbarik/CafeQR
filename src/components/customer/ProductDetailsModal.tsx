@@ -263,3 +263,4 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
     </div>
   );
 };
+

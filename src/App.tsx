@@ -347,6 +347,7 @@ export function App() {
         tableNumber={tableNumber}
         onTableChange={setTableNumber}
         onGetStarted={() => setCustomerStep('menu')}
+        onSwitchToAdmin={() => setMode('admin')}
       />
     );
   }
