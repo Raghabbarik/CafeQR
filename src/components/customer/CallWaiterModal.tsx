@@ -117,3 +117,4 @@ export const CallWaiterModal: React.FC<CallWaiterModalProps> = ({
     </div>
   );
 };
+

@@ -62,168 +62,280 @@ const defaultData = {
       name: "Signature Spanish Latte",
       category: "Coffee & Espresso",
       price: 240,
+      mrp: 290,
+      portion: "300ml",
       description: "Double shot espresso with condensed milk, velvety steamed milk, and a dusting of Ceylon cinnamon.",
+      whyLoveIt: [
+        "100% Single-origin Arabica beans",
+        "Creamy sweetened milk with aromatic Ceylon cinnamon",
+        "Crafted fresh by our master baristas"
+      ],
       image: "https://images.unsplash.com/photo-1541167760496-1628856ab772?w=600&auto=format&fit=crop&q=80",
       isVeg: true,
       isBestseller: true,
       isAvailable: true,
-      prepTime: "5-7 mins"
+      prepTime: "5-7 mins",
+      rating: 4.9
     },
     {
       id: "item_2",
       name: "Velvet Flat White",
       category: "Coffee & Espresso",
       price: 210,
+      mrp: 260,
+      portion: "240ml",
       description: "Silky micro-foam poured over a double ristretto of single-origin Arabica beans.",
+      whyLoveIt: [
+        "Rich double ristretto extraction",
+        "Ultra-silky velvety microfoam texture",
+        "No added artificial flavors or preservatives"
+      ],
       image: "https://images.unsplash.com/photo-1577968897966-3d4325b36b61?w=600&auto=format&fit=crop&q=80",
       isVeg: true,
       isBestseller: false,
       isAvailable: true,
-      prepTime: "5-7 mins"
+      prepTime: "5-7 mins",
+      rating: 4.8
     },
     {
       id: "item_3",
       name: "Classic Cappuccino",
       category: "Coffee & Espresso",
       price: 190,
+      mrp: 240,
+      portion: "250ml",
       description: "Equal parts espresso, steamed milk, and rich foam, topped with Belgian cocoa.",
+      whyLoveIt: [
+        "Traditional Italian 1:1:1 foam to milk ratio",
+        "Dusting of premium unsweetened Belgian cocoa",
+        "Perfect morning pick-me-up"
+      ],
       image: "https://images.unsplash.com/photo-1534778101976-62847782c213?w=600&auto=format&fit=crop&q=80",
       isVeg: true,
       isBestseller: true,
       isAvailable: true,
-      prepTime: "5 mins"
+      prepTime: "5 mins",
+      rating: 4.9
     },
     {
       id: "item_4",
       name: "Vanilla Cold Foam Cold Brew",
       category: "Cold Brews & Shakes",
       price: 260,
+      mrp: 320,
+      portion: "350ml",
       description: "18-hour slow steeped cold brew topped with house-made Madagascar vanilla sweet cream foam.",
+      whyLoveIt: [
+        "Slow cold-steeped for 18 hours for zero bitterness",
+        "House-made Madagascar Bourbon vanilla foam",
+        "Low acidity and naturally refreshing"
+      ],
       image: "https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=600&auto=format&fit=crop&q=80",
       isVeg: true,
       isBestseller: true,
       isAvailable: true,
-      prepTime: "4 mins"
+      prepTime: "4 mins",
+      rating: 5.0
     },
     {
       id: "item_5",
       name: "Belgian Dark Chocolate Frappe",
       category: "Cold Brews & Shakes",
       price: 280,
+      mrp: 340,
+      portion: "400ml",
       description: "Thick ice-blended 70% dark Belgian cocoa with whipped cream and chocolate drizzle.",
+      whyLoveIt: [
+        "Authentic 70% dark Belgian couverture cocoa",
+        "Topped with fresh cloud whipped cream",
+        "Decadent yet balanced sweetness"
+      ],
       image: "https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=600&auto=format&fit=crop&q=80",
       isVeg: true,
       isBestseller: false,
       isAvailable: true,
-      prepTime: "6 mins"
+      prepTime: "6 mins",
+      rating: 4.7
     },
     {
       id: "item_6",
       name: "Kashmiri Kahwa Tea",
       category: "Artisanal Teas",
       price: 180,
+      mrp: 220,
+      portion: "200ml",
       description: "Fragrant green tea infused with saffron strands, whole green cardamom, cinnamon, and crushed almonds.",
+      whyLoveIt: [
+        "Infused with real Kashmiri saffron strands",
+        "Garnished with toasted slivered almonds",
+        "Soothing, digestive, and antioxidant rich"
+      ],
       image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=600&auto=format&fit=crop&q=80",
       isVeg: true,
       isBestseller: false,
       isAvailable: true,
-      prepTime: "5 mins"
+      prepTime: "5 mins",
+      rating: 4.8
     },
     {
       id: "item_7",
       name: "Hibiscus Berry Iced Tea",
       category: "Artisanal Teas",
       price: 200,
+      mrp: 250,
+      portion: "350ml",
       description: "Brewed whole Egyptian hibiscus petals with wild forest berries and a touch of mint.",
+      whyLoveIt: [
+        "Naturally tart and caffeine-free",
+        "Loaded with Vitamin C from wild berries",
+        "Served iced with fresh garden mint"
+      ],
       image: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&auto=format&fit=crop&q=80",
       isVeg: true,
       isBestseller: true,
       isAvailable: true,
-      prepTime: "4 mins"
+      prepTime: "4 mins",
+      rating: 4.9
     },
     {
       id: "item_8",
       name: "Truffle Mushroom Melt Panini",
       category: "Burgers & Sandwiches",
       price: 320,
+      mrp: 380,
+      portion: "300g",
       description: "Sauteed wild portobello mushrooms, garlic aioli, mozzarella, and white truffle oil on sourdough.",
+      whyLoveIt: [
+        "Artisanal slow-fermented sourdough bread",
+        "Infused with aromatic Italian white truffle oil",
+        "Melted fior di latte mozzarella"
+      ],
       image: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600&auto=format&fit=crop&q=80",
       isVeg: true,
       isBestseller: true,
       isAvailable: true,
-      prepTime: "10-12 mins"
+      prepTime: "10-12 mins",
+      rating: 4.9
     },
     {
       id: "item_9",
       name: "Grilled Herb Chicken Burger",
       category: "Burgers & Sandwiches",
       price: 360,
+      mrp: 420,
+      portion: "350g",
       description: "Rosemary marinated grilled chicken breast, caramelized onions, smoked cheddar, and chipotle mayo.",
+      whyLoveIt: [
+        "Fresh tender grilled chicken breast (never frozen)",
+        "Soft artisanal brioche bun toasted in butter",
+        "Smoked cheddar and house-made chipotle mayo"
+      ],
       image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80",
       isVeg: false,
       isBestseller: true,
       isAvailable: true,
-      prepTime: "12-15 mins"
+      prepTime: "12-15 mins",
+      rating: 4.9
     },
     {
       id: "item_10",
       name: "Artisanal Margherita Pizza",
       category: "Pizzas & Pastas",
       price: 380,
+      mrp: 450,
+      portion: "10 inch",
       description: "Neapolitan hand-stretched crust, San Marzano tomato sauce, fresh buffalo mozzarella, and fresh basil.",
+      whyLoveIt: [
+        "Fermented 48-hour authentic Neapolitan dough",
+        "San Marzano Italian DOP tomatoes",
+        "Fresh buffalo mozzarella & sweet Genovese basil"
+      ],
       image: "https://images.unsplash.com/photo-1604382355076-af4b0eb60143?w=600&auto=format&fit=crop&q=80",
       isVeg: true,
       isBestseller: false,
       isAvailable: true,
-      prepTime: "15 mins"
+      prepTime: "15 mins",
+      rating: 4.8
     },
     {
       id: "item_11",
       name: "Creamy Pesto Penne",
       category: "Pizzas & Pastas",
       price: 350,
+      mrp: 410,
+      portion: "320g",
       description: "Penne tossed in Genovese basil pine-nut pesto, roasted cherry tomatoes, and aged parmesan.",
+      whyLoveIt: [
+        "Fresh house-pounded basil and toasted pine nut pesto",
+        "Burst cherry tomatoes for sweet acidity",
+        "Finished with 24-month aged Parmigiano-Reggiano"
+      ],
       image: "https://images.unsplash.com/photo-1621996346565-e3d5d6281729?w=600&auto=format&fit=crop&q=80",
       isVeg: true,
       isBestseller: false,
       isAvailable: true,
-      prepTime: "12 mins"
+      prepTime: "12 mins",
+      rating: 4.7
     },
     {
       id: "item_12",
       name: "Warm Chocolate Fudge Brownie",
       category: "Bakery & Desserts",
       price: 220,
+      mrp: 270,
+      portion: "200g",
       description: "Warm gooey Belgian chocolate brownie served with vanilla bean gelato and dark chocolate ganache.",
+      whyLoveIt: [
+        "Crispy crackly top with molten gooey center",
+        "Made with pure 60% dark chocolate",
+        "Served warm with bourbon vanilla gelato"
+      ],
       image: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600&auto=format&fit=crop&q=80",
       isVeg: true,
       isBestseller: true,
       isAvailable: true,
-      prepTime: "5 mins"
+      prepTime: "5 mins",
+      rating: 5.0
     },
     {
       id: "item_13",
       name: "Classic French Butter Croissant",
       category: "Bakery & Desserts",
       price: 160,
+      mrp: 190,
+      portion: "120g",
       description: "Golden flaky layered pastry made with 100% French cultured butter.",
+      whyLoveIt: [
+        "Hundreds of delicate flaky golden layers",
+        "100% Normandy cultured butter",
+        "Freshly baked every morning at 7 AM"
+      ],
       image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600&auto=format&fit=crop&q=80",
       isVeg: true,
       isBestseller: false,
       isAvailable: true,
-      prepTime: "3 mins"
+      prepTime: "3 mins",
+      rating: 4.8
     },
     {
       id: "item_14",
       name: "Peri-Peri Crispy Fries",
       category: "Sides & Bites",
       price: 180,
+      mrp: 220,
+      portion: "250g",
       description: "Crispy skin-on french fries tossed in zesty African bird's eye chili seasoning with garlic dip.",
+      whyLoveIt: [
+        "Extra crunchy double-fried russet potatoes",
+        "Spicy tangy house peri-peri spice dust",
+        "Served with creamy roasted garlic mayo"
+      ],
       image: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=600&auto=format&fit=crop&q=80",
       isVeg: true,
       isBestseller: true,
       isAvailable: true,
-      prepTime: "8 mins"
+      prepTime: "8 mins",
+      rating: 4.9
     }
   ],
   orders: []
@@ -283,22 +395,31 @@ app.get('/api/menu', (req, res) => {
 
 // Add Menu Item
 app.post('/api/menu/items', (req, res) => {
-  const { name, category, price, description, image, isVeg, isBestseller, prepTime } = req.body;
+  const { name, category, price, mrp, portion, description, whyLoveIt, image, isVeg, isBestseller, prepTime, rating } = req.body;
   if (!name || !price) {
     return res.status(400).json({ error: 'Name and price are required' });
   }
 
+  const p = Number(price);
   const newItem = {
     id: `item_${Date.now()}`,
     name,
     category: category || 'Coffee & Espresso',
-    price: Number(price),
+    price: p,
+    mrp: mrp ? Number(mrp) : Math.round(p * 1.2),
+    portion: portion || 'Regular',
     description: description || '',
+    whyLoveIt: Array.isArray(whyLoveIt) ? whyLoveIt : [
+      "Crafted with fresh premium ingredients",
+      "Prepared to order by our kitchen team",
+      "Authentic cafe recipe"
+    ],
     image: image || 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600&auto=format&fit=crop&q=80',
     isVeg: Boolean(isVeg),
     isBestseller: Boolean(isBestseller),
     isAvailable: true,
     prepTime: prepTime || '10 mins',
+    rating: rating ? Number(rating) : 4.8,
   };
 
   db.menu.unshift(newItem);
@@ -490,3 +611,4 @@ const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => {
   console.log(`☕ CafeQR Backend running on port ${PORT}`);
 });
+

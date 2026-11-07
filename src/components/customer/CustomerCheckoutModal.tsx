@@ -136,3 +136,4 @@ export const CustomerCheckoutModal: React.FC<CustomerCheckoutModalProps> = ({
     </div>
   );
 };
+

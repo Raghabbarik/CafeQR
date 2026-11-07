@@ -19,12 +19,16 @@ export interface MenuItem {
   name: string;
   category: string;
   price: number;
+  mrp?: number;
+  portion?: string;
   description: string;
+  whyLoveIt?: string[];
   image: string;
   isVeg: boolean;
   isBestseller: boolean;
   isAvailable: boolean;
   prepTime: string;
+  rating?: number;
 }
 
 export interface CartItem extends MenuItem {
@@ -66,3 +70,4 @@ export interface StaffAlert {
   type: string;
   time: string;
 }
+

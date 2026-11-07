@@ -9,6 +9,7 @@ import { WelcomeHero } from './components/customer/WelcomeHero';
 import { Navbar } from './components/customer/Navbar';
 import { CategoryBar } from './components/customer/CategoryBar';
 import { MenuItemCard } from './components/customer/MenuItemCard';
+import { ProductDetailsModal } from './components/customer/ProductDetailsModal';
 import { CartDrawer } from './components/customer/CartDrawer';
 import { CustomerCheckoutModal } from './components/customer/CustomerCheckoutModal';
 import { RazorpaySimulatorModal } from './components/customer/RazorpaySimulatorModal';
@@ -47,17 +48,19 @@ export function App() {
   const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
 
   // Modals & Panels
+  const [selectedProduct, setSelectedProduct] = useState<MenuItem | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
   const [isRazorpayModalOpen, setIsRazorpayModalOpen] = useState(false);
   const [isWaiterModalOpen, setIsWaiterModalOpen] = useState(false);
 
-  // Filters & Search
+  // Filters, Sort & Search
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [filterVeg, setFilterVeg] = useState<'all' | 'veg' | 'non-veg'>('all');
   const [onlyBestsellers, setOnlyBestsellers] = useState(false);
+  const [sortBy, setSortBy] = useState<'featured' | 'price_low' | 'price_high' | 'rating'>('featured');
 
   // Admin State
   const [adminTab, setAdminTab] = useState<'orders' | 'menu' | 'tables' | 'settings'>('orders');
@@ -160,6 +163,16 @@ export function App() {
         return prev.map((i) => (i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i));
       }
       return [...prev, { ...item, quantity: 1 }];
+    });
+  };
+
+  const handleAddToCartWithQty = (item: MenuItem, qty: number) => {
+    setCart((prev) => {
+      const existing = prev.find((i) => i.id === item.id);
+      if (existing) {
+        return prev.map((i) => (i.id === item.id ? { ...i, quantity: qty } : i));
+      }
+      return [...prev, { ...item, quantity: qty }];
     });
   };
 
@@ -350,20 +363,35 @@ export function App() {
   }
 
   // ---------------- CUSTOMER VIEW: STEP 2 (MENU BROWSING) ----------------
-  const filteredMenuItems = menuItems.filter((item) => {
-    const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
-    const matchesSearch =
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesVeg =
-      filterVeg === 'all' ? true : filterVeg === 'veg' ? item.isVeg : !item.isVeg;
-    const matchesBestseller = onlyBestsellers ? item.isBestseller : true;
+  const filteredMenuItems = (() => {
+    const list = menuItems.filter((item) => {
+      const matchesCategory =
+        selectedCategory === 'All' ||
+        selectedCategory === 'All Items' ||
+        item.category === selectedCategory;
+      const matchesSearch =
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesVeg =
+        filterVeg === 'all' ? true : filterVeg === 'veg' ? item.isVeg : !item.isVeg;
+      const matchesBestseller = onlyBestsellers ? item.isBestseller : true;
 
-    return matchesCategory && matchesSearch && matchesVeg && matchesBestseller;
-  });
+      return matchesCategory && matchesSearch && matchesVeg && matchesBestseller;
+    });
+
+    if (sortBy === 'price_low') {
+      list.sort((a, b) => a.price - b.price);
+    } else if (sortBy === 'price_high') {
+      list.sort((a, b) => b.price - a.price);
+    } else if (sortBy === 'rating') {
+      list.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    }
+
+    return list;
+  })();
 
   return (
-    <div className="min-h-screen bg-stone-50 pb-28">
+    <div className="min-h-screen bg-[#f8f9fa] pb-28">
       {/* Sticky Top Navbar */}
       <Navbar
         cafe={cafe}
@@ -377,7 +405,7 @@ export function App() {
         onSwitchToAdmin={() => setMode('admin')}
       />
 
-      {/* Category Pills & Filters */}
+      {/* Top Search & Filter Bar (matches mock) */}
       <CategoryBar
         categories={categories}
         selectedCategory={selectedCategory}
@@ -386,31 +414,73 @@ export function App() {
         onFilterVegChange={setFilterVeg}
         onlyBestsellers={onlyBestsellers}
         onToggleBestsellers={() => setOnlyBestsellers(!onlyBestsellers)}
+        sortBy={sortBy}
+        onSortByChange={setSortBy}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        isSearchOpen={isSearchOpen}
-        onCloseSearch={() => setIsSearchOpen(false)}
+        onGoBackWelcome={() => setCustomerStep('welcome')}
       />
 
-      {/* Menu Item Cards List */}
+      {/* Menu Item 2-Column Responsive Grid (matches mock right screen) */}
       <main className="max-w-4xl mx-auto px-4 py-4 space-y-3.5">
+        
+        {/* Section Header */}
+        <div className="flex items-center justify-between pb-1 pt-1">
+          <div>
+            <h2 className="text-base sm:text-lg font-black text-stone-900 tracking-tight">
+              {selectedCategory === 'All' || selectedCategory === 'All Items' ? 'Fresh Items' : selectedCategory}
+            </h2>
+            <p className="text-[11px] text-stone-400">
+              {filteredMenuItems.length} item{filteredMenuItems.length === 1 ? '' : 's'} available
+            </p>
+          </div>
+
+          <button
+            onClick={() => setSelectedCategory('All')}
+            className={`text-xs font-bold transition-colors cursor-pointer ${
+              selectedCategory !== 'All' && selectedCategory !== 'All Items'
+                ? 'text-[#133e2c] hover:underline'
+                : 'text-stone-400'
+            }`}
+          >
+            See All
+          </button>
+        </div>
+
+        {/* 2-Column Product Cards Grid */}
         {filteredMenuItems.length === 0 ? (
           <div className="py-16 text-center text-stone-400 space-y-2">
             <p className="font-bold text-stone-600 text-sm">No items found</p>
             <p className="text-xs text-stone-400">Try adjusting your filters or search keywords.</p>
           </div>
         ) : (
-          filteredMenuItems.map((item) => (
-            <MenuItemCard
-              key={item.id}
-              item={item}
-              quantity={getItemQuantity(item.id)}
-              onAddToCart={handleAddToCart}
-              onRemoveFromCart={handleRemoveFromCart}
-            />
-          ))
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
+            {filteredMenuItems.map((item) => (
+              <MenuItemCard
+                key={item.id}
+                item={item}
+                quantity={getItemQuantity(item.id)}
+                onAddToCart={handleAddToCart}
+                onRemoveFromCart={handleRemoveFromCart}
+                onOpenDetails={(item) => setSelectedProduct(item)}
+              />
+            ))}
+          </div>
         )}
       </main>
+
+      {/* Product Details Sheet / Modal (matches mock left screen) */}
+      <ProductDetailsModal
+        item={selectedProduct}
+        isOpen={Boolean(selectedProduct)}
+        onClose={() => setSelectedProduct(null)}
+        currentCartQty={selectedProduct ? getItemQuantity(selectedProduct.id) : 0}
+        onAddToCart={handleAddToCartWithQty}
+        onOpenSearch={() => {
+          setSelectedProduct(null);
+          setIsSearchOpen(true);
+        }}
+      />
 
       {/* Floating Bottom Cart Bar */}
       {totalCartItems > 0 && (

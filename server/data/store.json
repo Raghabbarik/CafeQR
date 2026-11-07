@@ -34,7 +34,15 @@
       "isVeg": true,
       "isBestseller": true,
       "isAvailable": true,
-      "prepTime": "5-7 mins"
+      "prepTime": "5-7 mins",
+      "mrp": 290,
+      "portion": "300ml",
+      "whyLoveIt": [
+        "100% Single-origin Arabica beans",
+        "Creamy condensed milk with Ceylon cinnamon",
+        "Crafted fresh by our master baristas"
+      ],
+      "rating": 4.9
     },
     {
       "id": "item_2",
@@ -46,7 +54,15 @@
       "isVeg": true,
       "isBestseller": false,
       "isAvailable": true,
-      "prepTime": "5-7 mins"
+      "prepTime": "5-7 mins",
+      "mrp": 260,
+      "portion": "240ml",
+      "whyLoveIt": [
+        "Rich double ristretto extraction",
+        "Ultra-silky velvety microfoam texture",
+        "No added artificial flavors"
+      ],
+      "rating": 4.8
     },
     {
       "id": "item_3",
@@ -58,7 +74,15 @@
       "isVeg": true,
       "isBestseller": true,
       "isAvailable": true,
-      "prepTime": "5 mins"
+      "prepTime": "5 mins",
+      "mrp": 240,
+      "portion": "250ml",
+      "whyLoveIt": [
+        "Traditional Italian 1:1:1 foam to milk ratio",
+        "Dusting of premium Belgian cocoa",
+        "Perfect morning pick-me-up"
+      ],
+      "rating": 4.9
     },
     {
       "id": "item_4",
@@ -70,7 +94,15 @@
       "isVeg": true,
       "isBestseller": true,
       "isAvailable": true,
-      "prepTime": "4 mins"
+      "prepTime": "4 mins",
+      "mrp": 320,
+      "portion": "350ml",
+      "whyLoveIt": [
+        "Slow cold-steeped for 18 hours",
+        "House-made Madagascar Bourbon vanilla foam",
+        "Low acidity and naturally refreshing"
+      ],
+      "rating": 5
     },
     {
       "id": "item_5",
@@ -82,7 +114,15 @@
       "isVeg": true,
       "isBestseller": false,
       "isAvailable": true,
-      "prepTime": "6 mins"
+      "prepTime": "6 mins",
+      "mrp": 340,
+      "portion": "400ml",
+      "whyLoveIt": [
+        "Authentic 70% dark Belgian couverture cocoa",
+        "Topped with fresh cloud whipped cream",
+        "Decadent yet balanced sweetness"
+      ],
+      "rating": 4.7
     },
     {
       "id": "item_6",
@@ -94,7 +134,15 @@
       "isVeg": true,
       "isBestseller": false,
       "isAvailable": true,
-      "prepTime": "5 mins"
+      "prepTime": "5 mins",
+      "mrp": 220,
+      "portion": "200ml",
+      "whyLoveIt": [
+        "Infused with real Kashmiri saffron strands",
+        "Garnished with toasted slivered almonds",
+        "Soothing, digestive, and antioxidant rich"
+      ],
+      "rating": 4.8
     },
     {
       "id": "item_7",
@@ -106,7 +154,15 @@
       "isVeg": true,
       "isBestseller": true,
       "isAvailable": true,
-      "prepTime": "4 mins"
+      "prepTime": "4 mins",
+      "mrp": 250,
+      "portion": "350ml",
+      "whyLoveIt": [
+        "Naturally tart and caffeine-free",
+        "Loaded with Vitamin C from wild berries",
+        "Served iced with fresh garden mint"
+      ],
+      "rating": 4.9
     },
     {
       "id": "item_8",
@@ -118,7 +174,15 @@
       "isVeg": true,
       "isBestseller": true,
       "isAvailable": true,
-      "prepTime": "10-12 mins"
+      "prepTime": "10-12 mins",
+      "mrp": 380,
+      "portion": "300g",
+      "whyLoveIt": [
+        "Artisanal slow-fermented sourdough bread",
+        "Infused with aromatic Italian white truffle oil",
+        "Melted fior di latte mozzarella"
+      ],
+      "rating": 4.9
     },
     {
       "id": "item_9",
@@ -130,7 +194,15 @@
       "isVeg": false,
       "isBestseller": true,
       "isAvailable": true,
-      "prepTime": "12-15 mins"
+      "prepTime": "12-15 mins",
+      "mrp": 420,
+      "portion": "350g",
+      "whyLoveIt": [
+        "Fresh tender grilled chicken breast",
+        "Soft artisanal brioche bun toasted in butter",
+        "Smoked cheddar and chipotle mayo"
+      ],
+      "rating": 4.9
     },
     {
       "id": "item_10",
@@ -142,7 +214,15 @@
       "isVeg": true,
       "isBestseller": false,
       "isAvailable": true,
-      "prepTime": "15 mins"
+      "prepTime": "15 mins",
+      "mrp": 450,
+      "portion": "10 inch",
+      "whyLoveIt": [
+        "Fermented 48-hour authentic Neapolitan dough",
+        "San Marzano Italian DOP tomatoes",
+        "Fresh buffalo mozzarella & sweet basil"
+      ],
+      "rating": 4.8
     },
     {
       "id": "item_11",
@@ -154,7 +234,15 @@
       "isVeg": true,
       "isBestseller": false,
       "isAvailable": true,
-      "prepTime": "12 mins"
+      "prepTime": "12 mins",
+      "mrp": 410,
+      "portion": "320g",
+      "whyLoveIt": [
+        "Fresh house-pounded basil & pine nut pesto",
+        "Burst cherry tomatoes for sweet acidity",
+        "Finished with 24-month aged Parmigiano"
+      ],
+      "rating": 4.7
     },
     {
       "id": "item_12",
@@ -166,7 +254,15 @@
       "isVeg": true,
       "isBestseller": true,
       "isAvailable": true,
-      "prepTime": "5 mins"
+      "prepTime": "5 mins",
+      "mrp": 270,
+      "portion": "200g",
+      "whyLoveIt": [
+        "Crispy crackly top with molten gooey center",
+        "Made with pure 60% dark chocolate",
+        "Served warm with bourbon vanilla gelato"
+      ],
+      "rating": 5
     },
     {
       "id": "item_13",
@@ -178,7 +274,15 @@
       "isVeg": true,
       "isBestseller": false,
       "isAvailable": true,
-      "prepTime": "3 mins"
+      "prepTime": "3 mins",
+      "mrp": 190,
+      "portion": "120g",
+      "whyLoveIt": [
+        "Hundreds of delicate flaky golden layers",
+        "100% Normandy cultured butter",
+        "Freshly baked every morning at 7 AM"
+      ],
+      "rating": 4.8
     },
     {
       "id": "item_14",
@@ -190,10 +294,44 @@
       "isVeg": true,
       "isBestseller": true,
       "isAvailable": true,
-      "prepTime": "8 mins"
+      "prepTime": "8 mins",
+      "mrp": 220,
+      "portion": "250g",
+      "whyLoveIt": [
+        "Extra crunchy double-fried russet potatoes",
+        "Spicy tangy house peri-peri spice dust",
+        "Served with creamy roasted garlic mayo"
+      ],
+      "rating": 4.9
     }
   ],
   "orders": [
+    {
+      "id": "ORD-4738",
+      "tableNumber": "4",
+      "customerName": "fbsfbns",
+      "customerPhone": "7878787878",
+      "items": [
+        {
+          "id": "item_1",
+          "name": "Signature Spanish Latte",
+          "price": 240,
+          "quantity": 1,
+          "isVeg": true
+        }
+      ],
+      "subtotal": 240,
+      "taxRate": 5,
+      "tax": 12,
+      "total": 252,
+      "notes": "",
+      "paymentMethod": "Razorpay",
+      "paymentId": "pay_AMIHFYH6",
+      "paymentStatus": "PAID",
+      "orderStatus": "ready",
+      "createdAt": "2026-11-07T13:56:46.350Z",
+      "updatedAt": "2026-11-07T14:01:57.725Z"
+    },
     {
       "id": "ORD-3688",
       "tableNumber": "4",
@@ -223,9 +361,9 @@
       "paymentMethod": "Razorpay",
       "paymentId": "pay_test_998877",
       "paymentStatus": "PAID",
-      "orderStatus": "preparing",
+      "orderStatus": "ready",
       "createdAt": "2026-11-07T13:53:50.185Z",
-      "updatedAt": "2026-11-07T13:53:56.881Z"
+      "updatedAt": "2026-11-07T14:02:03.609Z"
     }
   ]
 }

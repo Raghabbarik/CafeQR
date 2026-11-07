@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { MenuItem } from '../../types';
-import { Plus, Minus, Clock, Flame } from 'lucide-react';
+import { Plus, Minus, Clock, Heart } from 'lucide-react';
 
 interface MenuItemCardProps {
   item: MenuItem;
   quantity: number;
   onAddToCart: (item: MenuItem) => void;
   onRemoveFromCart: (item: MenuItem) => void;
+  onOpenDetails: (item: MenuItem) => void;
 }
 
 export const MenuItemCard: React.FC<MenuItemCardProps> = ({
@@ -14,110 +15,140 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
   quantity,
   onAddToCart,
   onRemoveFromCart,
+  onOpenDetails,
 }) => {
+  const [isLiked, setIsLiked] = useState(false);
+  const mrp = item.mrp || Math.round(item.price * 1.25);
+  const portion = item.portion || 'Regular';
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Prevent triggering details modal when clicking the + / - buttons or heart
+    const target = e.target as HTMLElement;
+    if (target.closest('.action-btn')) return;
+    onOpenDetails(item);
+  };
+
   return (
     <div
-      className={`relative bg-white rounded-2xl border border-stone-200/80 p-3.5 sm:p-4 shadow-xs transition-all duration-200 hover:shadow-md flex gap-3.5 sm:gap-4 items-center justify-between ${
+      onClick={handleCardClick}
+      className={`relative bg-white rounded-2xl border border-stone-200/70 p-3 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between cursor-pointer group ${
         !item.isAvailable ? 'opacity-60 grayscale-[40%]' : ''
       }`}
     >
-      {/* Left Details */}
-      <div className="flex-1 min-w-0 pr-2">
-        {/* Diet Icon & Badges */}
-        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-          {/* Veg / Non-Veg Icon */}
-          <div
-            className={`w-4 h-4 rounded-xs border-2 flex items-center justify-center p-0.5 ${
-              item.isVeg ? 'border-emerald-600' : 'border-red-600'
-            }`}
-            title={item.isVeg ? 'Vegetarian' : 'Non-Vegetarian'}
-          >
-            <div
-              className={`w-2 h-2 rounded-full ${
-                item.isVeg ? 'bg-emerald-600' : 'bg-red-600'
-              }`}
-            />
-          </div>
-
-          {/* Bestseller Badge */}
-          {item.isBestseller && (
-            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-900 text-[10px] font-bold tracking-wide uppercase">
-              <Flame className="w-2.5 h-2.5 text-amber-600 fill-amber-600" />
-              Bestseller
-            </span>
-          )}
-
-          {/* Prep Time */}
-          {item.prepTime && (
-            <span className="inline-flex items-center gap-1 text-[11px] text-stone-400 font-medium">
-              <Clock className="w-3 h-3 text-stone-400" />
-              {item.prepTime}
-            </span>
-          )}
+      {/* Top Bar: Veg/Non-Veg icon (optional subtle) & Wishlist Heart */}
+      <div className="flex items-center justify-between w-full mb-1">
+        {/* Subtle Veg / Non-Veg badge */}
+        <div
+          className={`w-3.5 h-3.5 rounded-xs border-2 flex items-center justify-center ${
+            item.isVeg ? 'border-emerald-600' : 'border-red-600'
+          }`}
+          title={item.isVeg ? 'Vegetarian' : 'Non-Vegetarian'}
+        >
+          <div className={`w-1.5 h-1.5 rounded-full ${item.isVeg ? 'bg-emerald-600' : 'bg-red-600'}`} />
         </div>
 
-        {/* Item Title */}
-        <h3 className="font-bold text-stone-900 text-base leading-snug line-clamp-1">
-          {item.name}
-        </h3>
-
-        {/* Price */}
-        <p className="text-amber-900 font-extrabold text-sm sm:text-base mt-0.5">
-          ₹{item.price}
-        </p>
-
-        {/* Description */}
-        <p className="text-stone-500 text-xs line-clamp-2 mt-1 leading-relaxed">
-          {item.description}
-        </p>
+        {/* Heart Wishlist Icon */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsLiked(!isLiked);
+          }}
+          className={`action-btn p-1 rounded-full text-stone-300 hover:text-red-500 transition-colors cursor-pointer ${
+            isLiked ? 'text-red-500' : ''
+          }`}
+        >
+          <Heart className={`w-4 h-4 ${isLiked ? 'fill-red-500' : ''}`} />
+        </button>
       </div>
 
-      {/* Right: Dish Photo & Add / Quantity Button */}
-      <div className="relative shrink-0 flex flex-col items-center">
-        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden bg-stone-100 border border-stone-200 shadow-inner">
-          <img
-            src={item.image}
-            alt={item.name}
-            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-            loading="lazy"
-          />
+      {/* Center: Product Image */}
+      <div className="w-full h-28 sm:h-32 flex items-center justify-center p-1 overflow-hidden">
+        <img
+          src={item.image}
+          alt={item.name}
+          className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
+          loading="lazy"
+        />
+      </div>
+
+      {/* Product Information */}
+      <div className="pt-2 flex flex-col flex-1 justify-between">
+        <div>
+          {/* Light-blue Portion / Size badge */}
+          <span className="bg-sky-50 text-sky-700 text-[10px] font-bold px-2 py-0.5 rounded-md inline-block">
+            {portion}
+          </span>
+
+          {/* Product Title */}
+          <h3 className="font-bold text-stone-900 text-xs sm:text-sm line-clamp-1 mt-1 leading-snug">
+            {item.name}
+          </h3>
+
+          {/* Prep Time */}
+          <div className="flex items-center gap-1 text-[10px] text-stone-400 font-medium mt-0.5">
+            <Clock className="w-3 h-3 text-stone-400" />
+            <span>{item.prepTime || '10 MINS'}</span>
+          </div>
         </div>
 
-        {/* Add Button or Quantity Controller */}
-        <div className="absolute -bottom-2 z-10 shadow-md rounded-xl">
-          {!item.isAvailable ? (
-            <span className="px-3 py-1 bg-stone-200 text-stone-600 text-xs font-bold rounded-xl whitespace-nowrap">
-              Sold Out
+        {/* Bottom Price & Add to Cart Row */}
+        <div className="flex items-center justify-between pt-2 mt-1.5 border-t border-stone-100">
+          <div className="flex items-baseline gap-1">
+            <span className="font-black text-[#133e2c] text-sm sm:text-base">
+              ₹{item.price}
             </span>
-          ) : quantity > 0 ? (
-            <div className="flex items-center bg-amber-800 text-white rounded-xl px-1.5 py-1 text-xs font-bold shadow-sm">
-              <button
-                onClick={() => onRemoveFromCart(item)}
-                className="p-1 hover:bg-amber-900 rounded-lg active:scale-90 transition-transform cursor-pointer"
-                aria-label="Decrease quantity"
-              >
-                <Minus className="w-3.5 h-3.5" />
-              </button>
-              <span className="px-2 min-w-[20px] text-center font-extrabold text-sm">
-                {quantity}
+            <span className="text-[10px] text-stone-400 line-through">
+              MRP ₹{mrp}
+            </span>
+          </div>
+
+          {/* Round Dark Green / Espresso + Button or Controller */}
+          <div className="action-btn">
+            {!item.isAvailable ? (
+              <span className="text-[10px] font-bold text-stone-400 bg-stone-100 px-2 py-0.5 rounded-md">
+                Sold Out
               </span>
+            ) : quantity > 0 ? (
+              <div className="flex items-center bg-[#133e2c] text-white rounded-full px-1.5 py-0.5 text-xs font-bold shadow-xs">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemoveFromCart(item);
+                  }}
+                  className="p-1 hover:bg-black/20 rounded-full active:scale-90 transition-transform cursor-pointer"
+                >
+                  <Minus className="w-3 h-3" />
+                </button>
+                <span className="px-1.5 min-w-[16px] text-center font-bold text-xs">
+                  {quantity}
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAddToCart(item);
+                  }}
+                  className="p-1 hover:bg-black/20 rounded-full active:scale-90 transition-transform cursor-pointer"
+                >
+                  <Plus className="w-3 h-3" />
+                </button>
+              </div>
+            ) : (
               <button
-                onClick={() => onAddToCart(item)}
-                className="p-1 hover:bg-amber-900 rounded-lg active:scale-90 transition-transform cursor-pointer"
-                aria-label="Increase quantity"
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddToCart(item);
+                }}
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#133e2c] hover:bg-[#0e2c20] text-white flex items-center justify-center font-bold shadow-xs hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                title="Add to cart"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-4 h-4" />
               </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => onAddToCart(item)}
-              className="flex items-center gap-1 bg-white hover:bg-amber-50 text-amber-900 border border-amber-300 rounded-xl px-3.5 py-1 text-xs font-bold shadow-sm active:scale-95 transition-all cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5 text-amber-700" />
-              <span>ADD</span>
-            </button>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

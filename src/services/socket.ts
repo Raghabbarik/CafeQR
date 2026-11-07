@@ -6,3 +6,4 @@ export const socket: Socket = io({
   reconnection: true,
   reconnectionDelay: 1000,
 });
+
