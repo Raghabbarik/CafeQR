@@ -45,9 +45,23 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
         )}
       </div>
 
-      {/* Center Hero Heading directly on image (matches screenshot: ✦ NEW + ICED MATCHA LATTE) */}
-      <div className="relative z-10 flex flex-col items-center text-center px-4 pt-8 pb-12 my-auto">
+      {/* Center Hero Heading directly on image: Centered Cafe Logo + ✦ NEW + Headline */}
+      <div className="relative z-10 flex flex-col items-center text-center px-4 pt-4 pb-10 my-auto">
         
+        {/* Centered Cafe Logo */}
+        <div className="mb-4 flex flex-col items-center animate-in fade-in zoom-in-95 duration-500">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full p-1 bg-white/25 backdrop-blur-md border-2 border-white/50 shadow-2xl overflow-hidden">
+            <img
+              src={cafe.logo}
+              alt={cafe.name}
+              className="w-full h-full rounded-full object-cover"
+            />
+          </div>
+          <p className="text-white text-xs sm:text-sm font-black uppercase tracking-widest mt-2 drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)]">
+            {cafe.name}
+          </p>
+        </div>
+
         {/* Pastel Lime/Yellow "✦ NEW" Badge */}
         <div className="inline-flex items-center gap-1.5 bg-[#eaf49f] text-[#2c3e1e] font-black text-xs px-3.5 py-1 rounded-full uppercase tracking-wider shadow-md mb-3 animate-in fade-in zoom-in-90 duration-300">
           <Sparkles className="w-3 h-3 fill-current" />
