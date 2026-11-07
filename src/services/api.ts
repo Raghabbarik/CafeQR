@@ -1,15 +1,38 @@
 import type { CafeInfo, MenuItem, Order } from '../types';
 
+// Direct backend address on port 5000 as resilient fallback if Vite proxy has issues or adblockers interfere
+const DIRECT_BACKEND = 'http://127.0.0.1:5000';
+
+async function requestApi(url: string, options?: RequestInit): Promise<Response> {
+  try {
+    const res = await fetch(url, options);
+    return res;
+  } catch (err: any) {
+    if (url.startsWith('/api')) {
+      const fallbackUrl = `${DIRECT_BACKEND}${url}`;
+      console.warn(`[API] Fetch to ${url} failed (${err.message}), retrying directly to ${fallbackUrl}`);
+      try {
+        const fallbackRes = await fetch(fallbackUrl, options);
+        return fallbackRes;
+      } catch (fallbackErr: any) {
+        console.error(`[API] Fallback also failed:`, fallbackErr);
+        throw fallbackErr;
+      }
+    }
+    throw err;
+  }
+}
+
 export const api = {
   // Cafe details
   async getCafe(): Promise<{ cafe: CafeInfo; categories: string[] }> {
-    const res = await fetch('/api/cafe');
+    const res = await requestApi('/api/cafe');
     if (!res.ok) throw new Error('Failed to fetch cafe details');
     return res.json();
   },
 
   async updateCafe(cafe: Partial<CafeInfo>): Promise<{ success: boolean; cafe: CafeInfo }> {
-    const res = await fetch('/api/cafe', {
+    const res = await requestApi('/api/cafe', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(cafe),
@@ -20,13 +43,13 @@ export const api = {
 
   // Menu items
   async getMenu(): Promise<{ categories: string[]; items: MenuItem[] }> {
-    const res = await fetch('/api/menu');
+    const res = await requestApi('/api/menu');
     if (!res.ok) throw new Error('Failed to fetch menu');
     return res.json();
   },
 
   async addMenuItem(item: Partial<MenuItem>): Promise<MenuItem> {
-    const res = await fetch('/api/menu/items', {
+    const res = await requestApi('/api/menu/items', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(item),
@@ -36,7 +59,7 @@ export const api = {
   },
 
   async updateMenuItem(id: string, updates: Partial<MenuItem>): Promise<MenuItem> {
-    const res = await fetch(`/api/menu/items/${id}`, {
+    const res = await requestApi(`/api/menu/items/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates),
@@ -46,14 +69,14 @@ export const api = {
   },
 
   async deleteMenuItem(id: string): Promise<void> {
-    const res = await fetch(`/api/menu/items/${id}`, {
+    const res = await requestApi(`/api/menu/items/${id}`, {
       method: 'DELETE',
     });
     if (!res.ok) throw new Error('Failed to delete menu item');
   },
 
   async addCategory(name: string): Promise<{ categories: string[] }> {
-    const res = await fetch('/api/categories', {
+    const res = await requestApi('/api/categories', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name }),
@@ -64,13 +87,13 @@ export const api = {
 
   // Orders
   async getOrders(): Promise<Order[]> {
-    const res = await fetch('/api/orders');
+    const res = await requestApi('/api/orders');
     if (!res.ok) throw new Error('Failed to fetch orders');
     return res.json();
   },
 
   async getOrder(id: string): Promise<Order> {
-    const res = await fetch(`/api/orders/${id}`);
+    const res = await requestApi(`/api/orders/${id}`);
     if (!res.ok) throw new Error('Failed to fetch order');
     return res.json();
   },
@@ -84,7 +107,7 @@ export const api = {
     paymentMethod: string;
     paymentId: string;
   }): Promise<Order> {
-    const res = await fetch('/api/orders', {
+    const res = await requestApi('/api/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(orderData),
@@ -94,7 +117,7 @@ export const api = {
   },
 
   async updateOrderStatus(id: string, status: Order['orderStatus']): Promise<Order> {
-    const res = await fetch(`/api/orders/${id}/status`, {
+    const res = await requestApi(`/api/orders/${id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
@@ -105,14 +128,14 @@ export const api = {
 
   // Call waiter / assistance
   async callAssistance(tableNumber: string, type: string = 'Water / Assistance'): Promise<void> {
-    await fetch('/api/assistance', {
+    await requestApi('/api/assistance', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tableNumber, type }),
     });
   },
 
-  // Razorpay order creation helper
+  // Razorpay order creation helper (uses /api/payment/order which is immune to adblockers)
   async createRazorpayOrder(amount: number): Promise<{
     id: string;
     currency: string;
@@ -121,12 +144,12 @@ export const api = {
     receipt: string;
     isReal?: boolean;
   }> {
-    const res = await fetch('/api/razorpay/order', {
+    const res = await requestApi('/api/payment/order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ amount }),
     });
-    if (!res.ok) throw new Error('Failed to initiate Razorpay payment');
+    if (!res.ok) throw new Error(`Server returned ${res.status}: Failed to initiate payment`);
     return res.json();
   },
 
@@ -135,7 +158,7 @@ export const api = {
     razorpay_payment_id: string;
     razorpay_signature?: string;
   }): Promise<{ success: boolean; paymentId: string }> {
-    const res = await fetch('/api/razorpay/verify', {
+    const res = await requestApi('/api/payment/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

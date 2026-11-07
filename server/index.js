@@ -587,8 +587,8 @@ app.post('/api/assistance', (req, res) => {
   res.json({ success: true, message: 'Staff notified' });
 });
 
-// Razorpay Order Creation via official SDK
-app.post('/api/razorpay/order', async (req, res) => {
+// Razorpay Order Creation via official SDK (supports both /api/payment/order and /api/razorpay/order)
+const handleCreatePaymentOrder = async (req, res) => {
   try {
     const { amount, receipt } = req.body;
     const options = {
@@ -620,10 +620,13 @@ app.post('/api/razorpay/order', async (req, res) => {
       isReal: false,
     });
   }
-});
+};
 
-// Razorpay Payment Verification
-app.post('/api/razorpay/verify', (req, res) => {
+app.post('/api/payment/order', handleCreatePaymentOrder);
+app.post('/api/razorpay/order', handleCreatePaymentOrder);
+
+// Razorpay Payment Verification (supports both /api/payment/verify and /api/razorpay/verify)
+const handleVerifyPayment = (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
   try {
     if (razorpay_order_id && razorpay_signature) {
@@ -642,7 +645,10 @@ app.post('/api/razorpay/verify', (req, res) => {
     console.error('Verification error:', err);
     res.json({ success: true, verified: false, paymentId: razorpay_payment_id });
   }
-});
+};
+
+app.post('/api/payment/verify', handleVerifyPayment);
+app.post('/api/razorpay/verify', handleVerifyPayment);
 
 // ---------------- WEBSOCKETS ----------------
 io.on('connection', (socket) => {
