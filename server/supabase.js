@@ -6,46 +6,23 @@ dotenv.config();
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://vtpryqwnccaeeuzxunvz.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || '';
 
-let supabase = null;
-let isConnected = false;
-
-if (SUPABASE_URL && SUPABASE_KEY) {
-  try {
-    supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: { persistSession: false },
-    });
-    console.log('⚡ Supabase Client initialized with project:', SUPABASE_URL);
-  } catch (err) {
-    console.warn('⚠️ Could not initialize Supabase client:', err.message);
-  }
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  throw new Error('Missing Supabase configuration in environment variables.');
 }
 
-// Check if tables are present in Supabase
-export async function checkSupabaseHealth() {
-  if (!supabase) return false;
-  try {
-    const { error } = await supabase.from('cafe').select('id').limit(1);
-    if (!error) {
-      isConnected = true;
-      console.log('✅ Connected to Supabase tables successfully!');
-      return true;
-    } else {
-      console.log('ℹ️ Supabase reachable, but tables not created yet in public schema:', error.message);
-      return false;
-    }
-  } catch (err) {
-    console.warn('⚠️ Supabase health check exception:', err.message);
-    return false;
-  }
-}
+export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: false },
+});
 
-export { supabase };
+console.log('⚡ Supabase Client initialized:', SUPABASE_URL);
 
 // ---------------- CAFE INFO ----------------
 export async function dbGetCafe() {
-  if (!supabase || !isConnected) return null;
   const { data, error } = await supabase.from('cafe').select('*').limit(1).single();
-  if (error || !data) return null;
+  if (error || !data) {
+    if (error) console.error('dbGetCafe error:', error.message);
+    return null;
+  }
   return {
     name: data.name,
     tagline: data.tagline,
@@ -59,7 +36,6 @@ export async function dbGetCafe() {
 }
 
 export async function dbUpdateCafe(updates) {
-  if (!supabase || !isConnected) return null;
   const payload = {
     updated_at: new Date().toISOString(),
   };
@@ -80,36 +56,39 @@ export async function dbUpdateCafe(updates) {
     .single();
 
   if (error) {
-    console.error('Supabase updateCafe error:', error);
-    return null;
+    console.error('dbUpdateCafe error:', error.message);
+    throw new Error(error.message);
   }
   return data;
 }
 
 // ---------------- CATEGORIES ----------------
 export async function dbGetCategories() {
-  if (!supabase || !isConnected) return null;
   const { data, error } = await supabase.from('categories').select('name').order('created_at');
-  if (error || !data) return null;
+  if (error || !data) {
+    if (error) console.error('dbGetCategories error:', error.message);
+    return [];
+  }
   return data.map((c) => c.name);
 }
 
 export async function dbAddCategory(name) {
-  if (!supabase || !isConnected) return null;
   const id = `cat_${Date.now()}`;
   const { data, error } = await supabase.from('categories').insert([{ id, name }]).select().single();
   if (error) {
-    console.error('Supabase addCategory error:', error);
-    return null;
+    console.error('dbAddCategory error:', error.message);
+    throw new Error(error.message);
   }
   return data;
 }
 
 // ---------------- MENU ITEMS ----------------
 export async function dbGetMenuItems() {
-  if (!supabase || !isConnected) return null;
   const { data, error } = await supabase.from('menu_items').select('*').order('created_at');
-  if (error || !data) return null;
+  if (error || !data) {
+    if (error) console.error('dbGetMenuItems error:', error.message);
+    return [];
+  }
   return data.map((item) => ({
     id: item.id,
     name: item.name,
@@ -129,7 +108,6 @@ export async function dbGetMenuItems() {
 }
 
 export async function dbAddMenuItem(item) {
-  if (!supabase || !isConnected) return null;
   const id = item.id || `item_${Date.now()}`;
   const row = {
     id,
@@ -150,14 +128,13 @@ export async function dbAddMenuItem(item) {
 
   const { data, error } = await supabase.from('menu_items').insert([row]).select().single();
   if (error) {
-    console.error('Supabase addMenuItem error:', error);
-    return null;
+    console.error('dbAddMenuItem error:', error.message);
+    throw new Error(error.message);
   }
   return data;
 }
 
 export async function dbUpdateMenuItem(id, updates) {
-  if (!supabase || !isConnected) return null;
   const payload = {
     updated_at: new Date().toISOString(),
   };
@@ -183,27 +160,28 @@ export async function dbUpdateMenuItem(id, updates) {
     .single();
 
   if (error) {
-    console.error('Supabase updateMenuItem error:', error);
-    return null;
+    console.error('dbUpdateMenuItem error:', error.message);
+    throw new Error(error.message);
   }
   return data;
 }
 
 export async function dbDeleteMenuItem(id) {
-  if (!supabase || !isConnected) return null;
   const { error } = await supabase.from('menu_items').delete().eq('id', id);
   if (error) {
-    console.error('Supabase deleteMenuItem error:', error);
-    return false;
+    console.error('dbDeleteMenuItem error:', error.message);
+    throw new Error(error.message);
   }
   return true;
 }
 
 // ---------------- ORDERS ----------------
 export async function dbGetOrders() {
-  if (!supabase || !isConnected) return null;
   const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
-  if (error || !data) return null;
+  if (error || !data) {
+    if (error) console.error('dbGetOrders error:', error.message);
+    return [];
+  }
   return data.map((o) => ({
     id: o.id,
     tableNumber: o.table_number,
@@ -223,9 +201,11 @@ export async function dbGetOrders() {
 }
 
 export async function dbGetOrder(id) {
-  if (!supabase || !isConnected) return null;
   const { data, error } = await supabase.from('orders').select('*').eq('id', id).single();
-  if (error || !data) return null;
+  if (error || !data) {
+    if (error) console.error('dbGetOrder error:', error.message);
+    return null;
+  }
   return {
     id: data.id,
     tableNumber: data.table_number,
@@ -245,7 +225,6 @@ export async function dbGetOrder(id) {
 }
 
 export async function dbCreateOrder(order) {
-  if (!supabase || !isConnected) return null;
   const row = {
     id: order.id,
     table_number: String(order.tableNumber),
@@ -265,14 +244,13 @@ export async function dbCreateOrder(order) {
 
   const { data, error } = await supabase.from('orders').insert([row]).select().single();
   if (error) {
-    console.error('Supabase createOrder error:', error);
-    return null;
+    console.error('dbCreateOrder error:', error.message);
+    throw new Error(error.message);
   }
   return order;
 }
 
 export async function dbUpdateOrderStatus(id, status) {
-  if (!supabase || !isConnected) return null;
   const { data, error } = await supabase
     .from('orders')
     .update({ order_status: status, updated_at: new Date().toISOString() })
@@ -281,15 +259,14 @@ export async function dbUpdateOrderStatus(id, status) {
     .single();
 
   if (error) {
-    console.error('Supabase updateOrderStatus error:', error);
-    return null;
+    console.error('dbUpdateOrderStatus error:', error.message);
+    throw new Error(error.message);
   }
   return data;
 }
 
 // ---------------- STAFF ALERTS ----------------
 export async function dbCreateAlert(alert) {
-  if (!supabase || !isConnected) return null;
   const row = {
     id: alert.id,
     table_number: String(alert.tableNumber),
@@ -298,6 +275,6 @@ export async function dbCreateAlert(alert) {
     created_at: alert.time || new Date().toISOString(),
   };
   const { error } = await supabase.from('staff_alerts').insert([row]);
-  if (error) console.error('Supabase createAlert error:', error);
+  if (error) console.error('dbCreateAlert error:', error.message);
   return alert;
 }

@@ -2,14 +2,10 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import Razorpay from 'razorpay';
 import dotenv from 'dotenv';
 import {
-  checkSupabaseHealth,
   dbGetCafe,
   dbUpdateCafe,
   dbGetCategories,
@@ -26,9 +22,6 @@ import {
 } from './supabase.js';
 
 dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_test_TxJ87ji7k95ncJ';
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || '7qT7ekNztPZcBzIlahb13GQk';
@@ -51,677 +44,267 @@ const io = new Server(httpServer, {
 app.use(cors());
 app.use(express.json());
 
-const DATA_DIR = path.join(__dirname, 'data');
-const DATA_FILE = path.join(DATA_DIR, 'store.json');
-
-// Ensure data directory exists
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-}
-
-// Initial Default Seed Data
-const defaultData = {
-  cafe: {
-    name: "The Roasted Bean Cafe",
-    tagline: "Crafted with passion, brewed with love.",
-    logo: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=300&auto=format&fit=crop&q=80",
-    coverImage: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=1200&auto=format&fit=crop&q=80",
-    address: "42 Artisan Lane, Indiranagar, Bengaluru - 560038",
-    phone: "+91 98765 43210",
-    wifiSsid: "RoastedBean_Guest",
-    wifiPassword: "CoffeeLove2026",
-    currency: "₹",
-    taxRate: 5, // 5% GST
-    razorpayKeyId: "rzp_test_cafeqrdemo",
-    upiId: "roastedbean@upi",
-    tablesCount: 12,
-  },
-  categories: [
-    "Coffee & Espresso",
-    "Cold Brews & Shakes",
-    "Artisanal Teas",
-    "Burgers & Sandwiches",
-    "Pizzas & Pastas",
-    "Bakery & Desserts",
-    "Sides & Bites"
-  ],
-  menu: [
-    {
-      id: "item_1",
-      name: "Signature Spanish Latte",
-      category: "Coffee & Espresso",
-      price: 240,
-      mrp: 290,
-      portion: "300ml",
-      description: "Double shot espresso with condensed milk, velvety steamed milk, and a dusting of Ceylon cinnamon.",
-      whyLoveIt: [
-        "100% Single-origin Arabica beans",
-        "Creamy sweetened milk with aromatic Ceylon cinnamon",
-        "Crafted fresh by our master baristas"
-      ],
-      image: "https://images.unsplash.com/photo-1541167760496-1628856ab772?w=600&auto=format&fit=crop&q=80",
-      isVeg: true,
-      isBestseller: true,
-      isAvailable: true,
-      prepTime: "5-7 mins",
-      rating: 4.9
-    },
-    {
-      id: "item_2",
-      name: "Velvet Flat White",
-      category: "Coffee & Espresso",
-      price: 210,
-      mrp: 260,
-      portion: "240ml",
-      description: "Silky micro-foam poured over a double ristretto of single-origin Arabica beans.",
-      whyLoveIt: [
-        "Rich double ristretto extraction",
-        "Ultra-silky velvety microfoam texture",
-        "No added artificial flavors or preservatives"
-      ],
-      image: "https://images.unsplash.com/photo-1577968897966-3d4325b36b61?w=600&auto=format&fit=crop&q=80",
-      isVeg: true,
-      isBestseller: false,
-      isAvailable: true,
-      prepTime: "5-7 mins",
-      rating: 4.8
-    },
-    {
-      id: "item_3",
-      name: "Classic Cappuccino",
-      category: "Coffee & Espresso",
-      price: 190,
-      mrp: 240,
-      portion: "250ml",
-      description: "Equal parts espresso, steamed milk, and rich foam, topped with Belgian cocoa.",
-      whyLoveIt: [
-        "Traditional Italian 1:1:1 foam to milk ratio",
-        "Dusting of premium unsweetened Belgian cocoa",
-        "Perfect morning pick-me-up"
-      ],
-      image: "https://images.unsplash.com/photo-1534778101976-62847782c213?w=600&auto=format&fit=crop&q=80",
-      isVeg: true,
-      isBestseller: true,
-      isAvailable: true,
-      prepTime: "5 mins",
-      rating: 4.9
-    },
-    {
-      id: "item_4",
-      name: "Vanilla Cold Foam Cold Brew",
-      category: "Cold Brews & Shakes",
-      price: 260,
-      mrp: 320,
-      portion: "350ml",
-      description: "18-hour slow steeped cold brew topped with house-made Madagascar vanilla sweet cream foam.",
-      whyLoveIt: [
-        "Slow cold-steeped for 18 hours for zero bitterness",
-        "House-made Madagascar Bourbon vanilla foam",
-        "Low acidity and naturally refreshing"
-      ],
-      image: "https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=600&auto=format&fit=crop&q=80",
-      isVeg: true,
-      isBestseller: true,
-      isAvailable: true,
-      prepTime: "4 mins",
-      rating: 5.0
-    },
-    {
-      id: "item_5",
-      name: "Belgian Dark Chocolate Frappe",
-      category: "Cold Brews & Shakes",
-      price: 280,
-      mrp: 340,
-      portion: "400ml",
-      description: "Thick ice-blended 70% dark Belgian cocoa with whipped cream and chocolate drizzle.",
-      whyLoveIt: [
-        "Authentic 70% dark Belgian couverture cocoa",
-        "Topped with fresh cloud whipped cream",
-        "Decadent yet balanced sweetness"
-      ],
-      image: "https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=600&auto=format&fit=crop&q=80",
-      isVeg: true,
-      isBestseller: false,
-      isAvailable: true,
-      prepTime: "6 mins",
-      rating: 4.7
-    },
-    {
-      id: "item_6",
-      name: "Kashmiri Kahwa Tea",
-      category: "Artisanal Teas",
-      price: 180,
-      mrp: 220,
-      portion: "200ml",
-      description: "Fragrant green tea infused with saffron strands, whole green cardamom, cinnamon, and crushed almonds.",
-      whyLoveIt: [
-        "Infused with real Kashmiri saffron strands",
-        "Garnished with toasted slivered almonds",
-        "Soothing, digestive, and antioxidant rich"
-      ],
-      image: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=600&auto=format&fit=crop&q=80",
-      isVeg: true,
-      isBestseller: false,
-      isAvailable: true,
-      prepTime: "5 mins",
-      rating: 4.8
-    },
-    {
-      id: "item_7",
-      name: "Hibiscus Berry Iced Tea",
-      category: "Artisanal Teas",
-      price: 200,
-      mrp: 250,
-      portion: "350ml",
-      description: "Brewed whole Egyptian hibiscus petals with wild forest berries and a touch of mint.",
-      whyLoveIt: [
-        "Naturally tart and caffeine-free",
-        "Loaded with Vitamin C from wild berries",
-        "Served iced with fresh garden mint"
-      ],
-      image: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&auto=format&fit=crop&q=80",
-      isVeg: true,
-      isBestseller: true,
-      isAvailable: true,
-      prepTime: "4 mins",
-      rating: 4.9
-    },
-    {
-      id: "item_8",
-      name: "Truffle Mushroom Melt Panini",
-      category: "Burgers & Sandwiches",
-      price: 320,
-      mrp: 380,
-      portion: "300g",
-      description: "Sauteed wild portobello mushrooms, garlic aioli, mozzarella, and white truffle oil on sourdough.",
-      whyLoveIt: [
-        "Artisanal slow-fermented sourdough bread",
-        "Infused with aromatic Italian white truffle oil",
-        "Melted fior di latte mozzarella"
-      ],
-      image: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600&auto=format&fit=crop&q=80",
-      isVeg: true,
-      isBestseller: true,
-      isAvailable: true,
-      prepTime: "10-12 mins",
-      rating: 4.9
-    },
-    {
-      id: "item_9",
-      name: "Grilled Herb Chicken Burger",
-      category: "Burgers & Sandwiches",
-      price: 360,
-      mrp: 420,
-      portion: "350g",
-      description: "Rosemary marinated grilled chicken breast, caramelized onions, smoked cheddar, and chipotle mayo.",
-      whyLoveIt: [
-        "Fresh tender grilled chicken breast (never frozen)",
-        "Soft artisanal brioche bun toasted in butter",
-        "Smoked cheddar and house-made chipotle mayo"
-      ],
-      image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80",
-      isVeg: false,
-      isBestseller: true,
-      isAvailable: true,
-      prepTime: "12-15 mins",
-      rating: 4.9
-    },
-    {
-      id: "item_10",
-      name: "Artisanal Margherita Pizza",
-      category: "Pizzas & Pastas",
-      price: 380,
-      mrp: 450,
-      portion: "10 inch",
-      description: "Neapolitan hand-stretched crust, San Marzano tomato sauce, fresh buffalo mozzarella, and fresh basil.",
-      whyLoveIt: [
-        "Fermented 48-hour authentic Neapolitan dough",
-        "San Marzano Italian DOP tomatoes",
-        "Fresh buffalo mozzarella & sweet Genovese basil"
-      ],
-      image: "https://images.unsplash.com/photo-1604382355076-af4b0eb60143?w=600&auto=format&fit=crop&q=80",
-      isVeg: true,
-      isBestseller: false,
-      isAvailable: true,
-      prepTime: "15 mins",
-      rating: 4.8
-    },
-    {
-      id: "item_11",
-      name: "Creamy Pesto Penne",
-      category: "Pizzas & Pastas",
-      price: 350,
-      mrp: 410,
-      portion: "320g",
-      description: "Penne tossed in Genovese basil pine-nut pesto, roasted cherry tomatoes, and aged parmesan.",
-      whyLoveIt: [
-        "Fresh house-pounded basil and toasted pine nut pesto",
-        "Burst cherry tomatoes for sweet acidity",
-        "Finished with 24-month aged Parmigiano-Reggiano"
-      ],
-      image: "https://images.unsplash.com/photo-1621996346565-e3d5d6281729?w=600&auto=format&fit=crop&q=80",
-      isVeg: true,
-      isBestseller: false,
-      isAvailable: true,
-      prepTime: "12 mins",
-      rating: 4.7
-    },
-    {
-      id: "item_12",
-      name: "Warm Chocolate Fudge Brownie",
-      category: "Bakery & Desserts",
-      price: 220,
-      mrp: 270,
-      portion: "200g",
-      description: "Warm gooey Belgian chocolate brownie served with vanilla bean gelato and dark chocolate ganache.",
-      whyLoveIt: [
-        "Crispy crackly top with molten gooey center",
-        "Made with pure 60% dark chocolate",
-        "Served warm with bourbon vanilla gelato"
-      ],
-      image: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600&auto=format&fit=crop&q=80",
-      isVeg: true,
-      isBestseller: true,
-      isAvailable: true,
-      prepTime: "5 mins",
-      rating: 5.0
-    },
-    {
-      id: "item_13",
-      name: "Classic French Butter Croissant",
-      category: "Bakery & Desserts",
-      price: 160,
-      mrp: 190,
-      portion: "120g",
-      description: "Golden flaky layered pastry made with 100% French cultured butter.",
-      whyLoveIt: [
-        "Hundreds of delicate flaky golden layers",
-        "100% Normandy cultured butter",
-        "Freshly baked every morning at 7 AM"
-      ],
-      image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600&auto=format&fit=crop&q=80",
-      isVeg: true,
-      isBestseller: false,
-      isAvailable: true,
-      prepTime: "3 mins",
-      rating: 4.8
-    },
-    {
-      id: "item_14",
-      name: "Peri-Peri Crispy Fries",
-      category: "Sides & Bites",
-      price: 180,
-      mrp: 220,
-      portion: "250g",
-      description: "Crispy skin-on french fries tossed in zesty African bird's eye chili seasoning with garlic dip.",
-      whyLoveIt: [
-        "Extra crunchy double-fried russet potatoes",
-        "Spicy tangy house peri-peri spice dust",
-        "Served with creamy roasted garlic mayo"
-      ],
-      image: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=600&auto=format&fit=crop&q=80",
-      isVeg: true,
-      isBestseller: true,
-      isAvailable: true,
-      prepTime: "8 mins",
-      rating: 4.9
-    }
-  ],
-  orders: []
-};
-
-// Helper to read and write database
-function loadData() {
-  try {
-    if (!fs.existsSync(DATA_FILE)) {
-      fs.writeFileSync(DATA_FILE, JSON.stringify(defaultData, null, 2), 'utf-8');
-      return defaultData;
-    }
-    const raw = fs.readFileSync(DATA_FILE, 'utf-8');
-    return JSON.parse(raw);
-  } catch (err) {
-    console.error('Error loading data, resetting to default:', err);
-    return defaultData;
-  }
-}
-
-function saveData(data) {
-  try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
-  } catch (err) {
-    console.error('Error saving data:', err);
-  }
-}
-
-// In-memory reference for fast access & offline resilience
-let db = loadData();
-
-// Check Supabase connection on startup
-let isSupabaseActive = false;
-async function checkAndSyncSupabase() {
-  const healthy = await checkSupabaseHealth();
-  if (healthy) {
-    isSupabaseActive = true;
-    console.log('🚀 Supabase Connected: Live Cloud Database connected!');
-  } else {
-    console.log('📁 Local File Storage Active: Run supabase/schema.sql in Supabase SQL Editor to link tables.');
-  }
-}
-checkAndSyncSupabase();
-
-// ---------------- REST API ROUTES ----------------
+// ---------------- REST API ROUTES (ALL BACKED BY SUPABASE) ----------------
 
 // Get Cafe Info & Settings
 app.get('/api/cafe', async (req, res) => {
-  if (isSupabaseActive) {
-    try {
-      const cafe = await dbGetCafe();
-      const categories = await dbGetCategories();
-      if (cafe) {
-        return res.json({
-          cafe,
-          categories: categories && categories.length > 0 ? categories : db.categories,
-        });
-      }
-    } catch (err) {
-      console.warn('Supabase getCafe fallback:', err.message);
-    }
+  try {
+    const cafe = await dbGetCafe();
+    const categories = await dbGetCategories();
+    res.json({
+      cafe: cafe || {
+        name: 'The Roasted Bean Cafe',
+        tagline: 'Artisanal Coffee & Fresh Gourmet Bites',
+        taxRate: 5,
+        currency: 'INR',
+        tablesCount: 12,
+        logo: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=200&auto=format&fit=crop&q=80',
+        coverImage: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=1200&auto=format&fit=crop&q=80',
+        razorpayKeyId: RAZORPAY_KEY_ID,
+      },
+      categories: categories || [],
+    });
+  } catch (err) {
+    console.error('Error fetching cafe from Supabase:', err);
+    res.status(500).json({ error: err.message });
   }
-  res.json({
-    cafe: db.cafe,
-    categories: db.categories,
-  });
 });
 
 // Update Cafe Info & Settings
 app.put('/api/cafe', async (req, res) => {
-  if (isSupabaseActive) {
-    try {
-      await dbUpdateCafe(req.body);
-    } catch (err) {
-      console.warn('Supabase updateCafe warning:', err.message);
-    }
+  try {
+    await dbUpdateCafe(req.body);
+    const cafe = await dbGetCafe();
+    io.emit('cafe:updated', cafe);
+    res.json({ success: true, cafe });
+  } catch (err) {
+    console.error('Error updating cafe in Supabase:', err);
+    res.status(500).json({ error: err.message });
   }
-  db.cafe = { ...db.cafe, ...req.body };
-  saveData(db);
-  io.emit('cafe:updated', db.cafe);
-  res.json({ success: true, cafe: db.cafe });
 });
 
 // Get Menu Items
 app.get('/api/menu', async (req, res) => {
-  if (isSupabaseActive) {
-    try {
-      const items = await dbGetMenuItems();
-      const categories = await dbGetCategories();
-      if (items && items.length > 0) {
-        return res.json({
-          categories: categories && categories.length > 0 ? categories : db.categories,
-          items,
-        });
-      }
-    } catch (err) {
-      console.warn('Supabase getMenu fallback:', err.message);
-    }
+  try {
+    const items = await dbGetMenuItems();
+    const categories = await dbGetCategories();
+    res.json({
+      categories: categories || [],
+      items: items || [],
+    });
+  } catch (err) {
+    console.error('Error fetching menu from Supabase:', err);
+    res.status(500).json({ error: err.message });
   }
-  res.json({
-    categories: db.categories,
-    items: db.menu,
-  });
 });
 
 // Add Menu Item
 app.post('/api/menu/items', async (req, res) => {
-  const { name, category, price, mrp, portion, description, whyLoveIt, image, isVeg, isBestseller, prepTime, rating } = req.body;
-  if (!name || !price) {
-    return res.status(400).json({ error: 'Name and price are required' });
-  }
-
-  const p = Number(price);
-  const newItem = {
-    id: `item_${Date.now()}`,
-    name,
-    category: category || 'Coffee & Espresso',
-    price: p,
-    mrp: mrp ? Number(mrp) : Math.round(p * 1.2),
-    portion: portion || 'Regular',
-    description: description || '',
-    whyLoveIt: Array.isArray(whyLoveIt) ? whyLoveIt : [
-      "Crafted with fresh premium ingredients",
-      "Prepared to order by our master kitchen",
-      "Authentic cafe recipe"
-    ],
-    image: image || 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600&auto=format&fit=crop&q=80',
-    isVeg: Boolean(isVeg),
-    isBestseller: Boolean(isBestseller),
-    isAvailable: true,
-    prepTime: prepTime || '10 mins',
-    rating: rating ? Number(rating) : 4.8,
-  };
-
-  if (isSupabaseActive) {
-    try {
-      await dbAddMenuItem(newItem);
-    } catch (err) {
-      console.warn('Supabase addMenuItem warning:', err.message);
+  try {
+    const { name, category, price, mrp, portion, description, whyLoveIt, image, isVeg, isBestseller, prepTime, rating } = req.body;
+    if (!name || !price) {
+      return res.status(400).json({ error: 'Name and price are required' });
     }
-  }
 
-  db.menu.unshift(newItem);
-  if (!db.categories.includes(newItem.category)) {
-    db.categories.push(newItem.category);
+    const p = Number(price);
+    const newItem = {
+      id: `item_${Date.now()}`,
+      name,
+      category: category || 'General',
+      price: p,
+      mrp: mrp ? Number(mrp) : Math.round(p * 1.25),
+      portion: portion || 'Regular',
+      description: description || '',
+      whyLoveIt: Array.isArray(whyLoveIt) ? whyLoveIt : [],
+      image: image || 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600&auto=format&fit=crop&q=80',
+      isVeg: Boolean(isVeg),
+      isBestseller: Boolean(isBestseller),
+      isAvailable: true,
+      prepTime: prepTime || '10 mins',
+      rating: rating ? Number(rating) : 4.8,
+    };
+
+    await dbAddMenuItem(newItem);
+
+    const items = await dbGetMenuItems();
+    const categories = await dbGetCategories();
+    io.emit('menu:updated', { categories, items });
+
+    res.status(201).json(newItem);
+  } catch (err) {
+    console.error('Error adding menu item to Supabase:', err);
+    res.status(500).json({ error: err.message });
   }
-  saveData(db);
-  io.emit('menu:updated', { categories: db.categories, items: db.menu });
-  res.status(201).json(newItem);
 });
 
 // Update Menu Item (e.g. stock toggle, price, details)
 app.put('/api/menu/items/:id', async (req, res) => {
-  const { id } = req.params;
-  const index = db.menu.findIndex(item => item.id === id);
-  if (index === -1) {
-    return res.status(400).json({ error: 'Item not found' });
+  try {
+    await dbUpdateMenuItem(req.params.id, req.body);
+    const items = await dbGetMenuItems();
+    const categories = await dbGetCategories();
+    io.emit('menu:updated', { categories, items });
+    res.json({ success: true, id: req.params.id });
+  } catch (err) {
+    console.error('Error updating menu item in Supabase:', err);
+    res.status(500).json({ error: err.message });
   }
-
-  if (isSupabaseActive) {
-    try {
-      await dbUpdateMenuItem(id, req.body);
-    } catch (err) {
-      console.warn('Supabase updateMenuItem warning:', err.message);
-    }
-  }
-
-  db.menu[index] = { ...db.menu[index], ...req.body };
-  saveData(db);
-  io.emit('menu:updated', { categories: db.categories, items: db.menu });
-  res.json(db.menu[index]);
 });
 
 // Delete Menu Item
 app.delete('/api/menu/items/:id', async (req, res) => {
-  const { id } = req.params;
-  if (isSupabaseActive) {
-    try {
-      await dbDeleteMenuItem(id);
-    } catch (err) {
-      console.warn('Supabase deleteMenuItem warning:', err.message);
-    }
+  try {
+    await dbDeleteMenuItem(req.params.id);
+    const items = await dbGetMenuItems();
+    const categories = await dbGetCategories();
+    io.emit('menu:updated', { categories, items });
+    res.json({ success: true, message: 'Item deleted' });
+  } catch (err) {
+    console.error('Error deleting menu item from Supabase:', err);
+    res.status(500).json({ error: err.message });
   }
-
-  db.menu = db.menu.filter(item => item.id !== id);
-  saveData(db);
-  io.emit('menu:updated', { categories: db.categories, items: db.menu });
-  res.json({ success: true, message: 'Item deleted' });
 });
 
 // Add Category
 app.post('/api/categories', async (req, res) => {
-  const { name } = req.body;
-  if (!name) return res.status(400).json({ error: 'Category name required' });
-  
-  if (isSupabaseActive) {
-    try {
-      await dbAddCategory(name);
-    } catch (err) {
-      console.warn('Supabase addCategory warning:', err.message);
-    }
+  try {
+    const { name } = req.body;
+    if (!name) return res.status(400).json({ error: 'Category name required' });
+    await dbAddCategory(name);
+    const categories = await dbGetCategories();
+    const items = await dbGetMenuItems();
+    io.emit('menu:updated', { categories, items });
+    res.json({ categories });
+  } catch (err) {
+    console.error('Error adding category to Supabase:', err);
+    res.status(500).json({ error: err.message });
   }
-
-  if (!db.categories.includes(name)) {
-    db.categories.push(name);
-    saveData(db);
-    io.emit('menu:updated', { categories: db.categories, items: db.menu });
-  }
-  res.json({ categories: db.categories });
 });
 
 // Get All Orders (Admin / Staff)
 app.get('/api/orders', async (req, res) => {
-  if (isSupabaseActive) {
-    try {
-      const orders = await dbGetOrders();
-      if (orders && orders.length > 0) {
-        return res.json(orders);
-      }
-    } catch (err) {
-      console.warn('Supabase getOrders fallback:', err.message);
-    }
+  try {
+    const orders = await dbGetOrders();
+    res.json(orders || []);
+  } catch (err) {
+    console.error('Error fetching orders from Supabase:', err);
+    res.status(500).json({ error: err.message });
   }
-  const sorted = [...db.orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  res.json(sorted);
 });
 
 // Get Single Order (For Customer Bill & Tracking)
 app.get('/api/orders/:id', async (req, res) => {
-  if (isSupabaseActive) {
-    try {
-      const order = await dbGetOrder(req.params.id);
-      if (order) return res.json(order);
-    } catch (err) {
-      console.warn('Supabase getOrder fallback:', err.message);
-    }
+  try {
+    const order = await dbGetOrder(req.params.id);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    res.json(order);
+  } catch (err) {
+    console.error('Error fetching order from Supabase:', err);
+    res.status(500).json({ error: err.message });
   }
-  const order = db.orders.find(o => o.id === req.params.id);
-  if (!order) return res.status(404).json({ error: 'Order not found' });
-  res.json(order);
 });
 
 // Create Order (After Razorpay Payment)
 app.post('/api/orders', async (req, res) => {
-  const {
-    tableNumber,
-    customerName,
-    customerPhone,
-    items,
-    notes,
-    paymentMethod = 'Razorpay',
-    paymentId,
-  } = req.body;
+  try {
+    const {
+      tableNumber,
+      customerName,
+      customerPhone,
+      items,
+      notes,
+      paymentMethod = 'Razorpay',
+      paymentId,
+    } = req.body;
 
-  if (!tableNumber || !customerName || !customerPhone || !items || items.length === 0) {
-    return res.status(400).json({ error: 'Missing required order details' });
-  }
-
-  const subtotal = items.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
-  const taxRate = db.cafe.taxRate || 5;
-  const tax = Math.round((subtotal * taxRate) / 100);
-  const total = subtotal + tax;
-
-  const uniqueSuffix = `${Date.now().toString().slice(-5)}-${Math.floor(100 + Math.random() * 900)}`;
-  const orderId = `ORD-${uniqueSuffix}`;
-
-  const newOrder = {
-    id: orderId,
-    tableNumber: String(tableNumber),
-    customerName,
-    customerPhone,
-    items,
-    subtotal,
-    taxRate,
-    tax,
-    total,
-    notes: notes || '',
-    paymentMethod,
-    paymentId: paymentId || `pay_${Math.random().toString(36).substring(2, 11)}`,
-    paymentStatus: 'PAID',
-    orderStatus: 'received', // 'received' | 'preparing' | 'ready' | 'completed' | 'cancelled'
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-
-  if (isSupabaseActive) {
-    try {
-      await dbCreateOrder(newOrder);
-      console.log('✅ Order synced to Supabase Cloud:', newOrder.id);
-    } catch (err) {
-      console.warn('Supabase createOrder warning:', err.message);
+    if (!tableNumber || !customerName || !customerPhone || !items || items.length === 0) {
+      return res.status(400).json({ error: 'Missing required order details' });
     }
+
+    const cafe = await dbGetCafe();
+    const subtotal = items.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
+    const taxRate = cafe?.taxRate || 5;
+    const tax = Math.round((subtotal * taxRate) / 100);
+    const total = subtotal + tax;
+
+    const uniqueSuffix = `${Date.now().toString().slice(-5)}-${Math.floor(100 + Math.random() * 900)}`;
+    const orderId = `ORD-${uniqueSuffix}`;
+
+    const newOrder = {
+      id: orderId,
+      tableNumber: String(tableNumber),
+      customerName,
+      customerPhone,
+      items,
+      subtotal,
+      taxRate,
+      tax,
+      total,
+      notes: notes || '',
+      paymentMethod,
+      paymentId: paymentId || `pay_${Math.random().toString(36).substring(2, 11)}`,
+      paymentStatus: 'PAID',
+      orderStatus: 'received',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    await dbCreateOrder(newOrder);
+    console.log('✅ New order saved to Supabase Cloud:', newOrder.id, 'Table:', tableNumber);
+
+    // Real-time broadcast to admin/kitchen
+    io.emit('order:new', newOrder);
+
+    res.status(201).json(newOrder);
+  } catch (err) {
+    console.error('Error creating order in Supabase:', err);
+    res.status(500).json({ error: err.message });
   }
-
-  db.orders.unshift(newOrder);
-  saveData(db);
-
-  // Real-time broadcast to admin/kitchen
-  io.emit('order:new', newOrder);
-
-  res.status(201).json(newOrder);
 });
 
 // Update Order Status (Admin / Kitchen Staff)
 app.patch('/api/orders/:id/status', async (req, res) => {
-  const { id } = req.params;
-  const { status } = req.body;
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
 
-  const validStatuses = ['received', 'preparing', 'ready', 'completed', 'cancelled'];
-  if (!validStatuses.includes(status)) {
-    return res.status(400).json({ error: 'Invalid status' });
-  }
-
-  if (isSupabaseActive) {
-    try {
-      await dbUpdateOrderStatus(id, status);
-    } catch (err) {
-      console.warn('Supabase updateOrderStatus warning:', err.message);
+    const validStatuses = ['received', 'preparing', 'ready', 'completed', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
     }
+
+    await dbUpdateOrderStatus(id, status);
+    const updatedOrder = await dbGetOrder(id);
+
+    // Broadcast to all staff and customer listening to this order
+    io.emit('order:updated', updatedOrder);
+    io.to(`order_${id}`).emit('order:status', updatedOrder);
+
+    res.json(updatedOrder);
+  } catch (err) {
+    console.error('Error updating order status in Supabase:', err);
+    res.status(500).json({ error: err.message });
   }
-
-  const orderIndex = db.orders.findIndex(o => o.id === id);
-  if (orderIndex === -1) {
-    return res.status(404).json({ error: 'Order not found' });
-  }
-
-  db.orders[orderIndex].orderStatus = status;
-  db.orders[orderIndex].updatedAt = new Date().toISOString();
-  saveData(db);
-
-  const updatedOrder = db.orders[orderIndex];
-
-  // Broadcast to all staff and customer listening to this order
-  io.emit('order:updated', updatedOrder);
-  io.to(`order_${id}`).emit('order:status', updatedOrder);
-
-  res.json(updatedOrder);
 });
 
 // Call Waiter / Assistance ping
 app.post('/api/assistance', async (req, res) => {
-  const { tableNumber, type = 'Assistance / Water' } = req.body;
-  const alert = {
-    id: `alert_${Date.now()}`,
-    tableNumber: String(tableNumber),
-    type,
-    time: new Date().toISOString(),
-  };
+  try {
+    const { tableNumber, type = 'Assistance / Water' } = req.body;
+    const alert = {
+      id: `alert_${Date.now()}`,
+      tableNumber: String(tableNumber),
+      type,
+      time: new Date().toISOString(),
+    };
 
-  if (isSupabaseActive) {
-    try {
-      await dbCreateAlert(alert);
-    } catch (err) {}
+    await dbCreateAlert(alert);
+    io.emit('staff:alert', alert);
+    res.json({ success: true, message: 'Staff notified' });
+  } catch (err) {
+    console.error('Error creating staff alert in Supabase:', err);
+    res.status(500).json({ error: err.message });
   }
-
-  io.emit('staff:alert', alert);
-  res.json({ success: true, message: 'Staff notified' });
 });
 
 // Razorpay Order Creation via official SDK (supports both /api/payment/order and /api/razorpay/order)
@@ -746,7 +329,7 @@ const handleCreatePaymentOrder = async (req, res) => {
       isReal: true,
     });
   } catch (err) {
-    console.error('⚠️ Razorpay API order creation warning, using fallback:', err?.error?.description || err.message);
+    console.error('Razorpay API order creation warning, using fallback:', err?.error?.description || err.message);
     const mockId = `order_rzp_${Date.now()}`;
     res.json({
       id: mockId,
@@ -776,7 +359,6 @@ const handleVerifyPayment = (req, res) => {
       }
     }
 
-    // Default approval for test mode
     res.json({ success: true, verified: true, paymentId: razorpay_payment_id || `pay_${Date.now()}` });
   } catch (err) {
     console.error('Verification error:', err);
@@ -789,24 +371,25 @@ app.post('/api/razorpay/verify', handleVerifyPayment);
 
 // ---------------- WEBSOCKETS ----------------
 io.on('connection', (socket) => {
-  // Join a specific order tracking room
   socket.on('track_order', (orderId) => {
     socket.join(`order_${orderId}`);
   });
 
-  // Call waiter directly via socket
-  socket.on('call_waiter', (payload) => {
-    io.emit('staff:alert', {
+  socket.on('call_waiter', async (payload) => {
+    const alert = {
       id: `alert_${Date.now()}`,
       tableNumber: payload.tableNumber,
       type: payload.type || 'Waiter Called',
       time: new Date().toISOString(),
-    });
+    };
+    try {
+      await dbCreateAlert(alert);
+    } catch {}
+    io.emit('staff:alert', alert);
   });
 });
 
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, '0.0.0.0', () => {
-  console.log(`☕ CafeQR Backend running on port ${PORT} (0.0.0.0)`);
+  console.log(`☕ CafeQR Backend running on port ${PORT} (0.0.0.0) connected to Supabase Cloud DB`);
 });
-

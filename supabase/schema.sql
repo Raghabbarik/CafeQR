@@ -326,3 +326,4 @@ INSERT INTO public.menu_items (id, name, category, price, mrp, portion, descript
     4.7
 )
 ON CONFLICT (id) DO NOTHING;
+
