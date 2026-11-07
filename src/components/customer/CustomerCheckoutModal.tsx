@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Phone, X, ShieldCheck, ArrowRight } from 'lucide-react';
+import { User, Phone, X, ShieldCheck, ArrowRight, Loader2 } from 'lucide-react';
 
 interface CustomerCheckoutModalProps {
   isOpen: boolean;
@@ -11,6 +11,7 @@ interface CustomerCheckoutModalProps {
   onNameChange: (name: string) => void;
   onPhoneChange: (phone: string) => void;
   onProceedToRazorpay: () => void;
+  isLoading?: boolean;
 }
 
 export const CustomerCheckoutModal: React.FC<CustomerCheckoutModalProps> = ({
@@ -23,6 +24,7 @@ export const CustomerCheckoutModal: React.FC<CustomerCheckoutModalProps> = ({
   onNameChange,
   onPhoneChange,
   onProceedToRazorpay,
+  isLoading = false,
 }) => {
   const [error, setError] = useState<string>('');
 
@@ -120,10 +122,20 @@ export const CustomerCheckoutModal: React.FC<CustomerCheckoutModalProps> = ({
           <div className="pt-2">
             <button
               type="submit"
-              className="w-full py-3.5 px-4 rounded-xl bg-amber-800 hover:bg-amber-900 text-white font-bold text-sm shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+              disabled={isLoading}
+              className="w-full py-3.5 px-4 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-sm shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
             >
-              <span>Pay ₹{totalAmount} via Razorpay</span>
-              <ArrowRight className="w-4 h-4" />
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  <span>Connecting to Razorpay...</span>
+                </>
+              ) : (
+                <>
+                  <span>Pay ₹{totalAmount} via Razorpay</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           </div>
 

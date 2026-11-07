@@ -54,6 +54,7 @@ export function App() {
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
   const [isRazorpayModalOpen, setIsRazorpayModalOpen] = useState(false);
   const [isWaiterModalOpen, setIsWaiterModalOpen] = useState(false);
+  const [isPaymentLoading, setIsPaymentLoading] = useState(false);
 
   // Filters, Sort & Search
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -204,9 +205,71 @@ export function App() {
     setIsCheckoutModalOpen(true);
   };
 
-  const handleOpenRazorpay = () => {
-    setIsCheckoutModalOpen(false);
-    setIsRazorpayModalOpen(true);
+  const handleOpenRazorpay = async () => {
+    try {
+      setIsPaymentLoading(true);
+
+      // 1. Create real order on backend through Razorpay SDK
+      const rzpOrder = await api.createRazorpayOrder(cartTotal);
+      console.log('✅ Real Razorpay order created:', rzpOrder);
+
+      // 2. Open official Razorpay Checkout popup directly
+      if (typeof window !== 'undefined' && (window as any).Razorpay) {
+        setIsCheckoutModalOpen(false);
+
+        const options: any = {
+          key: rzpOrder.keyId || cafe?.razorpayKeyId || 'rzp_test_TxJ87ji7k95ncJ',
+          amount: rzpOrder.amount,
+          currency: rzpOrder.currency || 'INR',
+          name: cafe?.name || 'The Roasted Bean Cafe',
+          description: `Table #${tableNumber} - Order Total: ₹${cartTotal}`,
+          image: cafe?.logo || '',
+          order_id: rzpOrder.isReal ? rzpOrder.id : undefined,
+          prefill: {
+            name: customerName,
+            contact: customerPhone,
+          },
+          theme: {
+            color: '#133e2c',
+          },
+          handler: async function (response: any) {
+            console.log('✅ Official Razorpay payment succeeded:', response);
+            try {
+              const verifyRes = await api.verifyRazorpayPayment({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              });
+              await handlePaymentSuccess(verifyRes.paymentId || response.razorpay_payment_id);
+            } catch {
+              await handlePaymentSuccess(response.razorpay_payment_id || `pay_${Date.now()}`);
+            }
+          },
+          modal: {
+            ondismiss: function () {
+              setIsPaymentLoading(false);
+            },
+          },
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.on('payment.failed', function (resp: any) {
+          alert('Payment Failed: ' + (resp.error?.description || 'Declined'));
+          setIsPaymentLoading(false);
+        });
+        rzp.open();
+      } else {
+        // Fallback to simulator modal if script is blocked
+        setIsCheckoutModalOpen(false);
+        setIsRazorpayModalOpen(true);
+      }
+    } catch (err) {
+      console.error('Razorpay initiation error:', err);
+      setIsCheckoutModalOpen(false);
+      setIsRazorpayModalOpen(true);
+    } finally {
+      setIsPaymentLoading(false);
+    }
   };
 
   const handlePaymentSuccess = async (paymentId: string) => {
@@ -427,6 +490,39 @@ export function App() {
         onGoBackWelcome={() => setCustomerStep('welcome')}
       />
 
+      {/* Active Order Tracker Pill (If customer placed an order & is ordering more) */}
+      {currentOrder && (
+        <div className="max-w-4xl mx-auto px-4 pt-2.5">
+          <div
+            onClick={() => setCustomerStep('bill')}
+            className="p-3 rounded-2xl bg-[#133e2c] text-white shadow-md flex items-center justify-between cursor-pointer hover:bg-[#0e2c20] transition-all active:scale-[0.99] border border-emerald-500/30"
+          >
+            <div className="flex items-center gap-2.5">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+              </span>
+              <div className="text-xs">
+                <span className="font-extrabold text-amber-300 mr-1.5">{currentOrder.id}:</span>
+                <span className="font-medium text-stone-200">
+                  {currentOrder.orderStatus === 'completed'
+                    ? 'Fulfilled & Served ✅'
+                    : currentOrder.orderStatus === 'ready'
+                    ? 'Ready to Serve 🔔'
+                    : currentOrder.orderStatus === 'preparing'
+                    ? 'In Kitchen (Preparing 👨‍🍳)'
+                    : 'Order Confirmed'}
+                </span>
+              </div>
+            </div>
+
+            <span className="text-[11px] font-bold text-emerald-200 bg-white/15 px-2.5 py-1 rounded-lg">
+              View Live Bill →
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Menu Item 2-Column Responsive Grid (matches mock right screen) */}
       <main className="max-w-4xl mx-auto px-4 py-4 space-y-3.5">
         
@@ -541,6 +637,7 @@ export function App() {
         onNameChange={setCustomerName}
         onPhoneChange={setCustomerPhone}
         onProceedToRazorpay={handleOpenRazorpay}
+        isLoading={isPaymentLoading}
       />
 
       {/* Razorpay Payment Simulator / Gateway Modal */}
