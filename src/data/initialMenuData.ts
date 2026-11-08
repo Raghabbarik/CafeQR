@@ -4,7 +4,7 @@ import { DEFAULT_CAFE_LOGO } from './defaultCafeLogo';
 export const DEFAULT_CAFE: CafeInfo = {
   name: 'The Roasted Bean Cafe',
   tagline: 'Artisanal Coffee & Fresh Gourmet Bites',
-  address: '128 Brewmaster Ave, Ground Floor, Indiranagar',
+  address: '128 Brewmaster Ave, Ground Floor, Indiranagar, Bengaluru 560038',
   phone: '+91 98765 43210',
   email: 'hello@roastedbean.cafe',
   gstNumber: '29ABCDE1234F1Z5',
@@ -18,6 +18,23 @@ export const DEFAULT_CAFE: CafeInfo = {
   coverImage: 'https://i.pinimg.com/736x/3c/05/c5/3c05c5bb573c8774bac97aab37b2fcbd.jpg',
   wifiSsid: 'RoastedBean-Guest',
   wifiPassword: 'freshcoffee',
+  isOpen: true,
+  closedMessage: 'We are currently closed for new orders. Please check our opening hours or visit us tomorrow!',
+  openingHours: 'Mon - Sun: 8:00 AM - 11:00 PM',
+  openTime: '08:00 AM',
+  closeTime: '11:00 PM',
+  googleMapsUrl: 'https://maps.google.com/?q=Indiranagar+Bengaluru',
+  mapEmbedUrl: 'https://maps.google.com/maps?q=Indiranagar%20Bengaluru&t=&z=14&ie=UTF8&iwloc=&output=embed',
+  about: 'Welcome to The Roasted Bean Cafe. We handcraft artisanal coffee using shade-grown 100% Arabica beans from Chikmagalur estates, paired with freshly baked European croissants and gourmet sourdough bites in an ambient botanical setting.',
+  features: [
+    'Free High-Speed Wi-Fi',
+    'Specialty Pour-Over & Espresso Bar',
+    'Air Conditioned Co-Working Spaces',
+    'Pet-Friendly Outdoor Patio',
+    'Fresh In-House Artisan Bakery',
+    'Vegan & Plant-Based Options',
+    'UPI, Card & Cash Payments Accepted'
+  ],
   hero: {
     badge: 'for you.',
     title: 'ICED\nMATCHA\nLATTE',

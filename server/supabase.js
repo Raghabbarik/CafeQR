@@ -30,6 +30,31 @@ export async function dbGetCafe() {
   };
   let staffList = [];
   let orderDisplayCode = '8899';
+  let isOpen = true;
+  let closedMessage = 'We are currently closed for new orders. Please check our opening hours or visit us tomorrow!';
+  let address = '128 Brewmaster Ave, Ground Floor, Indiranagar, Bengaluru 560038';
+  let phone = '+91 98765 43210';
+  let email = 'hello@roastedbean.cafe';
+  let openingHours = 'Mon - Sun: 8:00 AM - 11:00 PM';
+  let openTime = '08:00 AM';
+  let closeTime = '11:00 PM';
+  let googleMapsUrl = 'https://maps.google.com/?q=Indiranagar+Bengaluru';
+  let mapEmbedUrl = 'https://maps.google.com/maps?q=Indiranagar%20Bengaluru&t=&z=14&ie=UTF8&iwloc=&output=embed';
+  let wifiSsid = 'RoastedBean-Guest';
+  let wifiPassword = 'freshcoffee';
+  let about = 'Welcome to The Roasted Bean Cafe. We handcraft artisanal coffee using shade-grown 100% Arabica beans from Chikmagalur estates, paired with freshly baked European croissants and gourmet sourdough bites in an ambient botanical setting.';
+  let features = [
+    'Free High-Speed Wi-Fi',
+    'Specialty Pour-Over & Espresso Bar',
+    'Air Conditioned Co-Working Spaces',
+    'Pet-Friendly Outdoor Patio',
+    'Fresh In-House Artisan Bakery',
+    'Vegan & Plant-Based Options',
+    'UPI, Card & Cash Payments Accepted'
+  ];
+  let gstNumber = '29ABCDE1234F1Z5';
+  let fssaiNumber = '11223344556677';
+  let instagramUrl = '';
 
   try {
     if (data.tagline && data.tagline.trim().startsWith('{')) {
@@ -45,12 +70,25 @@ export async function dbGetCafe() {
           if (parsed.heroCardSubtitle) heroConfig.cardSubtitle = parsed.heroCardSubtitle;
           if (parsed.heroButtonText) heroConfig.buttonText = parsed.heroButtonText;
         }
-        if (Array.isArray(parsed.staff)) {
-          staffList = parsed.staff;
-        }
-        if (parsed.orderDisplayCode) {
-          orderDisplayCode = String(parsed.orderDisplayCode);
-        }
+        if (Array.isArray(parsed.staff)) staffList = parsed.staff;
+        if (parsed.orderDisplayCode) orderDisplayCode = String(parsed.orderDisplayCode);
+        if (parsed.isOpen !== undefined) isOpen = Boolean(parsed.isOpen);
+        if (parsed.closedMessage !== undefined) closedMessage = parsed.closedMessage;
+        if (parsed.address) address = parsed.address;
+        if (parsed.phone) phone = parsed.phone;
+        if (parsed.email) email = parsed.email;
+        if (parsed.openingHours) openingHours = parsed.openingHours;
+        if (parsed.openTime) openTime = parsed.openTime;
+        if (parsed.closeTime) closeTime = parsed.closeTime;
+        if (parsed.googleMapsUrl) googleMapsUrl = parsed.googleMapsUrl;
+        if (parsed.mapEmbedUrl) mapEmbedUrl = parsed.mapEmbedUrl;
+        if (parsed.wifiSsid) wifiSsid = parsed.wifiSsid;
+        if (parsed.wifiPassword) wifiPassword = parsed.wifiPassword;
+        if (parsed.about) about = parsed.about;
+        if (Array.isArray(parsed.features)) features = parsed.features;
+        if (parsed.gstNumber) gstNumber = parsed.gstNumber;
+        if (parsed.fssaiNumber) fssaiNumber = parsed.fssaiNumber;
+        if (parsed.instagramUrl) instagramUrl = parsed.instagramUrl;
       }
     }
   } catch (e) {
@@ -72,6 +110,23 @@ export async function dbGetCafe() {
     hero: heroConfig,
     staff: staffList,
     orderDisplayCode: orderDisplayCode,
+    isOpen,
+    closedMessage,
+    address,
+    phone,
+    email,
+    openingHours,
+    openTime,
+    closeTime,
+    googleMapsUrl,
+    mapEmbedUrl,
+    wifiSsid,
+    wifiPassword,
+    about,
+    features,
+    gstNumber,
+    fssaiNumber,
+    instagramUrl,
   };
 }
 
@@ -90,6 +145,33 @@ export async function dbUpdateCafe(updates) {
   let currentStaff = [];
   let currentOrderDisplayCode = '8899';
   let currentReviews = [];
+  let currentDetails = {
+    isOpen: true,
+    closedMessage: 'We are currently closed for new orders. Please check our opening hours or visit us tomorrow!',
+    address: '128 Brewmaster Ave, Ground Floor, Indiranagar, Bengaluru 560038',
+    phone: '+91 98765 43210',
+    email: 'hello@roastedbean.cafe',
+    openingHours: 'Mon - Sun: 8:00 AM - 11:00 PM',
+    openTime: '08:00 AM',
+    closeTime: '11:00 PM',
+    googleMapsUrl: 'https://maps.google.com/?q=Indiranagar+Bengaluru',
+    mapEmbedUrl: 'https://maps.google.com/maps?q=Indiranagar%20Bengaluru&t=&z=14&ie=UTF8&iwloc=&output=embed',
+    wifiSsid: 'RoastedBean-Guest',
+    wifiPassword: 'freshcoffee',
+    about: 'Welcome to The Roasted Bean Cafe. We handcraft artisanal coffee using shade-grown 100% Arabica beans from Chikmagalur estates, paired with freshly baked European croissants and gourmet sourdough bites in an ambient botanical setting.',
+    features: [
+      'Free High-Speed Wi-Fi',
+      'Specialty Pour-Over & Espresso Bar',
+      'Air Conditioned Co-Working Spaces',
+      'Pet-Friendly Outdoor Patio',
+      'Fresh In-House Artisan Bakery',
+      'Vegan & Plant-Based Options',
+      'UPI, Card & Cash Payments Accepted'
+    ],
+    gstNumber: '29ABCDE1234F1Z5',
+    fssaiNumber: '11223344556677',
+    instagramUrl: '',
+  };
   
   if (existing?.tagline && existing.tagline.trim().startsWith('{')) {
     try {
@@ -99,6 +181,23 @@ export async function dbUpdateCafe(updates) {
       if (Array.isArray(parsed.staff)) currentStaff = parsed.staff;
       if (parsed.orderDisplayCode) currentOrderDisplayCode = String(parsed.orderDisplayCode);
       if (Array.isArray(parsed.reviews)) currentReviews = parsed.reviews;
+      if (parsed.isOpen !== undefined) currentDetails.isOpen = Boolean(parsed.isOpen);
+      if (parsed.closedMessage !== undefined) currentDetails.closedMessage = parsed.closedMessage;
+      if (parsed.address) currentDetails.address = parsed.address;
+      if (parsed.phone) currentDetails.phone = parsed.phone;
+      if (parsed.email) currentDetails.email = parsed.email;
+      if (parsed.openingHours) currentDetails.openingHours = parsed.openingHours;
+      if (parsed.openTime) currentDetails.openTime = parsed.openTime;
+      if (parsed.closeTime) currentDetails.closeTime = parsed.closeTime;
+      if (parsed.googleMapsUrl) currentDetails.googleMapsUrl = parsed.googleMapsUrl;
+      if (parsed.mapEmbedUrl) currentDetails.mapEmbedUrl = parsed.mapEmbedUrl;
+      if (parsed.wifiSsid) currentDetails.wifiSsid = parsed.wifiSsid;
+      if (parsed.wifiPassword) currentDetails.wifiPassword = parsed.wifiPassword;
+      if (parsed.about) currentDetails.about = parsed.about;
+      if (Array.isArray(parsed.features)) currentDetails.features = parsed.features;
+      if (parsed.gstNumber) currentDetails.gstNumber = parsed.gstNumber;
+      if (parsed.fssaiNumber) currentDetails.fssaiNumber = parsed.fssaiNumber;
+      if (parsed.instagramUrl) currentDetails.instagramUrl = parsed.instagramUrl;
     } catch (e) {}
   }
 
@@ -121,28 +220,42 @@ export async function dbUpdateCafe(updates) {
   if (updates.tablesCount !== undefined) payload.tables_count = updates.tablesCount;
   if (updates.razorpayKeyId !== undefined) payload.razorpay_key_id = updates.razorpayKeyId;
 
-  // If hero, tagline, staff, orderDisplayCode, or reviews is provided, encode into tagline JSON
-  if (
-    updates.hero !== undefined ||
-    updates.tagline !== undefined ||
-    updates.staff !== undefined ||
-    updates.orderDisplayCode !== undefined ||
-    updates.reviews !== undefined
-  ) {
-    const newTagline = updates.tagline !== undefined ? updates.tagline : currentPlainTagline;
-    const newHero = updates.hero !== undefined ? { ...currentHero, ...updates.hero } : currentHero;
-    const newStaff = updates.staff !== undefined ? updates.staff : currentStaff;
-    const newCode = updates.orderDisplayCode !== undefined ? updates.orderDisplayCode : currentOrderDisplayCode;
-    const newReviews = updates.reviews !== undefined ? updates.reviews : currentReviews;
-    
-    payload.tagline = JSON.stringify({
-      tagline: newTagline,
-      hero: newHero,
-      staff: newStaff,
-      orderDisplayCode: newCode,
-      reviews: newReviews,
-    });
-  }
+  // Merge extra fields
+  const newTagline = updates.tagline !== undefined ? updates.tagline : currentPlainTagline;
+  const newHero = updates.hero !== undefined ? { ...currentHero, ...updates.hero } : currentHero;
+  const newStaff = updates.staff !== undefined ? updates.staff : currentStaff;
+  const newCode = updates.orderDisplayCode !== undefined ? updates.orderDisplayCode : currentOrderDisplayCode;
+  const newReviews = updates.reviews !== undefined ? updates.reviews : currentReviews;
+  
+  const mergedDetails = {
+    ...currentDetails,
+    ...(updates.isOpen !== undefined && { isOpen: Boolean(updates.isOpen) }),
+    ...(updates.closedMessage !== undefined && { closedMessage: updates.closedMessage }),
+    ...(updates.address !== undefined && { address: updates.address }),
+    ...(updates.phone !== undefined && { phone: updates.phone }),
+    ...(updates.email !== undefined && { email: updates.email }),
+    ...(updates.openingHours !== undefined && { openingHours: updates.openingHours }),
+    ...(updates.openTime !== undefined && { openTime: updates.openTime }),
+    ...(updates.closeTime !== undefined && { closeTime: updates.closeTime }),
+    ...(updates.googleMapsUrl !== undefined && { googleMapsUrl: updates.googleMapsUrl }),
+    ...(updates.mapEmbedUrl !== undefined && { mapEmbedUrl: updates.mapEmbedUrl }),
+    ...(updates.wifiSsid !== undefined && { wifiSsid: updates.wifiSsid }),
+    ...(updates.wifiPassword !== undefined && { wifiPassword: updates.wifiPassword }),
+    ...(updates.about !== undefined && { about: updates.about }),
+    ...(updates.features !== undefined && { features: updates.features }),
+    ...(updates.gstNumber !== undefined && { gstNumber: updates.gstNumber }),
+    ...(updates.fssaiNumber !== undefined && { fssaiNumber: updates.fssaiNumber }),
+    ...(updates.instagramUrl !== undefined && { instagramUrl: updates.instagramUrl }),
+  };
+
+  payload.tagline = JSON.stringify({
+    tagline: newTagline,
+    hero: newHero,
+    staff: newStaff,
+    orderDisplayCode: newCode,
+    reviews: newReviews,
+    ...mergedDetails,
+  });
 
   const { data, error } = await supabase
     .from('cafe')

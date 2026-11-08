@@ -14,6 +14,7 @@ import { CartDrawer } from './components/customer/CartDrawer';
 import { CustomerCheckoutModal } from './components/customer/CustomerCheckoutModal';
 import { BillReceiptView } from './components/customer/BillReceiptView';
 import { BillLookupModal } from './components/customer/BillLookupModal';
+import { CafeDetailsSection } from './components/customer/CafeDetailsSection';
 
 // Admin Components
 import { AdminDashboard } from './components/admin/AdminDashboard';
@@ -791,10 +792,10 @@ export function App() {
     setIsBillLookupOpen(false);
   };
 
-  // ---------------- CUSTOMER VIEW: STEP 1 (WELCOME) ----------------
+  // ---------------- CUSTOMER VIEW: STEP 1 (WELCOME + CAFE DETAILS) ----------------
   if (customerStep === 'welcome') {
     return (
-      <>
+      <div className="min-h-screen bg-stone-900 overflow-y-auto scroll-smooth">
         {!isOnline && (
           <div className="bg-amber-600 text-white text-xs font-bold text-center py-2 px-4 sticky top-0 z-50 flex items-center justify-center gap-2 shadow-md">
             <WifiOff className="w-3.5 h-3.5 animate-pulse" />
@@ -806,6 +807,10 @@ export function App() {
           onGetStarted={() => setCustomerStep('menu')}
           onCheckBill={() => setIsBillLookupOpen(true)}
         />
+        <CafeDetailsSection
+          cafe={cafe}
+          onOrderNow={() => setCustomerStep('menu')}
+        />
         <BillLookupModal
           isOpen={isBillLookupOpen}
           onClose={() => setIsBillLookupOpen(false)}
@@ -814,7 +819,7 @@ export function App() {
           initialPhone={customerPhone}
           initialName={customerName}
         />
-      </>
+      </div>
     );
   }
 
@@ -898,6 +903,18 @@ export function App() {
         onToggleSearch={() => setIsSearchOpen(!isSearchOpen)}
         isSearchOpen={isSearchOpen}
       />
+
+      {/* Store Closed Banner if Admin paused ordering */}
+      {cafe.isOpen === false && (
+        <div className="bg-rose-50 border-b border-rose-200 px-4 py-2.5 text-xs text-rose-800 sticky top-14 z-20 shadow-xs flex items-center justify-between">
+          <div className="flex items-center gap-2 max-w-2xl mx-auto w-full">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse shrink-0" />
+            <span className="font-bold">
+              {cafe.closedMessage || 'The cafe is currently closed for orders. You can browse our menu items below.'}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Top Search & Filter Bar (with mobile slide-out drawer) */}
       <FilterSidebar
@@ -1012,6 +1029,7 @@ export function App() {
                   onAddToCart={handleAddToCart}
                   onRemoveFromCart={handleRemoveFromCart}
                   onOpenDetails={(item) => setSelectedProduct(item)}
+                  isStoreClosed={cafe.isOpen === false}
                 />
               ))}
             </div>
@@ -1027,6 +1045,7 @@ export function App() {
         onClose={() => setSelectedProduct(null)}
         currentCartQty={selectedProduct ? getItemQuantity(selectedProduct.id) : 0}
         onAddToCart={handleAddToCartWithQty}
+        isStoreClosed={cafe.isOpen === false}
         onOpenSearch={() => {
           setSelectedProduct(null);
           setIsSearchOpen(true);

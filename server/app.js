@@ -521,6 +521,13 @@ app.post('/api/orders', async (req, res) => {
       paymentId,
     } = req.body;
 
+    const cafe = await dbGetCafe();
+    if (cafe && cafe.isOpen === false) {
+      return res.status(403).json({
+        error: cafe.closedMessage || 'The cafe is currently closed for orders. Please check back later!'
+      });
+    }
+
     if (!customerName || !customerPhone || !items || items.length === 0) {
       return res.status(400).json({ error: 'Missing required customer order details' });
     }
@@ -529,7 +536,6 @@ app.post('/api/orders', async (req, res) => {
     const assignedDiningOption = isParcel ? 'parcel' : 'dine_in';
     const assignedTable = isParcel ? 'Parcel' : 'Eat Now';
 
-    const cafe = await dbGetCafe();
     const subtotal = items.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
     const taxRate = cafe?.taxRate || 5;
     const tax = Math.round((subtotal * taxRate) / 100);

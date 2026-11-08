@@ -179,13 +179,30 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               </div>
 
               {/* Checkout Button */}
-              <button
-                onClick={onProceedToCheckout}
-                className="w-full py-3.5 px-4 rounded-xl bg-amber-800 hover:bg-amber-900 text-white font-bold text-sm shadow-md active:scale-[0.99] transition-all flex items-center justify-between cursor-pointer"
-              >
-                <span>Proceed to Pay (₹{total})</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+              {cafe.isOpen !== false ? (
+                <button
+                  onClick={onProceedToCheckout}
+                  className="w-full py-3.5 px-4 rounded-xl bg-amber-800 hover:bg-amber-900 text-white font-bold text-sm shadow-md active:scale-[0.99] transition-all flex items-center justify-between cursor-pointer"
+                >
+                  <span>Proceed to Pay (₹{total})</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              ) : (
+                <div className="space-y-1.5">
+                  <button
+                    disabled
+                    className="w-full py-3.5 px-4 rounded-xl bg-stone-300 text-stone-500 font-bold text-sm shadow-none flex items-center justify-between cursor-not-allowed"
+                  >
+                    <span>Cafe is Closed for Orders</span>
+                    <span className="text-[10px] uppercase font-black tracking-wider bg-stone-400 text-white px-2 py-0.5 rounded">
+                      Paused
+                    </span>
+                  </button>
+                  <p className="text-[11px] text-center text-rose-700 font-medium">
+                    {cafe.closedMessage || 'Online ordering is currently paused by the cafe.'}
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>

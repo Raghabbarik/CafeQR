@@ -173,6 +173,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           {/* Quick Actions Right */}
           <div className="flex items-center gap-2">
+            {/* Quick Store Open/Close Status Toggle */}
+            <button
+              onClick={() => onUpdateCafeSettings({ isOpen: cafe.isOpen === false ? true : false })}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-black transition-all shadow-xs cursor-pointer ${
+                cafe.isOpen !== false
+                  ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-800'
+                  : 'bg-rose-50 hover:bg-rose-100 border-rose-300 text-rose-800'
+              }`}
+              title={cafe.isOpen !== false ? 'Store is OPEN for orders (Click to Close)' : 'Store is CLOSED (Click to Open)'}
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  cafe.isOpen !== false ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'
+                }`}
+              />
+              <span className="hidden sm:inline">
+                {cafe.isOpen !== false ? 'Store: OPEN' : 'Store: CLOSED'}
+              </span>
+              <span className="sm:hidden">
+                {cafe.isOpen !== false ? 'Open' : 'Closed'}
+              </span>
+            </button>
+
             {/* Quick Kitchen Sound bell */}
             <button
               onClick={() => sound.playOrderBell()}

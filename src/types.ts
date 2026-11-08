@@ -37,6 +37,16 @@ export interface CafeInfo {
   hero?: HeroConfig;
   staff?: StaffMember[];
   orderDisplayCode?: string;
+  isOpen?: boolean;
+  closedMessage?: string;
+  openingHours?: string;
+  openTime?: string;
+  closeTime?: string;
+  googleMapsUrl?: string;
+  mapEmbedUrl?: string;
+  about?: string;
+  features?: string[];
+  instagramUrl?: string;
 }
 
 export interface MenuItem {

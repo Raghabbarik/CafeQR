@@ -9,6 +9,7 @@ interface MenuItemCardProps {
   onAddToCart: (item: MenuItem) => void;
   onRemoveFromCart: (item: MenuItem) => void;
   onOpenDetails: (item: MenuItem) => void;
+  isStoreClosed?: boolean;
 }
 
 export const MenuItemCard: React.FC<MenuItemCardProps> = ({
@@ -17,6 +18,7 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
   onAddToCart,
   onRemoveFromCart,
   onOpenDetails,
+  isStoreClosed = false,
 }) => {
   const [isLiked, setIsLiked] = useState(false);
   const mrp = item.mrp || Math.round(item.price * 1.25);
@@ -119,7 +121,11 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
 
           {/* Add button / Stepper */}
           <div className="action-btn">
-            {!item.isAvailable ? (
+            {isStoreClosed ? (
+              <span className="text-[9px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                Closed
+              </span>
+            ) : !item.isAvailable ? (
               <span className="text-[9px] font-bold text-stone-400 bg-stone-100 px-1.5 py-0.5 rounded">
                 Sold Out
               </span>

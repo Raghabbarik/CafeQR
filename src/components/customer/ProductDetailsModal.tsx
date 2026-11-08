@@ -27,6 +27,7 @@ interface ProductDetailsModalProps {
   currentCartQty: number;
   onAddToCart: (item: MenuItem, qty: number) => void;
   onOpenSearch?: () => void;
+  isStoreClosed?: boolean;
 }
 
 export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
@@ -36,6 +37,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
   currentCartQty,
   onAddToCart,
   onOpenSearch,
+  isStoreClosed = false,
 }) => {
   const [qty, setQty] = useState<number>(currentCartQty > 0 ? currentCartQty : 1);
   const [isLiked, setIsLiked] = useState<boolean>(false);
@@ -358,26 +360,35 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
           </div>
 
           {/* Add to cart Button */}
-          <button
-            onClick={handleAdd}
-            className={`flex-1 py-3.5 px-5 rounded-2xl font-black text-sm text-white shadow-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer ${
-              addedToast
-                ? 'bg-emerald-600'
-                : 'bg-[#133e2c] hover:bg-[#0e2c20]'
-            }`}
-          >
-            {addedToast ? (
-              <>
-                <Check className="w-4 h-4 animate-bounce" />
-                <span>Added to cart!</span>
-              </>
-            ) : (
-              <>
-                <ShoppingBag className="w-4 h-4" />
-                <span>Add to cart • ₹{item.price * qty}</span>
-              </>
-            )}
-          </button>
+          {isStoreClosed ? (
+            <button
+              disabled
+              className="flex-1 py-3.5 px-5 rounded-2xl font-black text-sm text-stone-500 bg-stone-300 shadow-none flex items-center justify-center gap-2 cursor-not-allowed"
+            >
+              <span>Cafe Closed for Orders</span>
+            </button>
+          ) : (
+            <button
+              onClick={handleAdd}
+              className={`flex-1 py-3.5 px-5 rounded-2xl font-black text-sm text-white shadow-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer ${
+                addedToast
+                  ? 'bg-emerald-600'
+                  : 'bg-[#133e2c] hover:bg-[#0e2c20]'
+              }`}
+            >
+              {addedToast ? (
+                <>
+                  <Check className="w-4 h-4 animate-bounce" />
+                  <span>Added to cart!</span>
+                </>
+              ) : (
+                <>
+                  <ShoppingBag className="w-4 h-4" />
+                  <span>Add to cart • ₹{item.price * qty}</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>
