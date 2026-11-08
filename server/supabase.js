@@ -57,11 +57,14 @@ export async function dbGetCafe() {
     // tagline is plain string
   }
 
+  const heroCover = heroConfig.coverImage || data.cover_image || 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=1400&auto=format&fit=crop&q=85';
+  heroConfig.coverImage = heroCover;
+
   return {
     name: data.name,
     tagline: plainTagline,
     logo: data.logo,
-    coverImage: data.cover_image,
+    coverImage: heroCover,
     taxRate: Number(data.tax_rate),
     currency: data.currency,
     tablesCount: Number(data.tables_count),
@@ -105,7 +108,14 @@ export async function dbUpdateCafe(updates) {
 
   if (updates.name !== undefined) payload.name = updates.name;
   if (updates.logo !== undefined) payload.logo = updates.logo;
-  if (updates.coverImage !== undefined) payload.cover_image = updates.coverImage;
+  if (updates.coverImage !== undefined) {
+    payload.cover_image = updates.coverImage;
+    currentHero.coverImage = updates.coverImage;
+  }
+  if (updates.hero && updates.hero.coverImage !== undefined) {
+    payload.cover_image = updates.hero.coverImage;
+    currentHero.coverImage = updates.hero.coverImage;
+  }
   if (updates.taxRate !== undefined) payload.tax_rate = updates.taxRate;
   if (updates.currency !== undefined) payload.currency = updates.currency;
   if (updates.tablesCount !== undefined) payload.tables_count = updates.tablesCount;

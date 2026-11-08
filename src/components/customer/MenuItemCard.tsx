@@ -36,41 +36,54 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
         !item.isAvailable ? 'opacity-60 grayscale-[40%]' : ''
       }`}
     >
-      {/* Top Bar: Veg / Non-Veg badge + Wishlist Heart */}
-      <div className="flex items-center justify-between w-full mb-0.5">
-        <div
-          className={`w-3 h-3 rounded-xs border flex items-center justify-center ${
-            item.isVeg ? 'border-emerald-600' : 'border-red-600'
-          }`}
-          title={item.isVeg ? 'Vegetarian' : 'Non-Vegetarian'}
-        >
-          <div className={`w-1.5 h-1.5 rounded-full ${item.isVeg ? 'bg-emerald-600' : 'bg-red-600'}`} />
+      {/* Full-width Product Image with Floating Veg/Non-Veg & Heart Badges ON TOP */}
+      <div className="relative w-full h-32 sm:h-36 rounded-xl overflow-hidden bg-stone-100 mb-1.5">
+        <ImageWithSkeleton
+          src={item.image}
+          alt={item.name}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          containerClassName="w-full h-full"
+          loading="lazy"
+        />
+
+        {/* Soft top gradient overlay for badge readability */}
+        <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-black/40 via-black/10 to-transparent pointer-events-none" />
+
+        {/* Floating Top-Left: Veg / Non-Veg badge */}
+        <div className="absolute top-1.5 left-1.5 z-10">
+          <div
+            className={`w-4 h-4 rounded-xs border-2 bg-white/95 backdrop-blur-xs shadow-xs flex items-center justify-center ${
+              item.isVeg ? 'border-emerald-600' : 'border-red-600'
+            }`}
+            title={item.isVeg ? 'Vegetarian' : 'Non-Vegetarian'}
+          >
+            <div className={`w-2 h-2 rounded-full ${item.isVeg ? 'bg-emerald-600' : 'bg-red-600'}`} />
+          </div>
         </div>
 
+        {/* Floating Top-Right: Wishlist Heart */}
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
             setIsLiked(!isLiked);
           }}
-          className={`action-btn p-0.5 rounded-full text-stone-300 hover:text-red-500 transition-colors cursor-pointer ${
-            isLiked ? 'text-red-500' : ''
+          className={`action-btn absolute top-1.5 right-1.5 z-10 w-6 h-6 rounded-full bg-white/95 backdrop-blur-xs shadow-xs flex items-center justify-center transition-all hover:scale-110 active:scale-90 cursor-pointer ${
+            isLiked ? 'text-red-500' : 'text-stone-400 hover:text-red-500'
           }`}
           title="Add to favorites"
         >
-          <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-red-500' : ''}`} />
+          <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
         </button>
-      </div>
 
-      {/* Center: Product Image with Skeleton Loading */}
-      <div className="w-full h-28 sm:h-32 flex items-center justify-center p-0.5 overflow-hidden">
-        <ImageWithSkeleton
-          src={item.image}
-          alt={item.name}
-          className="w-full h-full object-cover rounded-xl group-hover:scale-105 transition-transform duration-300"
-          containerClassName="w-full h-full flex items-center justify-center rounded-xl bg-stone-100"
-          loading="lazy"
-        />
+        {/* Floating Bottom-Left: Bestseller Pill */}
+        {item.isBestseller && (
+          <div className="absolute bottom-1.5 left-1.5 z-10">
+            <span className="text-[9px] font-black uppercase bg-amber-500 text-white px-1.5 py-0.5 rounded shadow-xs tracking-tight">
+              ★ Bestseller
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Product Information */}

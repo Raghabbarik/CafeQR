@@ -41,6 +41,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Only handle same-origin requests; let external image CDNs & fonts load directly
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
   // Handle HTML navigation requests with network-first falling back to cache
   if (event.request.mode === 'navigate') {
     event.respondWith(

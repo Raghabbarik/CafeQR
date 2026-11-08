@@ -104,28 +104,39 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto hide-scrollbar pb-24">
           
-          {/* Top Hero Section with soft cream background & image */}
-          <div className="relative bg-[#f8f6f2] pt-4 pb-6 px-4 flex flex-col items-center border-b border-stone-100">
-            
-            {/* Top Navigation Bar: Back, Search, Wishlist */}
-            <div className="w-full flex items-center justify-between mb-2">
+          {/* Top Full-Bleed Product Image Banner with Floating Navigation Directly ON TOP */}
+          <div className="relative w-full h-72 sm:h-80 bg-stone-900 overflow-hidden">
+            <ImageWithSkeleton
+              src={item.image}
+              alt={item.name}
+              className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+              containerClassName="w-full h-full"
+            />
+
+            {/* Top dark gradient for button contrast */}
+            <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/60 via-black/25 to-transparent pointer-events-none" />
+            {/* Bottom dark gradient for category text */}
+            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none" />
+
+            {/* Floating Top Bar DIRECTLY ON TOP OF IMAGE: Back Arrow, Search, Wishlist */}
+            <div className="absolute top-4 inset-x-4 z-20 flex items-center justify-between">
               <button
                 onClick={onClose}
-                className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-stone-700 hover:text-stone-950 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                className="w-10 h-10 rounded-full bg-white/95 hover:bg-white text-stone-900 shadow-xl flex items-center justify-center hover:scale-105 active:scale-90 transition-all cursor-pointer backdrop-blur-md"
                 title="Go Back"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
 
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2">
                 {onOpenSearch && (
                   <button
                     onClick={() => {
                       onClose();
                       onOpenSearch();
                     }}
-                    className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-stone-700 hover:text-stone-950 hover:scale-105 active:scale-95 transition-all cursor-pointer"
-                    title="Search"
+                    className="w-10 h-10 rounded-full bg-white/95 hover:bg-white text-stone-900 shadow-xl flex items-center justify-center hover:scale-105 active:scale-90 transition-all cursor-pointer backdrop-blur-md"
+                    title="Search menu"
                   >
                     <Search className="w-5 h-5" />
                   </button>
@@ -133,24 +144,36 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
 
                 <button
                   onClick={() => setIsLiked(!isLiked)}
-                  className={`w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer ${
-                    isLiked ? 'text-red-500' : 'text-stone-400 hover:text-red-500'
+                  className={`w-10 h-10 rounded-full bg-white/95 hover:bg-white shadow-xl flex items-center justify-center transition-all hover:scale-105 active:scale-90 cursor-pointer backdrop-blur-md ${
+                    isLiked ? 'text-red-500' : 'text-stone-500 hover:text-red-500'
                   }`}
                   title="Favorite"
                 >
-                  <Heart className={`w-5 h-5 ${isLiked ? 'fill-red-500' : ''}`} />
+                  <Heart className={`w-5 h-5 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
                 </button>
               </div>
             </div>
 
-            {/* Large Hero Product Image with Skeleton Loading */}
-            <div className="w-full h-64 sm:h-72 flex items-center justify-center p-2">
-              <ImageWithSkeleton
-                src={item.image}
-                alt={item.name}
-                className="w-full h-full object-cover rounded-2xl shadow-md transition-transform duration-500 hover:scale-[1.02]"
-                containerClassName="w-full h-full flex items-center justify-center rounded-2xl overflow-hidden bg-white shadow-xs"
-              />
+            {/* Floating Bottom Info on Image: Veg / Non-Veg Badge & Category */}
+            <div className="absolute bottom-3.5 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
+              <div className="flex items-center gap-2">
+                <div
+                  className={`w-4 h-4 rounded-xs border-2 bg-white flex items-center justify-center shadow-md ${
+                    item.isVeg ? 'border-emerald-600' : 'border-red-600'
+                  }`}
+                >
+                  <div className={`w-2 h-2 rounded-full ${item.isVeg ? 'bg-emerald-600' : 'bg-red-600'}`} />
+                </div>
+                <span className="text-xs font-black uppercase tracking-wider text-white drop-shadow-md">
+                  {item.category}
+                </span>
+              </div>
+
+              {item.isBestseller && (
+                <span className="text-[10px] font-extrabold uppercase bg-amber-500 text-white px-2.5 py-1 rounded-full shadow-md tracking-wider">
+                  ★ Bestseller
+                </span>
+              )}
             </div>
           </div>
 
@@ -173,24 +196,6 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
 
             {/* Title, Veg Badge & Category */}
             <div>
-              <div className="flex items-center gap-2 mb-1.5">
-                <div
-                  className={`w-3.5 h-3.5 rounded-xs border-2 flex items-center justify-center ${
-                    item.isVeg ? 'border-emerald-600' : 'border-red-600'
-                  }`}
-                >
-                  <div className={`w-1.5 h-1.5 rounded-full ${item.isVeg ? 'bg-emerald-600' : 'bg-red-600'}`} />
-                </div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-stone-400">
-                  {item.category}
-                </span>
-                {item.isBestseller && (
-                  <span className="text-[10px] font-extrabold uppercase bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
-                    ★ Bestseller
-                  </span>
-                )}
-              </div>
-
               <h2 className="text-2xl font-black text-stone-900 tracking-tight leading-snug">
                 {item.name}
               </h2>

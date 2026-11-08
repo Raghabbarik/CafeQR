@@ -20,7 +20,7 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
   const heroCardTitle = cafe.hero?.cardTitle || 'Welcome Back';
   const heroCardSubtitle = cafe.hero?.cardSubtitle || 'Explore our Fall menu';
   const heroButtonText = cafe.hero?.buttonText || 'Order Now';
-  const heroImage = cafe.coverImage || 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=1400&auto=format&fit=crop&q=85';
+  const heroImage = cafe.hero?.coverImage || cafe.coverImage || 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=1400&auto=format&fit=crop&q=85';
 
   const titleLines = heroTitle.split('\n');
 
@@ -43,11 +43,11 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
       </div>
 
       {/* Center Hero Heading directly on image: Centered Cafe Logo + ✦ NEW + Headline */}
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-4 py-4 my-auto">
+      <div className="relative z-10 flex-1 min-h-0 flex flex-col items-center justify-center text-center px-4 pt-4 sm:pt-6 pb-2 sm:pb-4">
         
         {/* Centered Cafe Logo */}
-        <div className="mb-2.5 flex flex-col items-center animate-in fade-in zoom-in-95 duration-500">
-          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full p-1 bg-white/25 backdrop-blur-md border-2 border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.35)] overflow-hidden transition-transform hover:scale-105">
+        <div className="mb-2 sm:mb-2.5 flex flex-col items-center animate-in fade-in zoom-in-95 duration-500">
+          <div className="w-16 h-16 sm:w-22 sm:h-22 rounded-full p-1 bg-white/25 backdrop-blur-md border-2 border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.35)] overflow-hidden transition-transform hover:scale-105">
             <ImageWithSkeleton
               src={cafe.logo}
               alt={cafe.name}
@@ -55,21 +55,21 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
               containerClassName="w-full h-full rounded-full"
             />
           </div>
-          <p className="text-white/95 text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.22em] mt-1.5 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+          <p className="text-white/95 text-[10px] sm:text-xs font-bold uppercase tracking-[0.22em] mt-1 sm:mt-1.5 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
             {cafe.name}
           </p>
         </div>
 
         {/* Pastel Lime/Yellow Badge (Editable: e.g. ✦ NEW) */}
         {heroBadge && (
-          <div className="inline-flex items-center gap-1.5 bg-[#eaf49f] text-[#2c3e1e] font-black text-xs px-3.5 py-1 rounded-full uppercase tracking-wider shadow-md mb-2.5 animate-in fade-in zoom-in-90 duration-300">
+          <div className="inline-flex items-center gap-1.5 bg-[#eaf49f] text-[#2c3e1e] font-black text-[11px] sm:text-xs px-3 sm:px-3.5 py-0.5 sm:py-1 rounded-full uppercase tracking-wider shadow-md mb-2 sm:mb-2.5 animate-in fade-in zoom-in-90 duration-300">
             <Sparkles className="w-3 h-3 fill-current" />
             <span>{heroBadge}</span>
           </div>
         )}
 
         {/* Big Crisp All-Caps Headline (Editable) */}
-        <h1 className="text-3xl sm:text-5xl font-black text-white tracking-widest leading-[1.08] uppercase drop-shadow-[0_4px_16px_rgba(0,0,0,0.5)]">
+        <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-white tracking-widest leading-[1.1] uppercase drop-shadow-[0_4px_16px_rgba(0,0,0,0.5)]">
           {titleLines.map((line, idx) => (
             <React.Fragment key={idx}>
               {line}
@@ -81,7 +81,7 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
 
       {/* Bottom Sheet Card (Editable: Welcome Back / Explore our Fall menu / Order Now) */}
       <div className="relative z-20 w-full max-w-md mx-auto shrink-0">
-        <div className="bg-white rounded-t-[36px] sm:rounded-3xl pt-4 sm:pt-5 pb-5 sm:pb-6 px-5 sm:px-7 shadow-[0_-12px_40px_rgba(0,0,0,0.18)] flex flex-col items-center text-center space-y-3 animate-in slide-in-from-bottom duration-300">
+        <div className="bg-white rounded-t-[32px] sm:rounded-3xl pt-3.5 sm:pt-5 pb-4 sm:pb-6 px-5 sm:px-7 shadow-[0_-12px_40px_rgba(0,0,0,0.18)] flex flex-col items-center text-center space-y-2.5 sm:space-y-3 animate-in slide-in-from-bottom duration-300">
           
           <div className="space-y-0.5">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111111] tracking-tight">

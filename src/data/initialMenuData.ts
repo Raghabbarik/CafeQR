@@ -110,7 +110,7 @@ export const DEFAULT_MENU_ITEMS: MenuItem[] = [
       'Fresh Hass avocado seasoned with sea salt',
       'Aged Modena balsamic glaze drizzle',
     ],
-    image: 'https://images.unsplash.com/photo-1603046891744-1f76eb10aec1?w=600&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1588137378633-dea1336ce1e2?w=800&auto=format&fit=crop&q=80',
     isVeg: true,
     isBestseller: true,
     isAvailable: true,

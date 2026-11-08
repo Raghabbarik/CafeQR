@@ -96,7 +96,6 @@ export const ImageWithSkeleton: React.FC<ImageWithSkeletonProps> = ({
         onLoad={handleLoad}
         onError={handleError}
         referrerPolicy="no-referrer"
-        crossOrigin="anonymous"
         className={`${className} transition-opacity duration-300 ${
           isLoaded ? 'opacity-100' : 'opacity-0'
         }`}

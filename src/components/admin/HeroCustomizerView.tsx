@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { CafeInfo } from '../../types';
 import { 
   Sparkles, 
@@ -7,7 +7,8 @@ import {
   Save, 
   CheckCircle, 
   Smartphone, 
-  ArrowRight
+  ArrowRight,
+  Upload
 } from 'lucide-react';
 
 interface HeroCustomizerViewProps {
@@ -20,7 +21,7 @@ export const HeroCustomizerView: React.FC<HeroCustomizerViewProps> = ({
   onSave,
 }) => {
   const [formData, setFormData] = useState({
-    coverImage: cafe.coverImage || 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=1400&auto=format&fit=crop&q=85',
+    coverImage: cafe.coverImage || cafe.hero?.coverImage || 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=1400&auto=format&fit=crop&q=85',
     logo: cafe.logo || '',
     name: cafe.name || 'The Roasted Bean Cafe',
     heroBadge: cafe.hero?.badge || 'NEW',
@@ -29,6 +30,22 @@ export const HeroCustomizerView: React.FC<HeroCustomizerViewProps> = ({
     heroCardSubtitle: cafe.hero?.cardSubtitle || 'Explore our Fall menu',
     heroButtonText: cafe.hero?.buttonText || 'Order Now',
   });
+
+  // Sync with incoming cafe data from cloud
+  useEffect(() => {
+    if (cafe) {
+      setFormData({
+        coverImage: cafe.coverImage || cafe.hero?.coverImage || 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=1400&auto=format&fit=crop&q=85',
+        logo: cafe.logo || '',
+        name: cafe.name || 'The Roasted Bean Cafe',
+        heroBadge: cafe.hero?.badge || 'NEW',
+        heroTitle: cafe.hero?.title || 'ICED\nMATCHA\nLATTE',
+        heroCardTitle: cafe.hero?.cardTitle || 'Welcome Back',
+        heroCardSubtitle: cafe.hero?.cardSubtitle || 'Explore our Fall menu',
+        heroButtonText: cafe.hero?.buttonText || 'Order Now',
+      });
+    }
+  }, [cafe]);
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -61,11 +78,28 @@ export const HeroCustomizerView: React.FC<HeroCustomizerViewProps> = ({
     setFormData((prev) => ({ ...prev, coverImage: url }));
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 3 * 1024 * 1024) {
+        alert('Image file is larger than 3MB. Please select a smaller photo.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          setFormData((prev) => ({ ...prev, coverImage: reader.result as string }));
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      await onSave({
+      const updates = {
         name: formData.name,
         logo: formData.logo,
         coverImage: formData.coverImage,
@@ -75,8 +109,15 @@ export const HeroCustomizerView: React.FC<HeroCustomizerViewProps> = ({
           cardTitle: formData.heroCardTitle,
           cardSubtitle: formData.heroCardSubtitle,
           buttonText: formData.heroButtonText,
+          coverImage: formData.coverImage,
         },
-      });
+      };
+
+      try {
+        localStorage.setItem('cafeqr_hero_cover', formData.coverImage);
+      } catch {}
+
+      await onSave(updates);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2500);
     } catch (err) {
@@ -144,15 +185,27 @@ export const HeroCustomizerView: React.FC<HeroCustomizerViewProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1.5">
-                Background Image URL (Full-Bleed Cover)
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-stone-700">
+                  Background Image URL (Full-Bleed Cover)
+                </label>
+                <label className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 px-2.5 py-1 rounded-lg border border-amber-200 cursor-pointer transition-colors shadow-2xs">
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Upload Image File</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </label>
+              </div>
               <input
-                type="url"
+                type="text"
                 required
                 value={formData.coverImage}
                 onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
-                placeholder="https://..."
+                placeholder="https://... or upload image"
                 className="w-full px-3.5 py-2.5 bg-stone-50 rounded-xl border border-stone-300 outline-none focus:border-amber-600 text-xs font-mono"
               />
             </div>

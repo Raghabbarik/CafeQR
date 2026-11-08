@@ -53,7 +53,26 @@ export function App() {
   const [diningOption, setDiningOption] = useState<DiningOption>('dine_in');
 
   // Cafe data (Instant ready-to-render defaults; updates live from API)
-  const [cafe, setCafe] = useState<CafeInfo>(DEFAULT_CAFE);
+  const [cafe, setCafe] = useState<CafeInfo>(() => {
+    try {
+      const cachedCover = localStorage.getItem('cafeqr_hero_cover');
+      if (cachedCover) {
+        const baseHero = DEFAULT_CAFE.hero || {
+          badge: 'NEW',
+          title: 'ICED\nMATCHA\nLATTE',
+          cardTitle: 'Welcome Back',
+          cardSubtitle: 'Explore our Fall menu',
+          buttonText: 'Order Now',
+        };
+        return {
+          ...DEFAULT_CAFE,
+          coverImage: cachedCover,
+          hero: { ...baseHero, coverImage: cachedCover },
+        };
+      }
+    } catch {}
+    return DEFAULT_CAFE;
+  });
   const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
   const [menuItems, setMenuItems] = useState<MenuItem[]>(DEFAULT_MENU_ITEMS);
 
@@ -246,6 +265,11 @@ export function App() {
     });
 
     socket.on('cafe:updated', (updatedCafe: CafeInfo) => {
+      if (updatedCafe?.coverImage) {
+        try {
+          localStorage.setItem('cafeqr_hero_cover', updatedCafe.coverImage);
+        } catch {}
+      }
       setCafe(updatedCafe);
     });
 
@@ -565,10 +589,20 @@ export function App() {
 
   const handleUpdateCafeSettings = async (updates: Partial<CafeInfo>) => {
     try {
+      if (updates.coverImage) {
+        try {
+          localStorage.setItem('cafeqr_hero_cover', updates.coverImage);
+        } catch {}
+      }
       setCafe((prev) => ({ ...prev, ...updates }));
       const res = await api.updateCafe(updates);
       if (res?.cafe) {
         setCafe(res.cafe);
+        if (res.cafe.coverImage) {
+          try {
+            localStorage.setItem('cafeqr_hero_cover', res.cafe.coverImage);
+          } catch {}
+        }
       }
     } catch (err: any) {
       console.error('Failed to update cafe settings:', err);

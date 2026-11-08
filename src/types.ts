@@ -4,6 +4,7 @@ export interface HeroConfig {
   cardTitle: string;
   cardSubtitle: string;
   buttonText: string;
+  coverImage?: string;
 }
 
 export interface StaffMember {
