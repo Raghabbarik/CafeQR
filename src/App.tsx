@@ -69,6 +69,12 @@ export function App() {
         localStorage.removeItem('cafeqr_hero_cover');
       }
 
+      const cachedCafe = localStorage.getItem('cafeqr_admin_cafe') || localStorage.getItem('cafeqr_cached_cafe');
+      if (cachedCafe) {
+        const parsed = JSON.parse(cachedCafe);
+        return { ...DEFAULT_CAFE, ...parsed };
+      }
+
       const cachedCover = localStorage.getItem('cafeqr_admin_cover_image') || localStorage.getItem('cafeqr_hero_cover');
       if (cachedCover && !cachedCover.includes('536256263959')) {
         return {
@@ -78,11 +84,7 @@ export function App() {
         };
       }
     } catch {}
-    return {
-      ...DEFAULT_CAFE,
-      coverImage: '',
-      hero: { ...baseHero, coverImage: '' },
-    };
+    return DEFAULT_CAFE;
   });
   const [categories, setCategories] = useState<string[]>(() => {
     try {
@@ -248,6 +250,7 @@ export function App() {
           const freshCafe = cafeRes.cafe;
           const freshCover = freshCafe.hero?.coverImage || freshCafe.coverImage || '';
           try {
+            localStorage.setItem('cafeqr_cached_cafe', JSON.stringify(freshCafe));
             if (freshCover && !freshCover.includes('536256263959')) {
               localStorage.setItem('cafeqr_admin_cover_image', freshCover);
               localStorage.setItem('cafeqr_hero_cover', freshCover);

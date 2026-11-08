@@ -42,8 +42,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         onClick={onClose}
       />
 
-      {/* Sliding Drawer Container */}
-      <div className="fixed inset-y-0 right-0 w-full max-w-md flex z-50 animate-in slide-in-from-right duration-300">
+      {/* Sliding Drawer Container: Full width on mobile, right-docked on tablet/desktop */}
+      <div className="fixed inset-y-0 right-0 w-full sm:max-w-md flex z-50 animate-in slide-in-from-right duration-300">
         <div className="w-full h-full bg-white shadow-2xl flex flex-col justify-between">
           {/* Header */}
           <div className="p-4 border-b border-stone-200 flex items-center justify-between bg-stone-50">

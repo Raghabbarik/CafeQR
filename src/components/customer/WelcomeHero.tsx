@@ -20,52 +20,35 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
   const heroCardTitle = cafe.hero?.cardTitle || 'Welcome Back';
   const heroCardSubtitle = cafe.hero?.cardSubtitle || 'Explore our Fall menu';
   const heroButtonText = cafe.hero?.buttonText || 'Order Now';
-  const heroImage = cafe.hero?.coverImage || cafe.coverImage || '';
+  const heroImage =
+    cafe.hero?.coverImage ||
+    cafe.coverImage ||
+    'https://i.pinimg.com/736x/3c/05/c5/3c05c5bb573c8774bac97aab37b2fcbd.jpg';
 
   const titleLines = heroTitle.split('\n');
 
-  // Resilient background image handling (Dark ambient theme - NEVER turns white)
-  const [bgSrc, setBgSrc] = React.useState<string>(heroImage);
-  const [bgLoaded, setBgLoaded] = React.useState<boolean>(false);
-  const [bgError, setBgError] = React.useState<boolean>(false);
-
-  React.useEffect(() => {
-    setBgSrc(heroImage);
-    setBgLoaded(false);
-    setBgError(false);
-  }, [heroImage]);
-
-  const handleBgError = () => {
-    // If external URL (e.g. Pinterest/CDN hotlink block) fails, route through high-speed weserv proxy
-    if (heroImage && heroImage.startsWith('http') && !bgSrc.includes('images.weserv.nl')) {
-      const cleanUrl = heroImage.replace(/^https?:\/\//, '');
-      setBgSrc(`https://images.weserv.nl/?url=${encodeURIComponent(cleanUrl)}`);
-    } else {
-      setBgError(true);
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    if (img.src && !img.src.includes('images.weserv.nl') && img.src.startsWith('http')) {
+      const cleanUrl = img.src.replace(/^https?:\/\//, '');
+      img.src = `https://images.weserv.nl/?url=${encodeURIComponent(cleanUrl)}`;
     }
   };
 
   return (
     <div className="min-h-screen h-[100dvh] bg-stone-900 flex flex-col justify-between relative overflow-hidden select-none">
       
-      {/* Full-Bleed Admin Uploaded Hero Background (Dark Theme - Never White) */}
+      {/* Full-Bleed Admin Uploaded Hero Background (Direct rendering - Instant on reload & navigation) */}
       <div className="absolute inset-0 z-0 bg-[#140e0c] overflow-hidden">
-        {bgSrc && !bgError && (
+        {heroImage && (
           <img
-            src={bgSrc}
+            key={heroImage}
+            src={heroImage}
             alt={heroCardTitle}
-            onLoad={() => setBgLoaded(true)}
-            onError={handleBgError}
+            onError={handleImageError}
             referrerPolicy="no-referrer"
-            className={`w-full h-full object-cover object-center brightness-95 scale-102 transition-opacity duration-700 ${
-              bgLoaded ? 'opacity-100' : 'opacity-0'
-            }`}
+            className="w-full h-full object-cover object-center brightness-95 scale-102"
           />
-        )}
-
-        {/* Ambient Dark Espresso Glow while loading or if offline */}
-        {!bgLoaded && (
-          <div className="absolute inset-0 bg-gradient-to-b from-[#241914] via-[#160f0c] to-[#0c0807] animate-pulse" />
         )}
 
         {/* Soft top gradient for header readability */}

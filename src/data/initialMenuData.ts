@@ -15,15 +15,16 @@ export const DEFAULT_CAFE: CafeInfo = {
   razorpayKeyId: 'rzp_test_TxJ87ji7k95ncJ',
   tablesCount: 12,
   logo: DEFAULT_CAFE_LOGO,
-  coverImage: '',
+  coverImage: 'https://i.pinimg.com/736x/3c/05/c5/3c05c5bb573c8774bac97aab37b2fcbd.jpg',
   wifiSsid: 'RoastedBean-Guest',
   wifiPassword: 'freshcoffee',
   hero: {
-    badge: 'NEW',
+    badge: 'for you.',
     title: 'ICED\nMATCHA\nLATTE',
     cardTitle: 'Welcome Back',
     cardSubtitle: 'Explore our Fall menu & order online',
     buttonText: 'Order Now',
+    coverImage: 'https://i.pinimg.com/736x/3c/05/c5/3c05c5bb573c8774bac97aab37b2fcbd.jpg',
   },
 };
 

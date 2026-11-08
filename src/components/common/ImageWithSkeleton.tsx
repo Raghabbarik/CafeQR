@@ -55,13 +55,8 @@ export const ImageWithSkeleton: React.FC<ImageWithSkeletonProps> = ({
       // Attempt 2: Try explicit fallbackSrc if provided
       setAttempt(2);
       setCurrentSrc(fallbackSrc);
-    } else if (attempt <= 2 && currentSrc !== DEFAULT_FOOD_SVG) {
-      // Attempt 3: Guaranteed inline SVG
-      setAttempt(3);
-      setCurrentSrc(DEFAULT_FOOD_SVG);
-      setIsLoaded(true);
     } else {
-      // Failed completely: render custom UI, never show native browser broken image icon
+      // Failed: Immediately show custom stylized fallback UI - NEVER native browser broken image icon
       setIsLoaded(true);
       setHasFailedCompletely(true);
     }
