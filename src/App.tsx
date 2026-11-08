@@ -28,7 +28,7 @@ import { OrderDisplayBoard } from './components/display/OrderDisplayBoard';
 // Initial resilient fallback data (eliminates blocking loading screens on Vercel)
 import { DEFAULT_CAFE, DEFAULT_CATEGORIES, DEFAULT_MENU_ITEMS } from './data/initialMenuData';
 
-import { WifiOff, ArrowLeft } from 'lucide-react';
+import { WifiOff } from 'lucide-react';
 
 export function App() {
   // App Mode: 'customer' | 'admin' | 'staff' | 'display'
@@ -888,18 +888,6 @@ export function App() {
               </div>
             </div>
           )}
-
-          {/* Back to Home Quick Link */}
-          <div className="flex items-center justify-between pb-0.5">
-            <button
-              onClick={() => setCustomerStep('welcome')}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-800 hover:text-amber-950 transition-colors cursor-pointer group py-0.5 px-2 rounded-lg hover:bg-amber-50"
-              title="Return to Welcome / Cover Screen"
-            >
-              <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform text-amber-700" />
-              <span>← Back to Home</span>
-            </button>
-          </div>
 
           {/* Section Header */}
           <div className="flex items-center justify-between pb-1 pt-1">
