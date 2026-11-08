@@ -15,6 +15,7 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { ImageWithSkeleton } from '../common/ImageWithSkeleton';
+import { extractCleanMapEmbedUrl, extractCleanDirectionsUrl } from '../../utils/mapUtils';
 
 interface CafeDetailsSectionProps {
   cafe: CafeInfo;
@@ -39,17 +40,8 @@ export const CafeDetailsSection: React.FC<CafeDetailsSectionProps> = ({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const defaultMapEmbed =
-    cafe.mapEmbedUrl ||
-    `https://maps.google.com/maps?q=${encodeURIComponent(
-      cafe.address || 'Indiranagar Bengaluru'
-    )}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
-
-  const googleMapsDirectionsUrl =
-    cafe.googleMapsUrl ||
-    `https://maps.google.com/?q=${encodeURIComponent(
-      cafe.address || 'The Roasted Bean Cafe'
-    )}`;
+  const defaultMapEmbed = extractCleanMapEmbedUrl(cafe.mapEmbedUrl, cafe.address);
+  const googleMapsDirectionsUrl = extractCleanDirectionsUrl(cafe.googleMapsUrl, cafe.address);
 
   const features =
     Array.isArray(cafe.features) && cafe.features.length > 0

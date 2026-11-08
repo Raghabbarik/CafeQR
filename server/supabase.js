@@ -12,6 +12,49 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
 
 console.log('⚡ Supabase Client initialized:', SUPABASE_URL);
 
+// Helper to clean map embed URL from <iframe> or raw links
+function sanitizeMapEmbedUrl(url, address) {
+  if (!url || typeof url !== 'string' || !url.trim()) {
+    if (address && address.trim()) {
+      return `https://maps.google.com/maps?q=${encodeURIComponent(address.trim())}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+    }
+    return 'https://maps.google.com/maps?q=Indiranagar%20Bengaluru&t=&z=14&ie=UTF8&iwloc=&output=embed';
+  }
+  const trimmed = url.trim();
+  const iframeMatch = trimmed.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+  if (iframeMatch && iframeMatch[1]) {
+    return iframeMatch[1].trim();
+  }
+  if (trimmed.includes('/maps/embed') || trimmed.includes('output=embed')) {
+    return trimmed;
+  }
+  const placeMatch = trimmed.match(/\/maps\/place\/([^/@?]+)/i);
+  if (placeMatch && placeMatch[1]) {
+    const placeName = decodeURIComponent(placeMatch[1].replace(/\+/g, ' '));
+    return `https://maps.google.com/maps?q=${encodeURIComponent(placeName)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+  }
+  if (trimmed.includes('google.com/maps') && (trimmed.includes('q=') || trimmed.includes('query='))) {
+    const separator = trimmed.includes('?') ? '&' : '?';
+    return `${trimmed}${separator}output=embed`;
+  }
+  return trimmed;
+}
+
+function sanitizeDirectionsUrl(url, address) {
+  if (!url || typeof url !== 'string' || !url.trim()) {
+    if (address && address.trim()) {
+      return `https://maps.google.com/?q=${encodeURIComponent(address.trim())}`;
+    }
+    return 'https://maps.google.com/?q=Indiranagar+Bengaluru';
+  }
+  const trimmed = url.trim();
+  const iframeMatch = trimmed.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+  if (iframeMatch && iframeMatch[1]) {
+    return iframeMatch[1].trim();
+  }
+  return trimmed;
+}
+
 // ---------------- CAFE INFO ----------------
 export async function dbGetCafe() {
   const { data, error } = await supabase.from('cafe').select('*').limit(1).single();
@@ -80,8 +123,8 @@ export async function dbGetCafe() {
         if (parsed.openingHours) openingHours = parsed.openingHours;
         if (parsed.openTime) openTime = parsed.openTime;
         if (parsed.closeTime) closeTime = parsed.closeTime;
-        if (parsed.googleMapsUrl) googleMapsUrl = parsed.googleMapsUrl;
-        if (parsed.mapEmbedUrl) mapEmbedUrl = parsed.mapEmbedUrl;
+        if (parsed.googleMapsUrl) googleMapsUrl = sanitizeDirectionsUrl(parsed.googleMapsUrl, address);
+        if (parsed.mapEmbedUrl) mapEmbedUrl = sanitizeMapEmbedUrl(parsed.mapEmbedUrl, address);
         if (parsed.wifiSsid) wifiSsid = parsed.wifiSsid;
         if (parsed.wifiPassword) wifiPassword = parsed.wifiPassword;
         if (parsed.about) about = parsed.about;
@@ -237,8 +280,8 @@ export async function dbUpdateCafe(updates) {
     ...(updates.openingHours !== undefined && { openingHours: updates.openingHours }),
     ...(updates.openTime !== undefined && { openTime: updates.openTime }),
     ...(updates.closeTime !== undefined && { closeTime: updates.closeTime }),
-    ...(updates.googleMapsUrl !== undefined && { googleMapsUrl: updates.googleMapsUrl }),
-    ...(updates.mapEmbedUrl !== undefined && { mapEmbedUrl: updates.mapEmbedUrl }),
+    ...(updates.googleMapsUrl !== undefined && { googleMapsUrl: sanitizeDirectionsUrl(updates.googleMapsUrl, updates.address || currentDetails.address) }),
+    ...(updates.mapEmbedUrl !== undefined && { mapEmbedUrl: sanitizeMapEmbedUrl(updates.mapEmbedUrl, updates.address || currentDetails.address) }),
     ...(updates.wifiSsid !== undefined && { wifiSsid: updates.wifiSsid }),
     ...(updates.wifiPassword !== undefined && { wifiPassword: updates.wifiPassword }),
     ...(updates.about !== undefined && { about: updates.about }),

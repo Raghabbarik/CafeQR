@@ -13,8 +13,11 @@ import {
   Sparkles,
   ExternalLink,
   Plus,
-  X
+  X,
+  RotateCcw,
+  Sparkle
 } from 'lucide-react';
+import { extractCleanMapEmbedUrl, extractCleanDirectionsUrl } from '../../utils/mapUtils';
 
 interface CafeSettingsViewProps {
   cafe: CafeInfo;
@@ -92,7 +95,13 @@ export const CafeSettingsView: React.FC<CafeSettingsViewProps> = ({
     e.preventDefault();
     setIsSaving(true);
     try {
-      await onSave(formData);
+      const cleanData: CafeInfo = {
+        ...formData,
+        mapEmbedUrl: extractCleanMapEmbedUrl(formData.mapEmbedUrl, formData.address),
+        googleMapsUrl: extractCleanDirectionsUrl(formData.googleMapsUrl, formData.address),
+      };
+      setFormData(cleanData);
+      await onSave(cleanData);
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 2500);
     } finally {
@@ -289,63 +298,127 @@ export const CafeSettingsView: React.FC<CafeSettingsViewProps> = ({
                   <span>Google Maps Directions URL</span>
                   {formData.googleMapsUrl && (
                     <a
-                      href={formData.googleMapsUrl}
+                      href={extractCleanDirectionsUrl(formData.googleMapsUrl, formData.address)}
                       target="_blank"
                       rel="noreferrer"
                       className="text-amber-800 hover:underline flex items-center gap-0.5 text-[10px]"
                     >
-                      <span>Test Link</span>
+                      <span>Test Directions</span>
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   )}
                 </label>
                 <input
-                  type="url"
-                  value={formData.googleMapsUrl}
-                  onChange={(e) =>
-                    setFormData({ ...formData, googleMapsUrl: e.target.value })
-                  }
-                  placeholder="https://maps.google.com/?q=..."
+                  type="text"
+                  value={formData.googleMapsUrl || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormData({ ...formData, googleMapsUrl: val });
+                  }}
+                  onBlur={() => {
+                    if (formData.googleMapsUrl) {
+                      setFormData((prev) => ({
+                        ...prev,
+                        googleMapsUrl: extractCleanDirectionsUrl(prev.googleMapsUrl, prev.address),
+                      }));
+                    }
+                  }}
+                  placeholder="https://maps.google.com/?q=... or address"
                   className="w-full px-3 py-2 bg-stone-50 rounded-xl border border-stone-300 outline-none focus:border-amber-600 font-mono text-[11px]"
                 />
+                <p className="text-[10px] text-stone-500 mt-1">
+                  URL for customers when tapping "Maps / Get Directions".
+                </p>
               </div>
 
               <div>
-                <label className="block font-bold text-stone-700 mb-1">
-                  Google Maps Embed URL (for interactive map)
+                <label className="block font-bold text-stone-700 mb-1 flex items-center justify-between">
+                  <span>Google Maps Embed URL or &lt;iframe&gt;</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const autoEmbed = extractCleanMapEmbedUrl('', formData.address);
+                        setFormData({ ...formData, mapEmbedUrl: autoEmbed });
+                      }}
+                      className="text-amber-800 hover:text-amber-950 font-bold hover:underline flex items-center gap-0.5 text-[10px] cursor-pointer"
+                      title="Generate Google Maps embed link from address above"
+                    >
+                      <Sparkle className="w-3 h-3 text-amber-600" />
+                      <span>Auto from Address</span>
+                    </button>
+                    {formData.mapEmbedUrl && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            mapEmbedUrl: 'https://maps.google.com/maps?q=Indiranagar%20Bengaluru&t=&z=14&ie=UTF8&iwloc=&output=embed',
+                          });
+                        }}
+                        className="text-stone-400 hover:text-stone-700 font-bold text-[10px] flex items-center gap-0.5 cursor-pointer"
+                        title="Reset to default map"
+                      >
+                        <RotateCcw className="w-2.5 h-2.5" />
+                        <span>Reset</span>
+                      </button>
+                    )}
+                  </div>
                 </label>
                 <input
-                  type="url"
-                  value={formData.mapEmbedUrl}
-                  onChange={(e) =>
-                    setFormData({ ...formData, mapEmbedUrl: e.target.value })
-                  }
-                  placeholder="https://maps.google.com/maps?q=...&output=embed"
+                  type="text"
+                  value={formData.mapEmbedUrl || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    // Auto-clean if user pastes an iframe snippet
+                    if (val.includes('<iframe') || val.includes('src=')) {
+                      setFormData({ ...formData, mapEmbedUrl: extractCleanMapEmbedUrl(val, formData.address) });
+                    } else {
+                      setFormData({ ...formData, mapEmbedUrl: val });
+                    }
+                  }}
+                  onBlur={() => {
+                    if (formData.mapEmbedUrl) {
+                      setFormData((prev) => ({
+                        ...prev,
+                        mapEmbedUrl: extractCleanMapEmbedUrl(prev.mapEmbedUrl, prev.address),
+                      }));
+                    }
+                  }}
+                  placeholder="Paste Google Maps embed URL or <iframe> code here..."
                   className="w-full px-3 py-2 bg-stone-50 rounded-xl border border-stone-300 outline-none focus:border-amber-600 font-mono text-[11px]"
                 />
+                <p className="text-[10px] text-stone-500 mt-1">
+                  💡 In Google Maps, click <b>Share</b> → <b>Embed a map</b> → <b>Copy HTML</b> and paste it directly here.
+                </p>
               </div>
             </div>
 
             {/* Live Map Preview */}
-            {formData.mapEmbedUrl && (
-              <div className="pt-2">
-                <p className="font-bold text-stone-600 mb-1.5 text-[11px]">
-                  Map Preview (as seen by customers):
+            <div className="pt-2">
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="font-bold text-stone-700 text-[11px] flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-amber-700" />
+                  <span>Interactive Map Preview (Live):</span>
                 </p>
-                <div className="w-full h-44 rounded-2xl overflow-hidden border border-stone-300 bg-stone-100 shadow-inner">
-                  <iframe
-                    title="Admin Map Preview"
-                    src={formData.mapEmbedUrl}
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    allowFullScreen={false}
-                    loading="lazy"
-                    className="w-full h-full"
-                  />
-                </div>
+                <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  Ready to display to customers
+                </span>
               </div>
-            )}
+              <div className="w-full h-48 sm:h-52 rounded-2xl overflow-hidden border border-stone-300 bg-stone-100 shadow-inner relative">
+                <iframe
+                  title="Admin Map Preview"
+                  src={extractCleanMapEmbedUrl(formData.mapEmbedUrl, formData.address)}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen={false}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="w-full h-full"
+                />
+              </div>
+            </div>
           </div>
         </div>
 

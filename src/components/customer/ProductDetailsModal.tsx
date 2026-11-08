@@ -142,7 +142,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
       {/* Mobile Half-Sheet / Expandable Dialog */}
       <div 
         className={`bg-white w-full max-w-md ${
-          isExpanded ? 'h-[92vh]' : 'h-[54vh]'
+          isExpanded ? 'h-[92vh]' : 'h-[58vh]'
         } sm:h-auto sm:max-h-[92vh] sm:rounded-3xl rounded-t-3xl shadow-2xl flex flex-col overflow-hidden relative transition-[height] duration-300 ease-out z-10 animate-in slide-in-from-bottom`}
       >
         {/* Mobile Top Drag Handle Bar */}
@@ -150,10 +150,10 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
           onClick={() => setIsExpanded((prev) => !prev)}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
-          className="w-full pt-2 pb-1.5 flex flex-col items-center justify-center cursor-pointer select-none sm:hidden absolute top-0 inset-x-0 z-30 bg-gradient-to-b from-black/50 to-transparent"
+          className="w-full pt-2.5 pb-2 flex flex-col items-center justify-center cursor-pointer select-none sm:hidden absolute top-0 inset-x-0 z-30 bg-gradient-to-b from-black/60 via-black/20 to-transparent"
           title={isExpanded ? "Collapse to half page" : "Expand to full details"}
         >
-          <div className="w-12 h-1.5 bg-white/80 hover:bg-white rounded-full shadow-md backdrop-blur-md transition-all" />
+          <div className="w-12 h-1.5 bg-white/90 hover:bg-white rounded-full shadow-md backdrop-blur-md transition-all" />
         </div>
         
         {/* Scrollable Content Container */}
@@ -239,69 +239,37 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
           {/* Details Body Sheet */}
           <div className="bg-white px-5 pt-3.5 pb-6 space-y-3.5">
             
-            {/* Mobile Expand / Collapse quick bar */}
-            <div className="sm:hidden">
-              {!isExpanded ? (
-                <button
-                  type="button"
-                  onClick={() => setIsExpanded(true)}
-                  className="w-full py-1.5 px-3 bg-amber-50 hover:bg-amber-100/70 border border-amber-200/60 rounded-xl text-amber-900 flex items-center justify-between text-xs font-bold transition-all active:scale-[0.99] cursor-pointer"
-                >
-                  <span className="flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                    Swipe up or tap for full details & reviews
+            {/* Title & Portion Header Row */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight leading-snug">
+                  {item.name}
+                </h2>
+                
+                {/* Price & Savings */}
+                <div className="flex items-baseline gap-2 mt-1">
+                  <span className="text-2xl font-black text-[#133e2c]">
+                    ₹{item.price}
                   </span>
-                  <ChevronUp className="w-4 h-4 text-amber-700 animate-bounce" />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setIsExpanded(false)}
-                  className="w-full py-1 px-3 bg-stone-100 text-stone-600 rounded-xl flex items-center justify-center gap-1 text-[11px] font-semibold transition-all cursor-pointer"
-                >
-                  <span>Collapse to half screen</span>
-                  <ChevronDown className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
-            {/* Prep Time & Portion Dropdown */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-stone-700 bg-stone-100 px-3 py-1.5 rounded-full">
-                <Clock className="w-3.5 h-3.5 text-stone-500" />
-                <span>{item.prepTime || '10 MINS'}</span>
+                  <span className="text-xs text-stone-400 line-through">
+                    MRP ₹{mrp}
+                  </span>
+                  {savings > 0 && (
+                    <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                      Save ₹{savings}
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Portion selector pill */}
-              <div className="flex items-center gap-1 bg-sky-50 text-sky-700 border border-sky-200/80 text-xs font-bold px-3 py-1.5 rounded-xl">
+              <div className="flex items-center gap-1 bg-sky-50 text-sky-700 border border-sky-200/80 text-xs font-bold px-3 py-1.5 rounded-xl shrink-0 mt-0.5">
                 <span>{selectedSize}</span>
                 <ChevronDown className="w-3.5 h-3.5" />
               </div>
             </div>
 
-            {/* Title, Veg Badge & Category */}
-            <div>
-              <h2 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight leading-snug">
-                {item.name}
-              </h2>
-
-              {/* Price & Savings */}
-              <div className="flex items-baseline gap-2 mt-1.5">
-                <span className="text-2xl font-black text-[#133e2c]">
-                  ₹{item.price}
-                </span>
-                <span className="text-sm text-stone-400 line-through">
-                  MRP ₹{mrp}
-                </span>
-                {savings > 0 && (
-                  <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200">
-                    Save ₹{savings}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Ratings & Review Bar */}
+            {/* Quick Badges Bento Bar: Rating, Prep Time & Reorder */}
             <div className="bg-amber-50/70 border border-amber-200/70 rounded-2xl p-2.5 sm:p-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1 bg-amber-500 text-white font-black text-xs px-2 py-1 rounded-lg shadow-2xs">
@@ -318,21 +286,65 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-100/70 px-2.5 py-1 rounded-full">
-                <ThumbsUp className="w-3 h-3 text-emerald-700" />
-                <span>98% Reorder</span>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 text-[11px] font-bold text-stone-700 bg-stone-100 px-2.5 py-1 rounded-full">
+                  <Clock className="w-3 h-3 text-stone-500" />
+                  <span>{item.prepTime || '10 MINS'}</span>
+                </div>
+                <div className="hidden xs:flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-100/70 px-2 py-1 rounded-full">
+                  <ThumbsUp className="w-3 h-3 text-emerald-700" />
+                  <span>98%</span>
+                </div>
               </div>
             </div>
 
-            {/* Section: About this product */}
-            <div className="space-y-1.5 pt-1">
-              <h3 className="text-sm font-extrabold text-stone-900">
-                About this product
-              </h3>
-              <p className="text-xs text-stone-600 leading-relaxed">
-                {item.description || 'Delicious artisanal preparation made fresh with the highest quality cafe ingredients.'}
-              </p>
+            {/* Short Description Preview */}
+            <p className={`text-xs text-stone-600 leading-relaxed ${isExpanded ? '' : 'line-clamp-2'}`}>
+              {item.description || 'Delicious artisanal preparation made fresh with the highest quality cafe ingredients.'}
+            </p>
+
+            {/* Mobile Expand / Collapse Bar */}
+            <div className="sm:hidden pt-0.5">
+              {!isExpanded ? (
+                <button
+                  type="button"
+                  onClick={() => setIsExpanded(true)}
+                  className="w-full py-2 px-3.5 bg-gradient-to-r from-amber-50 via-amber-100/40 to-orange-50 hover:from-amber-100 hover:to-orange-100 border border-amber-200/80 rounded-2xl text-amber-950 flex items-center justify-between text-xs font-bold transition-all shadow-2xs active:scale-[0.99] cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-amber-500/15 flex items-center justify-center text-amber-800">
+                      <Sparkles className="w-3 h-3 text-amber-700" />
+                    </span>
+                    <span>View full story, ingredients & reviews</span>
+                  </span>
+                  <span className="flex items-center gap-1 text-[10px] font-extrabold text-amber-800 bg-amber-200/60 px-2 py-0.5 rounded-full">
+                    <span>Expand</span>
+                    <ChevronUp className="w-3 h-3 animate-bounce" />
+                  </span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsExpanded(false)}
+                  className="w-full py-1.5 px-3 bg-stone-100 hover:bg-stone-200 text-stone-600 rounded-xl flex items-center justify-center gap-1.5 text-xs font-semibold transition-all cursor-pointer"
+                >
+                  <span>Collapse to half screen</span>
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
+
+            {/* Section: About this product (Fully shown when expanded) */}
+            {isExpanded && (
+              <div className="space-y-1.5 pt-1 animate-in fade-in duration-200">
+                <h3 className="text-sm font-extrabold text-stone-900">
+                  About this dish
+                </h3>
+                <p className="text-xs text-stone-600 leading-relaxed">
+                  {item.description || 'Delicious artisanal preparation made fresh with the highest quality cafe ingredients.'}
+                </p>
+              </div>
+            )}
 
             {/* Section: Why you'll love it */}
             <div className="space-y-2 pt-1 border-t border-stone-100">
