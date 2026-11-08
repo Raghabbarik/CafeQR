@@ -1,4 +1,5 @@
 import type { CafeInfo, MenuItem } from '../types';
+import { DEFAULT_CAFE_LOGO } from './defaultCafeLogo';
 
 export const DEFAULT_CAFE: CafeInfo = {
   name: 'The Roasted Bean Cafe',
@@ -13,7 +14,7 @@ export const DEFAULT_CAFE: CafeInfo = {
   themeColor: '#78350f',
   razorpayKeyId: 'rzp_test_TxJ87ji7k95ncJ',
   tablesCount: 12,
-  logo: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=200&auto=format&fit=crop&q=80',
+  logo: DEFAULT_CAFE_LOGO,
   coverImage: 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=1400&auto=format&fit=crop&q=85',
   wifiSsid: 'RoastedBean-Guest',
   wifiPassword: 'freshcoffee',

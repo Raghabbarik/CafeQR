@@ -9,6 +9,7 @@ import {
   Loader2,
   AlertCircle
 } from 'lucide-react';
+import { ImageWithSkeleton } from '../common/ImageWithSkeleton';
 
 interface MenuManagerViewProps {
   categories: string[];
@@ -42,15 +43,19 @@ export const MenuManagerView: React.FC<MenuManagerViewProps> = ({
   const [isAddingCat, setIsAddingCat] = useState(false);
 
   // Form state
+  const [whyLoveItText, setWhyLoveItText] = useState<string>('');
   const [formData, setFormData] = useState<Partial<MenuItem>>({
     name: '',
     category: categories[0] || 'Coffee & Espresso',
     price: 150,
+    mrp: 180,
+    portion: 'Regular',
     description: '',
     image: 'https://images.unsplash.com/photo-1541167760496-1628856ab772?w=600&auto=format&fit=crop&q=80',
     isVeg: true,
     isBestseller: false,
     prepTime: '5-7 mins',
+    rating: 4.8,
   });
 
   const filteredItems = items.filter((item) => {
@@ -63,15 +68,19 @@ export const MenuManagerView: React.FC<MenuManagerViewProps> = ({
   const handleOpenAdd = () => {
     setEditingItem(null);
     setFormError(null);
+    setWhyLoveItText('Handcrafted with premium selected ingredients\nFreshly prepared to order by our culinary team\nPerfect balance of flavors');
     setFormData({
       name: '',
       category: categories[0] || 'Coffee & Espresso',
       price: 180,
+      mrp: 225,
+      portion: 'Regular',
       description: '',
       image: 'https://images.unsplash.com/photo-1541167760496-1628856ab772?w=600&auto=format&fit=crop&q=80',
       isVeg: true,
       isBestseller: false,
       prepTime: '8-10 mins',
+      rating: 4.8,
     });
     setIsAddModalOpen(true);
   };
@@ -79,7 +88,13 @@ export const MenuManagerView: React.FC<MenuManagerViewProps> = ({
   const handleOpenEdit = (item: MenuItem) => {
     setEditingItem(item);
     setFormError(null);
-    setFormData({ ...item });
+    setWhyLoveItText(item.whyLoveIt?.join('\n') || 'Handcrafted with premium selected ingredients\nFreshly prepared to order');
+    setFormData({
+      ...item,
+      mrp: item.mrp || Math.round(item.price * 1.25),
+      portion: item.portion || 'Regular',
+      rating: item.rating || 4.8,
+    });
     setIsAddModalOpen(true);
   };
 
@@ -90,10 +105,20 @@ export const MenuManagerView: React.FC<MenuManagerViewProps> = ({
     setIsSubmitting(true);
     setFormError(null);
     try {
+      const whyPoints = whyLoveItText
+        .split('\n')
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const payload = {
+        ...formData,
+        whyLoveIt: whyPoints,
+      };
+
       if (editingItem) {
-        await onUpdateItem(editingItem.id, formData);
+        await onUpdateItem(editingItem.id, payload);
       } else {
-        await onAddItem(formData);
+        await onAddItem(payload);
       }
       setIsAddModalOpen(false);
       setEditingItem(null);
@@ -202,10 +227,11 @@ export const MenuManagerView: React.FC<MenuManagerViewProps> = ({
             }`}
           >
             <div className="flex gap-3">
-              <img
+              <ImageWithSkeleton
                 src={item.image}
                 alt={item.name}
-                className="w-20 h-20 rounded-xl object-cover border border-stone-200 shrink-0 bg-stone-100"
+                className="w-full h-full rounded-xl object-cover"
+                containerClassName="w-20 h-20 rounded-xl border border-stone-200 shrink-0 bg-stone-100"
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 mb-1">
@@ -332,7 +358,20 @@ export const MenuManagerView: React.FC<MenuManagerViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="block font-bold text-stone-700 mb-1">Price (₹) *</label>
+                  <label className="block font-bold text-stone-700 mb-1">Portion / Serving Size</label>
+                  <input
+                    type="text"
+                    value={formData.portion || ''}
+                    onChange={(e) => setFormData({ ...formData, portion: e.target.value })}
+                    placeholder="e.g. 350ml, Regular, 2 Pcs"
+                    className="w-full px-3 py-2 bg-stone-50 rounded-xl border border-stone-300 outline-none focus:border-amber-600"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">Selling Price (₹) *</label>
                   <input
                     type="number"
                     required
@@ -342,31 +381,69 @@ export const MenuManagerView: React.FC<MenuManagerViewProps> = ({
                     className="w-full px-3 py-2 bg-stone-50 rounded-xl border border-stone-300 outline-none focus:border-amber-600"
                   />
                 </div>
+
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">MRP / Original (₹)</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={formData.mrp || ''}
+                    onChange={(e) => setFormData({ ...formData, mrp: Number(e.target.value) })}
+                    placeholder="e.g. 240"
+                    className="w-full px-3 py-2 bg-stone-50 rounded-xl border border-stone-300 outline-none focus:border-amber-600"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">Star Rating</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={5}
+                    step={0.1}
+                    value={formData.rating || 4.8}
+                    onChange={(e) => setFormData({ ...formData, rating: Number(e.target.value) })}
+                    className="w-full px-3 py-2 bg-stone-50 rounded-xl border border-stone-300 outline-none focus:border-amber-600"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block font-bold text-stone-700 mb-1">Description</label>
+                <label className="block font-bold text-stone-700 mb-1">Description (Ingredients, Flavor, Story)</label>
                 <textarea
                   rows={2}
                   value={formData.description || ''}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Ingredients, flavors, notes..."
+                  placeholder="Ingredients, flavors, brewing method..."
                   className="w-full px-3 py-2 bg-stone-50 rounded-xl border border-stone-300 outline-none focus:border-amber-600"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-stone-700 mb-1">Photo URL</label>
-                <input
-                  type="url"
-                  value={formData.image || ''}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  placeholder="https://..."
-                  className="w-full px-3 py-2 bg-stone-50 rounded-xl border border-stone-300 outline-none focus:border-amber-600 font-mono text-[11px]"
+                <label className="block font-bold text-stone-700 mb-1">
+                  Why You'll Love It (One highlight point per line)
+                </label>
+                <textarea
+                  rows={3}
+                  value={whyLoveItText}
+                  onChange={(e) => setWhyLoveItText(e.target.value)}
+                  placeholder="Handcrafted with organic single-origin beans&#10;Brewed fresh upon order&#10;Rich and velvety mouthfeel"
+                  className="w-full px-3 py-2 bg-stone-50 rounded-xl border border-stone-300 outline-none focus:border-amber-600 font-sans text-xs"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">Photo URL</label>
+                  <input
+                    type="url"
+                    value={formData.image || ''}
+                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                    placeholder="https://..."
+                    className="w-full px-3 py-2 bg-stone-50 rounded-xl border border-stone-300 outline-none focus:border-amber-600 font-mono text-[11px]"
+                  />
+                </div>
+
                 <div>
                   <label className="block font-bold text-stone-700 mb-1">Prep Time</label>
                   <input
@@ -377,28 +454,28 @@ export const MenuManagerView: React.FC<MenuManagerViewProps> = ({
                     className="w-full px-3 py-2 bg-stone-50 rounded-xl border border-stone-300 outline-none focus:border-amber-600"
                   />
                 </div>
+              </div>
 
-                <div className="flex flex-col justify-end gap-2">
-                  <label className="flex items-center gap-2 cursor-pointer font-bold text-stone-700">
-                    <input
-                      type="checkbox"
-                      checked={formData.isVeg}
-                      onChange={(e) => setFormData({ ...formData, isVeg: e.target.checked })}
-                      className="rounded accent-emerald-600 w-4 h-4"
-                    />
-                    <span>Vegetarian (Veg)</span>
-                  </label>
+              <div className="flex items-center gap-6 pt-1">
+                <label className="flex items-center gap-2 cursor-pointer font-bold text-stone-700">
+                  <input
+                    type="checkbox"
+                    checked={formData.isVeg}
+                    onChange={(e) => setFormData({ ...formData, isVeg: e.target.checked })}
+                    className="rounded accent-emerald-600 w-4 h-4"
+                  />
+                  <span>Vegetarian (Veg)</span>
+                </label>
 
-                  <label className="flex items-center gap-2 cursor-pointer font-bold text-stone-700">
-                    <input
-                      type="checkbox"
-                      checked={formData.isBestseller}
-                      onChange={(e) => setFormData({ ...formData, isBestseller: e.target.checked })}
-                      className="rounded accent-amber-600 w-4 h-4"
-                    />
-                    <span>Mark as Bestseller</span>
-                  </label>
-                </div>
+                <label className="flex items-center gap-2 cursor-pointer font-bold text-stone-700">
+                  <input
+                    type="checkbox"
+                    checked={formData.isBestseller}
+                    onChange={(e) => setFormData({ ...formData, isBestseller: e.target.checked })}
+                    className="rounded accent-amber-600 w-4 h-4"
+                  />
+                  <span>Mark as Bestseller ★</span>
+                </label>
               </div>
 
               <div className="pt-3">

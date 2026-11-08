@@ -16,8 +16,14 @@ import {
   Check,
   ShieldCheck,
   Hash,
-  Receipt
+  Receipt,
+  Star,
+  MessageSquareHeart,
+  Send,
+  Loader2
 } from 'lucide-react';
+import { ImageWithSkeleton } from '../common/ImageWithSkeleton';
+import { api } from '../../services/api';
 
 interface BillReceiptViewProps {
   order: Order;
@@ -33,6 +39,44 @@ export const BillReceiptView: React.FC<BillReceiptViewProps> = ({
   onLookupBills,
 }) => {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  // Customer Feedback state (asked after delivery / on receipt)
+  const [rating, setRating] = useState<number>(5);
+  const [hoverRating, setHoverRating] = useState<number>(0);
+  const [selectedItemId, setSelectedItemId] = useState<string>(order.items[0]?.id || '');
+  const [comment, setComment] = useState<string>('');
+  const [reviewerName, setReviewerName] = useState<string>(order.customerName || '');
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState<boolean>(false);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean>(false);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
+
+  const handleSubmitFeedback = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!comment.trim() || isSubmittingFeedback) return;
+
+    setIsSubmittingFeedback(true);
+    setFeedbackError(null);
+    try {
+      const selectedItem = order.items.find((i) => i.id === selectedItemId) || order.items[0];
+      await api.submitReview({
+        orderId: order.id,
+        itemId: selectedItem ? selectedItem.id : undefined,
+        itemName: selectedItem ? selectedItem.name : 'Cafe Dining Experience',
+        customerName: reviewerName.trim() || order.customerName || 'Happy Customer',
+        customerPhone: order.customerPhone,
+        rating,
+        comment: comment.trim(),
+        status: 'approved',
+      });
+      setFeedbackSubmitted(true);
+      confetti({ particleCount: 70, spread: 65, origin: { y: 0.7 } });
+    } catch (err: any) {
+      console.error('Error submitting feedback:', err);
+      setFeedbackError(err.message || 'Could not submit review. Please try again.');
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
+  };
 
   // Fire confetti celebration on receipt generation
   useEffect(() => {
@@ -209,6 +253,136 @@ export const BillReceiptView: React.FC<BillReceiptViewProps> = ({
           </div>
         </div>
 
+        {/* ================= Customer Feedback & Rating (Post-Order / Delivery) ================= */}
+        <div className="bg-gradient-to-br from-amber-50/70 via-white to-stone-50 rounded-3xl p-5 border border-amber-200/80 shadow-md no-print space-y-3.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-800 flex items-center justify-center font-bold">
+                <MessageSquareHeart className="w-4 h-4 text-amber-700" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-stone-900 text-sm">
+                  {order.orderStatus === 'completed' ? 'How was your meal?' : 'Order Feedback & Review'}
+                </h3>
+                <p className="text-[11px] text-stone-500">
+                  Your feedback helps other guests and is featured on our menu!
+                </p>
+              </div>
+            </div>
+
+            <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
+              Verified Order
+            </span>
+          </div>
+
+          {feedbackSubmitted ? (
+            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-1.5 animate-in zoom-in-95 duration-200">
+              <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
+                <Check className="w-5 h-5 stroke-[3]" />
+              </div>
+              <h4 className="font-extrabold text-emerald-950 text-sm">Thank You for Your Review!</h4>
+              <p className="text-xs text-emerald-800 font-medium">
+                Your feedback has been saved and is now visible on the dish's product details page.
+              </p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmitFeedback} className="space-y-3">
+              {/* Star Rating Selector */}
+              <div className="flex items-center justify-center gap-1.5 py-1">
+                {[1, 2, 3, 4, 5].map((star) => {
+                  const active = (hoverRating || rating) >= star;
+                  return (
+                    <button
+                      key={star}
+                      type="button"
+                      onMouseEnter={() => setHoverRating(star)}
+                      onMouseLeave={() => setHoverRating(0)}
+                      onClick={() => setRating(star)}
+                      className="p-1 hover:scale-115 active:scale-95 transition-transform cursor-pointer"
+                    >
+                      <Star
+                        className={`w-7 h-7 transition-colors ${
+                          active
+                            ? 'text-amber-500 fill-amber-400 drop-shadow-xs'
+                            : 'text-stone-300'
+                        }`}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Select which dish to review */}
+              {order.items.length > 0 && (
+                <div>
+                  <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                    Select dish to review:
+                  </label>
+                  <select
+                    value={selectedItemId}
+                    onChange={(e) => setSelectedItemId(e.target.value)}
+                    className="w-full text-xs font-semibold px-3 py-2 bg-white rounded-xl border border-stone-300 text-stone-800 outline-none focus:border-amber-600"
+                  >
+                    {order.items.map((i) => (
+                      <option key={i.id} value={i.id}>
+                        {i.name} (₹{i.price})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Reviewer Name */}
+              <div>
+                <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                  Your Name (optional):
+                </label>
+                <input
+                  type="text"
+                  value={reviewerName}
+                  onChange={(e) => setReviewerName(e.target.value)}
+                  placeholder="e.g. Rahul Sharma"
+                  className="w-full text-xs p-2.5 bg-white rounded-xl border border-stone-300 text-stone-800 placeholder-stone-400 outline-none focus:border-amber-600 shadow-2xs"
+                />
+              </div>
+
+              {/* Review Text */}
+              <div>
+                <textarea
+                  rows={2}
+                  required
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Tell us what you liked (flavor, portion, presentation, delivery speed)..."
+                  className="w-full text-xs p-3 bg-white rounded-xl border border-stone-300 text-stone-800 placeholder-stone-400 outline-none focus:border-amber-600 resize-none shadow-2xs"
+                />
+              </div>
+
+              {feedbackError && (
+                <p className="text-xs text-red-600 font-semibold">{feedbackError}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={isSubmittingFeedback || !comment.trim()}
+                className="w-full py-2.5 px-4 rounded-xl bg-amber-800 hover:bg-amber-900 disabled:opacity-50 text-white font-bold text-xs shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {isSubmittingFeedback ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Submitting Review...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Submit Customer Review</span>
+                  </>
+                )}
+              </button>
+            </form>
+          )}
+        </div>
+
         {/* ================= Printable Digital Bill ================= */}
         <div
           id="printable-bill"
@@ -219,10 +393,11 @@ export const BillReceiptView: React.FC<BillReceiptViewProps> = ({
 
           {/* 1. Cafe Logo & Name */}
           <div className="text-center pt-2 pb-4 border-b border-dashed border-stone-300">
-            <img
+            <ImageWithSkeleton
               src={cafe.logo}
               alt={cafe.name}
-              className="w-16 h-16 rounded-2xl mx-auto object-cover border border-amber-200 shadow-xs mb-2 bg-white"
+              className="w-full h-full rounded-2xl object-cover"
+              containerClassName="w-16 h-16 rounded-2xl mx-auto border border-amber-200 shadow-xs mb-2 bg-white"
             />
             <h2 className="text-xl font-black text-stone-900 tracking-tight">
               {cafe.name}

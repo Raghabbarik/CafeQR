@@ -2,6 +2,7 @@ import React from 'react';
 import type { CafeInfo } from '../../types';
 import { Sparkles, Wifi, Receipt } from 'lucide-react';
 import { SlideToOrder } from './SlideToOrder';
+import { ImageWithSkeleton } from '../common/ImageWithSkeleton';
 
 interface WelcomeHeroProps {
   cafe: CafeInfo;
@@ -26,12 +27,14 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
   return (
     <div className="min-h-screen h-[100dvh] bg-stone-900 flex flex-col justify-between relative overflow-hidden select-none">
       
-      {/* Full-Bleed Sky & Matcha Latte Hero Background (editable from admin) */}
+      {/* Full-Bleed Sky & Matcha Latte Hero Background with Skeleton Loading */}
       <div className="absolute inset-0 z-0">
-        <img
+        <ImageWithSkeleton
           src={heroImage}
           alt={heroCardTitle}
           className="w-full h-full object-cover object-center brightness-95 scale-102 transition-transform duration-1000"
+          containerClassName="w-full h-full"
+          showIconPlaceholder={false}
         />
         {/* Soft top gradient for header readability */}
         <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/40 via-black/15 to-transparent pointer-events-none" />
@@ -45,10 +48,11 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
         {/* Centered Cafe Logo */}
         <div className="mb-2.5 flex flex-col items-center animate-in fade-in zoom-in-95 duration-500">
           <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full p-1 bg-white/25 backdrop-blur-md border-2 border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.35)] overflow-hidden transition-transform hover:scale-105">
-            <img
+            <ImageWithSkeleton
               src={cafe.logo}
               alt={cafe.name}
               className="w-full h-full rounded-full object-cover"
+              containerClassName="w-full h-full rounded-full"
             />
           </div>
           <p className="text-white/95 text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.22em] mt-1.5 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">

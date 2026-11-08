@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import type { MenuItem } from '../../types';
+import React, { useState, useEffect } from 'react';
+import type { MenuItem, Review } from '../../types';
 import { 
   ArrowLeft, 
   Search, 
@@ -13,8 +13,12 @@ import {
   ShoppingBag,
   Star,
   ThumbsUp,
-  MessageSquare
+  MessageSquare,
+  Send,
+  Loader2
 } from 'lucide-react';
+import { ImageWithSkeleton } from '../common/ImageWithSkeleton';
+import { api } from '../../services/api';
 
 interface ProductDetailsModalProps {
   item: MenuItem | null;
@@ -38,45 +42,86 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
   const [selectedSize, setSelectedSize] = useState<string>(item?.portion || 'Regular');
   const [addedToast, setAddedToast] = useState<boolean>(false);
 
-  // Sync qty when item changes
-  React.useEffect(() => {
-    if (item) {
+  // Live reviews state
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState<boolean>(false);
+  const [isWritingReview, setIsWritingReview] = useState<boolean>(false);
+  const [newReviewRating, setNewReviewRating] = useState<number>(5);
+  const [newReviewName, setNewReviewName] = useState<string>('');
+  const [newReviewComment, setNewReviewComment] = useState<string>('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState<boolean>(false);
+  const [reviewSuccess, setReviewSuccess] = useState<boolean>(false);
+
+  // Fetch reviews when modal opens or item changes
+  useEffect(() => {
+    if (isOpen && item) {
       setQty(currentCartQty > 0 ? currentCartQty : 1);
       setSelectedSize(item.portion || 'Regular');
+      setIsWritingReview(false);
+      setReviewSuccess(false);
+
+      setIsLoadingReviews(true);
+      api.getReviews(item.id)
+        .then((data) => {
+          setReviews(data || []);
+        })
+        .catch((err) => {
+          console.warn('Could not fetch reviews:', err);
+        })
+        .finally(() => {
+          setIsLoadingReviews(false);
+        });
     }
-  }, [item, currentCartQty]);
+  }, [item?.id, isOpen, currentCartQty]);
 
   if (!isOpen || !item) return null;
 
   const mrp = item.mrp || Math.round(item.price * 1.25);
   const savings = mrp - item.price;
-  const ratingValue = item.rating || 4.8;
-  const reviewCount = Math.floor(80 + (item.price * 1.3));
 
-  const whyLoveIt = item.whyLoveIt || [
+  // Calculate live average rating from approved reviews
+  const approvedReviews = reviews.filter((r) => r.status !== 'hidden');
+  const averageRating = approvedReviews.length > 0
+    ? (approvedReviews.reduce((sum, r) => sum + r.rating, 0) / approvedReviews.length).toFixed(1)
+    : (item.rating || 4.8).toFixed(1);
+  const totalReviewsCount = approvedReviews.length > 0 ? approvedReviews.length : Math.floor(25 + (item.price * 0.4));
+
+  const whyLoveIt = item.whyLoveIt && item.whyLoveIt.length > 0 ? item.whyLoveIt : [
     'Handcrafted with premium selected ingredients',
     'Freshly prepared to order by our culinary team',
     'Perfect balance of flavors and authentic cafe craft'
   ];
 
-  // Customer reviews sample tailored to the dish
-  const customerReviews = [
-    {
-      author: 'Ananya S.',
-      rating: 5,
-      date: '2 days ago',
-      comment: `Absolutely loved this ${item.name}! Super fresh, flavorful, and presented beautifully.`,
-    },
-    {
-      author: 'Rohan M.',
-      rating: 5,
-      date: 'Last week',
-      comment: 'Top notch quality! One of my favorite orders here at the cafe.',
-    },
-  ];
-
   const handleIncrease = () => setQty((prev) => prev + 1);
   const handleDecrease = () => setQty((prev) => (prev > 1 ? prev - 1 : 1));
+
+  const handleAddReviewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newReviewComment.trim() || isSubmittingReview) return;
+
+    setIsSubmittingReview(true);
+    try {
+      const created = await api.submitReview({
+        itemId: item.id,
+        itemName: item.name,
+        customerName: newReviewName.trim() || 'Food Enthusiast',
+        rating: newReviewRating,
+        comment: newReviewComment.trim(),
+        status: 'approved',
+      });
+      setReviews((prev) => [created, ...prev]);
+      setNewReviewComment('');
+      setReviewSuccess(true);
+      setTimeout(() => {
+        setIsWritingReview(false);
+        setReviewSuccess(false);
+      }, 1500);
+    } catch (err: any) {
+      alert(`Could not submit review: ${err.message || 'Error'}`);
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
 
   const handleAdd = () => {
     onAddToCart(item, qty);
@@ -134,12 +179,13 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
               </div>
             </div>
 
-            {/* Large Hero Product Image */}
+            {/* Large Hero Product Image with Skeleton Loading */}
             <div className="w-full h-56 sm:h-64 flex items-center justify-center py-2">
-              <img
+              <ImageWithSkeleton
                 src={item.image}
                 alt={item.name}
                 className="max-h-full max-w-[85%] object-contain drop-shadow-xl transition-transform duration-500 hover:scale-105"
+                containerClassName="w-full h-full flex items-center justify-center"
               />
             </div>
           </div>
@@ -206,14 +252,14 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1 bg-amber-500 text-white font-black text-xs px-2 py-1 rounded-lg shadow-2xs">
                   <Star className="w-3.5 h-3.5 fill-white text-white" />
-                  <span>{ratingValue}</span>
+                  <span>{averageRating}</span>
                 </div>
                 <div>
                   <p className="text-xs font-bold text-stone-800 leading-tight">
                     Excellent Taste
                   </p>
                   <p className="text-[10px] text-stone-500">
-                    {reviewCount} verified guest ratings
+                    {totalReviewsCount} guest ratings
                   </p>
                 </div>
               </div>
@@ -230,7 +276,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                 About this product
               </h3>
               <p className="text-xs text-stone-600 leading-relaxed">
-                {item.description}
+                {item.description || 'Delicious artisanal preparation made fresh with the highest quality cafe ingredients.'}
               </p>
             </div>
 
@@ -256,39 +302,137 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
             <div className="space-y-2.5 pt-2 border-t border-stone-100">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-extrabold text-stone-900 flex items-center gap-1.5">
-                  <MessageSquare className="w-4 h-4 text-stone-500" />
-                  <span>Customer Reviews</span>
+                  <MessageSquare className="w-4 h-4 text-amber-800" />
+                  <span>Guest Reviews & Feedback</span>
                 </h3>
-                <span className="text-[11px] font-bold text-[#133e2c]">
-                  See all {reviewCount} →
-                </span>
+                <button
+                  onClick={() => setIsWritingReview(!isWritingReview)}
+                  className="text-xs font-bold text-amber-800 hover:text-amber-950 underline cursor-pointer"
+                >
+                  {isWritingReview ? 'Cancel' : '+ Write Review'}
+                </button>
               </div>
 
-              <div className="space-y-2">
-                {customerReviews.map((rev, idx) => (
-                  <div key={idx} className="bg-stone-50 rounded-xl p-2.5 border border-stone-100 space-y-1">
-                    <div className="flex items-center justify-between text-[11px]">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-stone-800">{rev.author}</span>
-                        <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-bold">
-                          Verified Order
+              {/* Inline Write Review Form */}
+              {isWritingReview && (
+                <form
+                  onSubmit={handleAddReviewSubmit}
+                  className="p-3.5 bg-amber-50/60 rounded-2xl border border-amber-200/80 space-y-2.5 animate-in fade-in duration-200"
+                >
+                  <p className="text-xs font-bold text-stone-800">
+                    Share your experience with {item.name}:
+                  </p>
+
+                  {/* Star rating selector */}
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setNewReviewRating(s)}
+                        className="p-0.5 hover:scale-110 active:scale-95 transition-transform cursor-pointer"
+                      >
+                        <Star
+                          className={`w-5 h-5 ${
+                            newReviewRating >= s
+                              ? 'text-amber-500 fill-amber-400'
+                              : 'text-stone-300'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                    <span className="text-xs font-bold text-stone-600 ml-1">
+                      {newReviewRating} Star{newReviewRating > 1 ? 's' : ''}
+                    </span>
+                  </div>
+
+                  <input
+                    type="text"
+                    value={newReviewName}
+                    onChange={(e) => setNewReviewName(e.target.value)}
+                    placeholder="Your Name (e.g. Rahul S.)"
+                    className="w-full text-xs p-2 bg-white rounded-xl border border-stone-300 outline-none focus:border-amber-600"
+                  />
+
+                  <textarea
+                    rows={2}
+                    required
+                    value={newReviewComment}
+                    onChange={(e) => setNewReviewComment(e.target.value)}
+                    placeholder="How was the taste, presentation, freshness?..."
+                    className="w-full text-xs p-2.5 bg-white rounded-xl border border-stone-300 outline-none focus:border-amber-600 resize-none"
+                  />
+
+                  {reviewSuccess ? (
+                    <div className="p-2 bg-emerald-100 text-emerald-800 rounded-xl text-xs font-bold text-center">
+                      Review posted successfully! Thank you.
+                    </div>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={isSubmittingReview || !newReviewComment.trim()}
+                      className="w-full py-2 px-3 bg-amber-800 hover:bg-amber-900 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      {isSubmittingReview ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Posting...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Post Review</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </form>
+              )}
+
+              {/* Reviews List */}
+              {isLoadingReviews ? (
+                <div className="p-4 flex items-center justify-center gap-2 text-xs text-stone-400">
+                  <Loader2 className="w-4 h-4 animate-spin text-amber-700" />
+                  <span>Loading customer reviews...</span>
+                </div>
+              ) : approvedReviews.length === 0 ? (
+                <div className="p-4 text-center bg-stone-50 rounded-2xl border border-stone-100">
+                  <p className="text-xs text-stone-500 font-medium">
+                    No reviews yet for this dish.
+                  </p>
+                  <p className="text-[11px] text-amber-800 font-bold mt-0.5">
+                    Order today and be the first to share your thoughts!
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {approvedReviews.map((rev) => (
+                    <div key={rev.id} className="bg-stone-50 rounded-xl p-3 border border-stone-100 space-y-1">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-stone-800">{rev.customerName}</span>
+                          <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-bold">
+                            Verified Guest
+                          </span>
+                        </div>
+                        <span className="text-stone-400 text-[10px]">
+                          {new Date(rev.createdAt).toLocaleDateString()}
                         </span>
                       </div>
-                      <span className="text-stone-400 text-[10px]">{rev.date}</span>
-                    </div>
 
-                    <div className="flex items-center gap-0.5 text-amber-500">
-                      {[...Array(rev.rating)].map((_, i) => (
-                        <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
-                      ))}
-                    </div>
+                      <div className="flex items-center gap-0.5 text-amber-500">
+                        {[...Array(rev.rating || 5)].map((_, i) => (
+                          <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
+                        ))}
+                      </div>
 
-                    <p className="text-[11px] text-stone-600 leading-snug">
-                      "{rev.comment}"
-                    </p>
-                  </div>
-                ))}
-              </div>
+                      <p className="text-[11px] text-stone-600 leading-snug">
+                        "{rev.comment}"
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

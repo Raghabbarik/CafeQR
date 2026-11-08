@@ -15,11 +15,12 @@ import {
   Radio,
   LogOut,
   Users,
-  PanelLeftClose
+  PanelLeftClose,
+  MessageSquareHeart
 } from 'lucide-react';
 import { sound } from '../../services/sound';
 
-export type AdminTab = 'orders' | 'hero' | 'menu' | 'analytics' | 'settings' | 'staff';
+export type AdminTab = 'orders' | 'hero' | 'menu' | 'reviews' | 'analytics' | 'settings' | 'staff';
 
 interface AdminSidebarProps {
   cafe: CafeInfo;
@@ -68,6 +69,11 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       id: 'menu' as AdminTab,
       label: 'Menu & Stock',
       icon: UtensilsCrossed,
+    },
+    {
+      id: 'reviews' as AdminTab,
+      label: 'Guest Reviews & Feedback',
+      icon: MessageSquareHeart,
     },
     {
       id: 'analytics' as AdminTab,

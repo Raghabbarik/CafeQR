@@ -23,6 +23,10 @@ import {
   dbDeleteStaff,
   dbGetOrderDisplayCode,
   dbUpdateOrderDisplayCode,
+  dbGetReviews,
+  dbAddReview,
+  dbUpdateReview,
+  dbDeleteReview,
 } from './supabase.js';
 
 dotenv.config();
@@ -643,6 +647,68 @@ const handleVerifyPayment = (req, res) => {
 
 app.post('/api/payment/verify', handleVerifyPayment);
 app.post('/api/razorpay/verify', handleVerifyPayment);
+
+// ---------------- CUSTOMER REVIEWS & FEEDBACK ----------------
+// Get Reviews (optionally filter by itemId)
+app.get('/api/reviews', async (req, res) => {
+  try {
+    const { itemId } = req.query;
+    const reviews = await dbGetReviews(itemId);
+    res.json(reviews || []);
+  } catch (err) {
+    console.error('Error fetching reviews:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Submit New Customer Feedback / Review
+app.post('/api/reviews', async (req, res) => {
+  try {
+    const { orderId, itemId, itemName, customerName, customerPhone, rating, comment } = req.body || {};
+    if (!itemName) {
+      return res.status(400).json({ error: 'Item name is required' });
+    }
+    const newRev = await dbAddReview({
+      orderId,
+      itemId,
+      itemName,
+      customerName: customerName || 'Cafe Guest',
+      customerPhone,
+      rating: rating ? Number(rating) : 5,
+      comment: comment || '',
+      status: 'approved',
+    });
+    safeEmit(req, 'review:new', newRev);
+    res.status(201).json(newRev);
+  } catch (err) {
+    console.error('Error adding review:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update Review (Admin: approve / hide / edit)
+app.put('/api/reviews/:id', async (req, res) => {
+  try {
+    const updated = await dbUpdateReview(req.params.id, req.body || {});
+    safeEmit(req, 'review:updated', updated);
+    res.json({ success: true, review: updated });
+  } catch (err) {
+    console.error('Error updating review:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete Review (Admin)
+app.delete('/api/reviews/:id', async (req, res) => {
+  try {
+    await dbDeleteReview(req.params.id);
+    safeEmit(req, 'review:deleted', { id: req.params.id });
+    res.json({ success: true, message: 'Review deleted', id: req.params.id });
+  } catch (err) {
+    console.error('Error deleting review:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 export default app;
 

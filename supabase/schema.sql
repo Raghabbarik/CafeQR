@@ -71,6 +71,20 @@ CREATE TABLE IF NOT EXISTS public.staff_alerts (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 6. REVIEWS & FEEDBACK TABLE
+CREATE TABLE IF NOT EXISTS public.reviews (
+    id TEXT PRIMARY KEY,
+    order_id TEXT,
+    item_id TEXT,
+    item_name TEXT NOT NULL,
+    customer_name TEXT NOT NULL,
+    customer_phone TEXT,
+    rating NUMERIC NOT NULL DEFAULT 5,
+    comment TEXT,
+    status TEXT DEFAULT 'approved',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ====================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- ====================================================================
@@ -80,6 +94,7 @@ ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.menu_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.staff_alerts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
 
 -- Allow Public/Anon Read for Cafe, Categories & Menu
 DROP POLICY IF EXISTS "Public can view cafe" ON public.cafe;
@@ -99,6 +114,9 @@ CREATE POLICY "Public can manage orders" ON public.orders FOR ALL USING (true);
 
 DROP POLICY IF EXISTS "Public can manage alerts" ON public.staff_alerts;
 CREATE POLICY "Public can manage alerts" ON public.staff_alerts FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Public can manage reviews" ON public.reviews;
+CREATE POLICY "Public can manage reviews" ON public.reviews FOR ALL USING (true);
 
 -- ====================================================================
 -- SEED INITIAL DATA

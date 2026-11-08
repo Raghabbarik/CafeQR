@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { CafeInfo, Order, StaffAlert, MenuItem, OrderStatus, StaffMember } from '../../types';
 import { LiveKDSView } from '../admin/LiveKDSView';
 import { MenuManagerView } from '../admin/MenuManagerView';
+import { ImageWithSkeleton } from '../common/ImageWithSkeleton';
 import {
   ClipboardList,
   UtensilsCrossed,
@@ -71,7 +72,12 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-500 p-0.5 shadow-md shrink-0">
               <div className="w-full h-full rounded-[10px] overflow-hidden bg-stone-950 flex items-center justify-center">
                 {cafe.logo ? (
-                  <img src={cafe.logo} alt={cafe.name} className="w-full h-full object-cover" />
+                  <ImageWithSkeleton
+                    src={cafe.logo}
+                    alt={cafe.name}
+                    className="w-full h-full object-cover"
+                    containerClassName="w-full h-full"
+                  />
                 ) : (
                   <Coffee className="w-4 h-4 text-amber-400" />
                 )}

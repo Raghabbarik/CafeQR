@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { MenuItem } from '../../types';
 import { Plus, Minus, Clock, Heart } from 'lucide-react';
+import { ImageWithSkeleton } from '../common/ImageWithSkeleton';
 
 interface MenuItemCardProps {
   item: MenuItem;
@@ -61,12 +62,13 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
         </button>
       </div>
 
-      {/* Center: Product Image (compact height h-20 sm:h-24) */}
+      {/* Center: Product Image with Skeleton Loading */}
       <div className="w-full h-20 sm:h-24 flex items-center justify-center p-0.5 overflow-hidden">
-        <img
+        <ImageWithSkeleton
           src={item.image}
           alt={item.name}
           className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
+          containerClassName="w-full h-full flex items-center justify-center rounded-xl"
           loading="lazy"
         />
       </div>

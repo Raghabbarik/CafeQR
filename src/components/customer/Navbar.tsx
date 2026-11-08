@@ -1,6 +1,7 @@
 import React from 'react';
 import type { CafeInfo } from '../../types';
 import { ShoppingBag, Bell, Search, Receipt, ArrowLeft } from 'lucide-react';
+import { ImageWithSkeleton } from '../common/ImageWithSkeleton';
 
 interface NavbarProps {
   cafe: CafeInfo;
@@ -40,10 +41,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="font-extrabold text-[11px] sm:text-xs">Home</span>
             </button>
           )}
-          <img
+          <ImageWithSkeleton
             src={cafe.logo}
             alt={cafe.name}
-            className="w-9 h-9 rounded-xl object-cover border border-amber-200 shadow-xs shrink-0"
+            className="w-full h-full object-cover"
+            containerClassName="w-9 h-9 rounded-xl border border-amber-200 shadow-xs shrink-0"
           />
           <div className="leading-tight min-w-0">
             <h1 className="font-bold text-stone-900 text-sm sm:text-base truncate">

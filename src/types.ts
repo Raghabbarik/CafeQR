@@ -98,3 +98,17 @@ export interface StaffAlert {
   time: string;
 }
 
+export interface Review {
+  id: string;
+  orderId?: string;
+  itemId?: string;
+  itemName: string;
+  customerName: string;
+  customerPhone?: string;
+  rating: number; // 1 to 5
+  comment: string;
+  status: 'approved' | 'hidden';
+  createdAt: string;
+}
+
+

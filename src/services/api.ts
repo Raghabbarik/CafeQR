@@ -1,4 +1,4 @@
-import type { CafeInfo, MenuItem, Order, StaffMember, DiningOption } from '../types';
+import type { CafeInfo, MenuItem, Order, StaffMember, DiningOption, Review } from '../types';
 
 // Dynamic backend URL fallback if relative fetch fails (only for local dev on port 3000 -> 5000)
 const getBackendDirectUrl = () => {
@@ -382,5 +382,50 @@ export const api = {
     });
     const data = await res.json();
     return Boolean(res.ok && data.verified);
+  },
+
+  // Customer Reviews & Feedback
+  async getReviews(itemId?: string): Promise<Review[]> {
+    const url = itemId ? `/api/reviews?itemId=${encodeURIComponent(itemId)}` : '/api/reviews';
+    const res = await requestApi(url);
+    if (!res.ok) throw new Error('Failed to fetch reviews');
+    return res.json();
+  },
+
+  async submitReview(review: Partial<Review>): Promise<Review> {
+    const res = await requestApi('/api/reviews', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(review),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to submit review');
+    }
+    return res.json();
+  },
+
+  async updateReview(id: string, updates: Partial<Review>): Promise<Review> {
+    const res = await requestApi(`/api/reviews/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to update review');
+    }
+    const data = await res.json();
+    return data.review;
+  },
+
+  async deleteReview(id: string): Promise<void> {
+    const res = await requestApi(`/api/reviews/${id}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to delete review');
+    }
   },
 };

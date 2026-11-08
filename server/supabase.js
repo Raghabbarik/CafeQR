@@ -86,6 +86,7 @@ export async function dbUpdateCafe(updates) {
   let currentPlainTagline = existing?.tagline || 'Artisanal Coffee & Fresh Gourmet Bites';
   let currentStaff = [];
   let currentOrderDisplayCode = '8899';
+  let currentReviews = [];
   
   if (existing?.tagline && existing.tagline.trim().startsWith('{')) {
     try {
@@ -94,6 +95,7 @@ export async function dbUpdateCafe(updates) {
       if (parsed.hero) currentHero = { ...currentHero, ...parsed.hero };
       if (Array.isArray(parsed.staff)) currentStaff = parsed.staff;
       if (parsed.orderDisplayCode) currentOrderDisplayCode = String(parsed.orderDisplayCode);
+      if (Array.isArray(parsed.reviews)) currentReviews = parsed.reviews;
     } catch (e) {}
   }
 
@@ -109,23 +111,26 @@ export async function dbUpdateCafe(updates) {
   if (updates.tablesCount !== undefined) payload.tables_count = updates.tablesCount;
   if (updates.razorpayKeyId !== undefined) payload.razorpay_key_id = updates.razorpayKeyId;
 
-  // If hero, tagline, staff, or orderDisplayCode is provided, encode into tagline JSON
+  // If hero, tagline, staff, orderDisplayCode, or reviews is provided, encode into tagline JSON
   if (
     updates.hero !== undefined ||
     updates.tagline !== undefined ||
     updates.staff !== undefined ||
-    updates.orderDisplayCode !== undefined
+    updates.orderDisplayCode !== undefined ||
+    updates.reviews !== undefined
   ) {
     const newTagline = updates.tagline !== undefined ? updates.tagline : currentPlainTagline;
     const newHero = updates.hero !== undefined ? { ...currentHero, ...updates.hero } : currentHero;
     const newStaff = updates.staff !== undefined ? updates.staff : currentStaff;
     const newCode = updates.orderDisplayCode !== undefined ? updates.orderDisplayCode : currentOrderDisplayCode;
+    const newReviews = updates.reviews !== undefined ? updates.reviews : currentReviews;
     
     payload.tagline = JSON.stringify({
       tagline: newTagline,
       hero: newHero,
       staff: newStaff,
       orderDisplayCode: newCode,
+      reviews: newReviews,
     });
   }
 
@@ -456,3 +461,186 @@ export async function dbCreateAlert(alert) {
   if (error) console.error('dbCreateAlert error:', error.message);
   return alert;
 }
+
+// ---------------- REVIEWS & FEEDBACK ----------------
+const DEFAULT_REVIEWS = [
+  {
+    id: 'rev_1',
+    itemId: 'item_1',
+    itemName: 'Iced Matcha Latte',
+    customerName: 'Ananya S.',
+    customerPhone: '9876543210',
+    rating: 5,
+    comment: 'Hands down the best Iced Matcha Latte in town! Perfect sweetness and rich ceremonial grade flavor.',
+    status: 'approved',
+    createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+  },
+  {
+    id: 'rev_2',
+    itemId: 'item_1',
+    itemName: 'Iced Matcha Latte',
+    customerName: 'Rohan M.',
+    customerPhone: '9876543211',
+    rating: 5,
+    comment: 'Super refreshing and velvety smooth. My go-to order every morning!',
+    status: 'approved',
+    createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
+  },
+  {
+    id: 'rev_3',
+    itemId: 'item_7',
+    itemName: 'Butter Croissant',
+    customerName: 'Priya K.',
+    customerPhone: '9876543212',
+    rating: 5,
+    comment: 'Warm, flaky layers with real French butter. Goes amazingly with espresso.',
+    status: 'approved',
+    createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
+  },
+  {
+    id: 'rev_4',
+    itemId: 'item_2',
+    itemName: 'Artisanal Cappuccino',
+    customerName: 'Vikram D.',
+    customerPhone: '9876543213',
+    rating: 5,
+    comment: 'Rich crema and wonderful latte art. Outstanding coffee bean roast quality.',
+    status: 'approved',
+    createdAt: new Date(Date.now() - 86400000 * 4).toISOString(),
+  },
+];
+
+export async function dbGetReviews(itemId) {
+  // 1. Try querying dedicated Supabase reviews table if created
+  try {
+    let query = supabase.from('reviews').select('*').order('created_at', { ascending: false });
+    if (itemId) {
+      query = query.eq('item_id', String(itemId));
+    }
+    const { data, error } = await query;
+    if (!error && Array.isArray(data)) {
+      return data.map((r) => ({
+        id: String(r.id),
+        orderId: r.order_id,
+        itemId: r.item_id,
+        itemName: r.item_name,
+        customerName: r.customer_name,
+        customerPhone: r.customer_phone,
+        rating: Number(r.rating || 5),
+        comment: r.comment || '',
+        status: r.status || 'approved',
+        createdAt: r.created_at,
+      }));
+    }
+  } catch (err) {
+    // continue to fallback
+  }
+
+  // 2. Cloud Fallback: Read reviews from cafe.tagline JSON
+  try {
+    const { data: cafe } = await supabase.from('cafe').select('tagline').limit(1).single();
+    if (cafe?.tagline && cafe.tagline.trim().startsWith('{')) {
+      const parsed = JSON.parse(cafe.tagline);
+      if (Array.isArray(parsed.reviews) && parsed.reviews.length > 0) {
+        let revs = parsed.reviews;
+        if (itemId) {
+          revs = revs.filter((r) => r.itemId === itemId || r.itemName === itemId);
+        }
+        return revs;
+      }
+    }
+  } catch (err) {
+    console.warn('Error reading fallback reviews:', err.message);
+  }
+
+  // 3. Return defaults filtered
+  if (itemId) {
+    return DEFAULT_REVIEWS.filter((r) => r.itemId === itemId || r.itemName === itemId);
+  }
+  return DEFAULT_REVIEWS;
+}
+
+export async function dbAddReview(review) {
+  const newReview = {
+    id: review.id || `rev_${Date.now()}`,
+    orderId: review.orderId || null,
+    itemId: review.itemId ? String(review.itemId) : null,
+    itemName: review.itemName || 'Cafe Order',
+    customerName: review.customerName || 'Happy Customer',
+    customerPhone: review.customerPhone || '',
+    rating: Number(review.rating || 5),
+    comment: review.comment || '',
+    status: review.status || 'approved',
+    createdAt: review.createdAt || new Date().toISOString(),
+  };
+
+  // Try saving to Supabase table
+  try {
+    const row = {
+      id: newReview.id,
+      order_id: newReview.orderId,
+      item_id: newReview.itemId,
+      item_name: newReview.itemName,
+      customer_name: newReview.customerName,
+      customer_phone: newReview.customerPhone,
+      rating: newReview.rating,
+      comment: newReview.comment,
+      status: newReview.status,
+      created_at: newReview.createdAt,
+    };
+    const { data, error } = await supabase.from('reviews').insert([row]).select().single();
+    if (!error && data) {
+      return newReview;
+    }
+  } catch (e) {
+    // continue to fallback
+  }
+
+  // Fallback: save to cafe tagline JSON
+  try {
+    const currentReviews = await dbGetReviews();
+    const updated = [newReview, ...currentReviews.filter((r) => r.id !== newReview.id)];
+    await dbUpdateCafe({ reviews: updated });
+  } catch (e) {
+    console.error('dbAddReview fallback error:', e.message);
+  }
+
+  return newReview;
+}
+
+export async function dbUpdateReview(id, updates) {
+  const strId = String(id);
+  // Try table
+  try {
+    const rowUpdates = {};
+    if (updates.status !== undefined) rowUpdates.status = updates.status;
+    if (updates.comment !== undefined) rowUpdates.comment = updates.comment;
+    if (updates.rating !== undefined) rowUpdates.rating = Number(updates.rating);
+    const { data, error } = await supabase.from('reviews').update(rowUpdates).eq('id', strId).select();
+    if (!error && data && data.length > 0) {
+      return data[0];
+    }
+  } catch (e) {}
+
+  // Fallback in JSON
+  const currentReviews = await dbGetReviews();
+  const updated = currentReviews.map((r) => (r.id === strId ? { ...r, ...updates } : r));
+  await dbUpdateCafe({ reviews: updated });
+  return updated.find((r) => r.id === strId);
+}
+
+export async function dbDeleteReview(id) {
+  const strId = String(id);
+  // Try table
+  try {
+    const { error } = await supabase.from('reviews').delete().eq('id', strId);
+    if (!error) return true;
+  } catch (e) {}
+
+  // Fallback in JSON
+  const currentReviews = await dbGetReviews();
+  const updated = currentReviews.filter((r) => r.id !== strId);
+  await dbUpdateCafe({ reviews: updated });
+  return true;
+}
+

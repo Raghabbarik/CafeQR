@@ -7,6 +7,7 @@ import { MenuManagerView } from './MenuManagerView';
 import { CafeSettingsView } from './CafeSettingsView';
 import { AnalyticsView } from './AnalyticsView';
 import { StaffManagerView } from './StaffManagerView';
+import { FeedbackManagerView } from './FeedbackManagerView';
 import { Menu, ArrowLeft, BellRing, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { sound } from '../../services/sound';
 
@@ -98,6 +99,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     staff: {
       title: 'Staff Accounts & TV Display Screen',
       subtitle: 'Assign staff members for Kitchen/Menu access and configure TV order status PIN',
+    },
+    reviews: {
+      title: 'Customer Feedback & Reviews Control',
+      subtitle: 'Approve, moderate, feature and manage dish reviews from verified diners',
     },
   };
 
@@ -227,6 +232,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               onDeleteItem={onDeleteItem}
               onAddCategory={onAddCategory}
             />
+          )}
+
+          {adminTab === 'reviews' && (
+            <FeedbackManagerView menuItems={menuItems} />
           )}
 
           {adminTab === 'analytics' && (
