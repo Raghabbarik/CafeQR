@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { MenuItem, Review } from '../../types';
 import { 
   ArrowLeft, 
@@ -6,6 +6,7 @@ import {
   Heart, 
   Clock, 
   ChevronDown, 
+  ChevronUp,
   Plus, 
   Minus, 
   Sparkles, 
@@ -44,13 +45,19 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
   const [selectedSize, setSelectedSize] = useState<string>(item?.portion || 'Regular');
   const [addedToast, setAddedToast] = useState<boolean>(false);
 
+  // Half-page to full-page expandable state on mobile
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
   // Live reviews state
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoadingReviews, setIsLoadingReviews] = useState<boolean>(false);
 
-  // Fetch reviews when modal opens or item changes
+  // Reset states when modal opens or item changes
   useEffect(() => {
     if (isOpen && item) {
+      setIsExpanded(false);
       setQty(currentCartQty > 0 ? currentCartQty : 1);
       setSelectedSize(item.portion || 'Regular');
 
@@ -98,16 +105,66 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
     }, 400);
   };
 
+  // Touch gesture handling on top drag handle
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartY(e.touches[0].clientY);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartY === null) return;
+    const deltaY = e.changedTouches[0].clientY - touchStartY;
+    if (deltaY < -30) {
+      // Swiped UP -> expand to full page
+      setIsExpanded(true);
+    } else if (deltaY > 40) {
+      // Swiped DOWN -> collapse to half or close
+      if (isExpanded) {
+        setIsExpanded(false);
+      } else {
+        onClose();
+      }
+    }
+    setTouchStartY(null);
+  };
+
+  // Scroll detection: auto-expand when user scrolls down
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (e.currentTarget.scrollTop > 12 && !isExpanded) {
+      setIsExpanded(true);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      {/* Mobile Card / Sheet */}
-      <div className="bg-white w-full max-w-md max-h-[92vh] sm:rounded-3xl rounded-t-3xl shadow-2xl flex flex-col overflow-hidden relative animate-in slide-in-from-bottom duration-300">
+      {/* Backdrop click to close */}
+      <div className="absolute inset-0" onClick={onClose} />
+
+      {/* Mobile Half-Sheet / Expandable Dialog */}
+      <div 
+        className={`bg-white w-full max-w-md ${
+          isExpanded ? 'h-[92vh]' : 'h-[54vh]'
+        } sm:h-auto sm:max-h-[92vh] sm:rounded-3xl rounded-t-3xl shadow-2xl flex flex-col overflow-hidden relative transition-[height] duration-300 ease-out z-10 animate-in slide-in-from-bottom`}
+      >
+        {/* Mobile Top Drag Handle Bar */}
+        <div
+          onClick={() => setIsExpanded((prev) => !prev)}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          className="w-full pt-2 pb-1.5 flex flex-col items-center justify-center cursor-pointer select-none sm:hidden absolute top-0 inset-x-0 z-30 bg-gradient-to-b from-black/50 to-transparent"
+          title={isExpanded ? "Collapse to half page" : "Expand to full details"}
+        >
+          <div className="w-12 h-1.5 bg-white/80 hover:bg-white rounded-full shadow-md backdrop-blur-md transition-all" />
+        </div>
         
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto hide-scrollbar pb-24">
+        {/* Scrollable Content Container */}
+        <div 
+          ref={scrollContainerRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto hide-scrollbar pb-24"
+        >
           
           {/* Top Full-Bleed Product Image Banner with Floating Navigation Directly ON TOP */}
-          <div className="relative w-full h-72 sm:h-80 bg-stone-900 overflow-hidden">
+          <div className={`relative w-full ${isExpanded ? 'h-64 sm:h-80' : 'h-40 sm:h-72'} bg-stone-900 overflow-hidden transition-[height] duration-300`}>
             <ImageWithSkeleton
               src={item.image}
               alt={item.name}
@@ -157,7 +214,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
             </div>
 
             {/* Floating Bottom Info on Image: Veg / Non-Veg Badge & Category */}
-            <div className="absolute bottom-3.5 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
+            <div className="absolute bottom-3 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
               <div className="flex items-center gap-2">
                 <div
                   className={`w-4 h-4 rounded-xs border-2 bg-white flex items-center justify-center shadow-md ${
@@ -180,8 +237,34 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
           </div>
 
           {/* Details Body Sheet */}
-          <div className="bg-white px-5 pt-4 pb-6 space-y-4">
+          <div className="bg-white px-5 pt-3.5 pb-6 space-y-3.5">
             
+            {/* Mobile Expand / Collapse quick bar */}
+            <div className="sm:hidden">
+              {!isExpanded ? (
+                <button
+                  type="button"
+                  onClick={() => setIsExpanded(true)}
+                  className="w-full py-1.5 px-3 bg-amber-50 hover:bg-amber-100/70 border border-amber-200/60 rounded-xl text-amber-900 flex items-center justify-between text-xs font-bold transition-all active:scale-[0.99] cursor-pointer"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                    Swipe up or tap for full details & reviews
+                  </span>
+                  <ChevronUp className="w-4 h-4 text-amber-700 animate-bounce" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsExpanded(false)}
+                  className="w-full py-1 px-3 bg-stone-100 text-stone-600 rounded-xl flex items-center justify-center gap-1 text-[11px] font-semibold transition-all cursor-pointer"
+                >
+                  <span>Collapse to half screen</span>
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
             {/* Prep Time & Portion Dropdown */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5 text-xs font-bold text-stone-700 bg-stone-100 px-3 py-1.5 rounded-full">
@@ -198,12 +281,12 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
 
             {/* Title, Veg Badge & Category */}
             <div>
-              <h2 className="text-2xl font-black text-stone-900 tracking-tight leading-snug">
+              <h2 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight leading-snug">
                 {item.name}
               </h2>
 
               {/* Price & Savings */}
-              <div className="flex items-baseline gap-2 mt-2">
+              <div className="flex items-baseline gap-2 mt-1.5">
                 <span className="text-2xl font-black text-[#133e2c]">
                   ₹{item.price}
                 </span>
@@ -219,7 +302,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
             </div>
 
             {/* Ratings & Review Bar */}
-            <div className="bg-amber-50/70 border border-amber-200/70 rounded-2xl p-3 flex items-center justify-between">
+            <div className="bg-amber-50/70 border border-amber-200/70 rounded-2xl p-2.5 sm:p-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1 bg-amber-500 text-white font-black text-xs px-2 py-1 rounded-lg shadow-2xs">
                   <Star className="w-3.5 h-3.5 fill-white text-white" />
@@ -336,10 +419,10 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
         </div>
 
         {/* Sticky Bottom Bar with Quantity Selector & "Add to cart" Button */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-md border-t border-stone-200/80 shadow-2xl flex items-center gap-3">
+        <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 bg-white/95 backdrop-blur-md border-t border-stone-200/80 shadow-2xl flex items-center gap-3 z-30">
           
           {/* Quantity selector `[-] 01 [+]` */}
-          <div className="flex items-center justify-between bg-stone-100 rounded-2xl px-3 py-2 border border-stone-200/80 min-w-[110px]">
+          <div className="flex items-center justify-between bg-stone-100 rounded-2xl px-3 py-2 border border-stone-200/80 min-w-[105px]">
             <button
               onClick={handleDecrease}
               className="w-7 h-7 rounded-full bg-[#133e2c] text-white flex items-center justify-center font-bold active:scale-90 transition-transform cursor-pointer"
