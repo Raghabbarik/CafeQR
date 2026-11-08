@@ -57,7 +57,7 @@ export async function dbGetCafe() {
     // tagline is plain string
   }
 
-  const heroCover = heroConfig.coverImage || data.cover_image || 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=1400&auto=format&fit=crop&q=85';
+  const heroCover = heroConfig.coverImage || data.cover_image || '';
   heroConfig.coverImage = heroCover;
 
   return {

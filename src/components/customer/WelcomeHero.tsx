@@ -20,22 +20,26 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
   const heroCardTitle = cafe.hero?.cardTitle || 'Welcome Back';
   const heroCardSubtitle = cafe.hero?.cardSubtitle || 'Explore our Fall menu';
   const heroButtonText = cafe.hero?.buttonText || 'Order Now';
-  const heroImage = cafe.hero?.coverImage || cafe.coverImage || 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=1400&auto=format&fit=crop&q=85';
+  const heroImage = cafe.hero?.coverImage || cafe.coverImage || '';
 
   const titleLines = heroTitle.split('\n');
 
   return (
     <div className="min-h-screen h-[100dvh] bg-stone-900 flex flex-col justify-between relative overflow-hidden select-none">
       
-      {/* Full-Bleed Sky & Matcha Latte Hero Background with Skeleton Loading */}
-      <div className="absolute inset-0 z-0">
-        <ImageWithSkeleton
-          src={heroImage}
-          alt={heroCardTitle}
-          className="w-full h-full object-cover object-center brightness-95 scale-102 transition-transform duration-1000"
-          containerClassName="w-full h-full"
-          showIconPlaceholder={false}
-        />
+      {/* Full-Bleed Admin Uploaded Hero Background (No Hardcoded Fallback Images) */}
+      <div className="absolute inset-0 z-0 bg-[#16100d]">
+        {heroImage ? (
+          <ImageWithSkeleton
+            src={heroImage}
+            alt={heroCardTitle}
+            className="w-full h-full object-cover object-center brightness-95 scale-102 transition-transform duration-1000"
+            containerClassName="w-full h-full"
+            showIconPlaceholder={false}
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-b from-[#251b17] via-[#1a120e] to-[#0d0908] animate-pulse" />
+        )}
         {/* Soft top gradient for header readability */}
         <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/40 via-black/15 to-transparent pointer-events-none" />
         {/* Soft bottom vignette */}

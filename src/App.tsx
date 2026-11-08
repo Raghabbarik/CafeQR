@@ -54,16 +54,23 @@ export function App() {
 
   // Cafe data (Instant ready-to-render defaults; updates live from API)
   const [cafe, setCafe] = useState<CafeInfo>(() => {
+    const baseHero = DEFAULT_CAFE.hero || {
+      badge: 'NEW',
+      title: 'ICED\nMATCHA\nLATTE',
+      cardTitle: 'Welcome Back',
+      cardSubtitle: 'Explore our Fall menu',
+      buttonText: 'Order Now',
+    };
+
     try {
-      const cachedCover = localStorage.getItem('cafeqr_hero_cover');
-      if (cachedCover) {
-        const baseHero = DEFAULT_CAFE.hero || {
-          badge: 'NEW',
-          title: 'ICED\nMATCHA\nLATTE',
-          cardTitle: 'Welcome Back',
-          cardSubtitle: 'Explore our Fall menu',
-          buttonText: 'Order Now',
-        };
+      // Clear legacy hardcoded cover image if stored
+      const legacyCover = localStorage.getItem('cafeqr_hero_cover');
+      if (legacyCover && legacyCover.includes('536256263959')) {
+        localStorage.removeItem('cafeqr_hero_cover');
+      }
+
+      const cachedCover = localStorage.getItem('cafeqr_admin_cover_image') || localStorage.getItem('cafeqr_hero_cover');
+      if (cachedCover && !cachedCover.includes('536256263959')) {
         return {
           ...DEFAULT_CAFE,
           coverImage: cachedCover,
@@ -71,7 +78,11 @@ export function App() {
         };
       }
     } catch {}
-    return DEFAULT_CAFE;
+    return {
+      ...DEFAULT_CAFE,
+      coverImage: '',
+      hero: { ...baseHero, coverImage: '' },
+    };
   });
   const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
   const [menuItems, setMenuItems] = useState<MenuItem[]>(DEFAULT_MENU_ITEMS);
@@ -206,7 +217,18 @@ export function App() {
       try {
         const cafeRes = await api.getCafe();
         if (cafeRes && cafeRes.cafe) {
-          setCafe(cafeRes.cafe);
+          const freshCafe = cafeRes.cafe;
+          const freshCover = freshCafe.hero?.coverImage || freshCafe.coverImage || '';
+          try {
+            if (freshCover && !freshCover.includes('536256263959')) {
+              localStorage.setItem('cafeqr_admin_cover_image', freshCover);
+              localStorage.setItem('cafeqr_hero_cover', freshCover);
+            } else {
+              localStorage.removeItem('cafeqr_admin_cover_image');
+              localStorage.removeItem('cafeqr_hero_cover');
+            }
+          } catch {}
+          setCafe(freshCafe);
           if (Array.isArray(cafeRes.categories) && cafeRes.categories.length) {
             setCategories(cafeRes.categories);
           }
@@ -265,11 +287,16 @@ export function App() {
     });
 
     socket.on('cafe:updated', (updatedCafe: CafeInfo) => {
-      if (updatedCafe?.coverImage) {
-        try {
-          localStorage.setItem('cafeqr_hero_cover', updatedCafe.coverImage);
-        } catch {}
-      }
+      const cover = updatedCafe?.hero?.coverImage || updatedCafe?.coverImage || '';
+      try {
+        if (cover && !cover.includes('536256263959')) {
+          localStorage.setItem('cafeqr_admin_cover_image', cover);
+          localStorage.setItem('cafeqr_hero_cover', cover);
+        } else {
+          localStorage.removeItem('cafeqr_admin_cover_image');
+          localStorage.removeItem('cafeqr_hero_cover');
+        }
+      } catch {}
       setCafe(updatedCafe);
     });
 
@@ -589,20 +616,32 @@ export function App() {
 
   const handleUpdateCafeSettings = async (updates: Partial<CafeInfo>) => {
     try {
-      if (updates.coverImage) {
+      const newCover = updates.hero?.coverImage !== undefined ? updates.hero.coverImage : updates.coverImage;
+      if (newCover !== undefined) {
         try {
-          localStorage.setItem('cafeqr_hero_cover', updates.coverImage);
+          if (newCover && !newCover.includes('536256263959')) {
+            localStorage.setItem('cafeqr_admin_cover_image', newCover);
+            localStorage.setItem('cafeqr_hero_cover', newCover);
+          } else {
+            localStorage.removeItem('cafeqr_admin_cover_image');
+            localStorage.removeItem('cafeqr_hero_cover');
+          }
         } catch {}
       }
       setCafe((prev) => ({ ...prev, ...updates }));
       const res = await api.updateCafe(updates);
       if (res?.cafe) {
         setCafe(res.cafe);
-        if (res.cafe.coverImage) {
-          try {
-            localStorage.setItem('cafeqr_hero_cover', res.cafe.coverImage);
-          } catch {}
-        }
+        const savedCover = res.cafe.hero?.coverImage || res.cafe.coverImage || '';
+        try {
+          if (savedCover && !savedCover.includes('536256263959')) {
+            localStorage.setItem('cafeqr_admin_cover_image', savedCover);
+            localStorage.setItem('cafeqr_hero_cover', savedCover);
+          } else {
+            localStorage.removeItem('cafeqr_admin_cover_image');
+            localStorage.removeItem('cafeqr_hero_cover');
+          }
+        } catch {}
       }
     } catch (err: any) {
       console.error('Failed to update cafe settings:', err);
@@ -717,29 +756,7 @@ export function App() {
           </div>
         )}
         <WelcomeHero
-          cafe={cafe || {
-            name: 'The Roasted Bean Cafe',
-            tagline: 'Artisanal Coffee & Fresh Gourmet Bites',
-            address: '128 Brewmaster Ave, Ground Floor, Indiranagar',
-            phone: '+91 98765 43210',
-            email: 'hello@roastedbean.cafe',
-            gstNumber: '29ABCDE1234F1Z5',
-            fssaiNumber: '11223344556677',
-            taxRate: 5,
-            currency: '₹',
-            themeColor: '#78350f',
-            logo: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=200&auto=format&fit=crop&q=80',
-            coverImage: 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=1400&auto=format&fit=crop&q=85',
-            wifiSsid: 'RoastedBean-Guest',
-            wifiPass: 'freshcoffee',
-            hero: {
-              badge: 'NEW',
-              title: 'ICED\nMATCHA\nLATTE',
-              cardTitle: 'Welcome Back',
-              cardSubtitle: 'Explore our Fall menu & order online',
-              buttonText: 'Order Now',
-            },
-          }}
+          cafe={cafe}
           onGetStarted={() => setCustomerStep('menu')}
           onCheckBill={() => setIsBillLookupOpen(true)}
         />
@@ -820,20 +837,7 @@ export function App() {
       )}
       {/* Sticky Top Navbar */}
       <Navbar
-        cafe={cafe || {
-          name: 'The Roasted Bean Cafe',
-          tagline: 'Artisanal Coffee & Fresh Gourmet Bites',
-          address: '128 Brewmaster Ave, Ground Floor, Indiranagar',
-          phone: '+91 98765 43210',
-          email: 'hello@roastedbean.cafe',
-          gstNumber: '29ABCDE1234F1Z5',
-          fssaiNumber: '11223344556677',
-          taxRate: 5,
-          currency: '₹',
-          themeColor: '#78350f',
-          logo: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=200&auto=format&fit=crop&q=80',
-          coverImage: 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=1400&auto=format&fit=crop&q=85',
-        }}
+        cafe={cafe}
         totalCartItems={totalCartItems}
         onBackToHome={() => setCustomerStep('welcome')}
         onOpenCart={() => setIsCartOpen(true)}
@@ -1017,20 +1021,7 @@ export function App() {
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
         cartItems={cart}
-        cafe={cafe || {
-          name: 'The Roasted Bean Cafe',
-          tagline: 'Artisanal Coffee & Fresh Gourmet Bites',
-          address: '128 Brewmaster Ave, Ground Floor, Indiranagar',
-          phone: '+91 98765 43210',
-          email: 'hello@roastedbean.cafe',
-          gstNumber: '29ABCDE1234F1Z5',
-          fssaiNumber: '11223344556677',
-          taxRate: 5,
-          currency: '₹',
-          themeColor: '#78350f',
-          logo: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=200&auto=format&fit=crop&q=80',
-          coverImage: 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=1400&auto=format&fit=crop&q=85',
-        }}
+        cafe={cafe}
         notes={notes}
         onNotesChange={setNotes}
         onAddToCart={handleAddToCart}

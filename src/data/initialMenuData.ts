@@ -15,7 +15,7 @@ export const DEFAULT_CAFE: CafeInfo = {
   razorpayKeyId: 'rzp_test_TxJ87ji7k95ncJ',
   tablesCount: 12,
   logo: DEFAULT_CAFE_LOGO,
-  coverImage: 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=1400&auto=format&fit=crop&q=85',
+  coverImage: '',
   wifiSsid: 'RoastedBean-Guest',
   wifiPassword: 'freshcoffee',
   hero: {

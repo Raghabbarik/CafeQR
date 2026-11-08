@@ -8,7 +8,8 @@ import {
   CheckCircle, 
   Smartphone, 
   ArrowRight,
-  Upload
+  Upload,
+  Trash2
 } from 'lucide-react';
 
 interface HeroCustomizerViewProps {
@@ -16,12 +17,53 @@ interface HeroCustomizerViewProps {
   onSave: (updates: Partial<CafeInfo>) => Promise<void>;
 }
 
+// Client-side canvas image compression to ensure instant uploads & prevent quota errors
+const compressImageFile = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const MAX_WIDTH = 1920;
+        const MAX_HEIGHT = 1080;
+        let { width, height } = img;
+
+        if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+          if (width / height > MAX_WIDTH / MAX_HEIGHT) {
+            height = Math.round((height * MAX_WIDTH) / width);
+            width = MAX_WIDTH;
+          } else {
+            width = Math.round((width * MAX_HEIGHT) / height);
+            height = MAX_HEIGHT;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(reader.result as string);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.86);
+        resolve(compressedDataUrl);
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
 export const HeroCustomizerView: React.FC<HeroCustomizerViewProps> = ({
   cafe,
   onSave,
 }) => {
   const [formData, setFormData] = useState({
-    coverImage: cafe.coverImage || cafe.hero?.coverImage || 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=1400&auto=format&fit=crop&q=85',
+    coverImage: cafe.coverImage || cafe.hero?.coverImage || '',
     logo: cafe.logo || '',
     name: cafe.name || 'The Roasted Bean Cafe',
     heroBadge: cafe.hero?.badge || 'NEW',
@@ -31,11 +73,11 @@ export const HeroCustomizerView: React.FC<HeroCustomizerViewProps> = ({
     heroButtonText: cafe.hero?.buttonText || 'Order Now',
   });
 
-  // Sync with incoming cafe data from cloud
+  // Sync with incoming cafe data from cloud (always prioritizing admin's uploaded image)
   useEffect(() => {
     if (cafe) {
       setFormData({
-        coverImage: cafe.coverImage || cafe.hero?.coverImage || 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=1400&auto=format&fit=crop&q=85',
+        coverImage: cafe.coverImage || cafe.hero?.coverImage || '',
         logo: cafe.logo || '',
         name: cafe.name || 'The Roasted Bean Cafe',
         heroBadge: cafe.hero?.badge || 'NEW',
@@ -50,12 +92,8 @@ export const HeroCustomizerView: React.FC<HeroCustomizerViewProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Suggested high-quality curated cafe hero background presets
+  // Suggested curated cafe hero background presets (pure coffee / cafe themes)
   const presets = [
-    {
-      label: 'Matcha Latte (Sky)',
-      url: 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=1400&auto=format&fit=crop&q=85',
-    },
     {
       label: 'Artisanal Espresso Bar',
       url: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=1400&auto=format&fit=crop&q=85',
@@ -75,24 +113,26 @@ export const HeroCustomizerView: React.FC<HeroCustomizerViewProps> = ({
   ];
 
   const handlePresetSelect = (url: string) => {
+    // Replaces previous image with newly chosen preset
     setFormData((prev) => ({ ...prev, coverImage: url }));
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 3 * 1024 * 1024) {
-        alert('Image file is larger than 3MB. Please select a smaller photo.');
-        return;
+      try {
+        const compressedBase64 = await compressImageFile(file);
+        // Completely replaces previous image with new uploaded photo
+        setFormData((prev) => ({ ...prev, coverImage: compressedBase64 }));
+      } catch (err) {
+        console.error('Failed to process image:', err);
+        alert('Could not read the selected image file. Please try another image.');
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === 'string') {
-          setFormData((prev) => ({ ...prev, coverImage: reader.result as string }));
-        }
-      };
-      reader.readAsDataURL(file);
     }
+  };
+
+  const handleRemoveImage = () => {
+    setFormData((prev) => ({ ...prev, coverImage: '' }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -114,7 +154,13 @@ export const HeroCustomizerView: React.FC<HeroCustomizerViewProps> = ({
       };
 
       try {
-        localStorage.setItem('cafeqr_hero_cover', formData.coverImage);
+        if (formData.coverImage) {
+          localStorage.setItem('cafeqr_admin_cover_image', formData.coverImage);
+          localStorage.setItem('cafeqr_hero_cover', formData.coverImage);
+        } else {
+          localStorage.removeItem('cafeqr_admin_cover_image');
+          localStorage.removeItem('cafeqr_hero_cover');
+        }
       } catch {}
 
       await onSave(updates);
@@ -189,25 +235,40 @@ export const HeroCustomizerView: React.FC<HeroCustomizerViewProps> = ({
                 <label className="text-xs font-bold text-stone-700">
                   Background Image URL (Full-Bleed Cover)
                 </label>
-                <label className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 px-2.5 py-1 rounded-lg border border-amber-200 cursor-pointer transition-colors shadow-2xs">
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>Upload Image File</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                </label>
+                <div className="flex items-center gap-2">
+                  {formData.coverImage && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="inline-flex items-center gap-1 text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-lg border border-red-200 transition-colors shadow-2xs cursor-pointer"
+                      title="Remove background image"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Remove</span>
+                    </button>
+                  )}
+                  <label className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 px-2.5 py-1 rounded-lg border border-amber-200 cursor-pointer transition-colors shadow-2xs">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload Image File</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
               </div>
               <input
                 type="text"
-                required
                 value={formData.coverImage}
                 onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
                 placeholder="https://... or upload image"
                 className="w-full px-3.5 py-2.5 bg-stone-50 rounded-xl border border-stone-300 outline-none focus:border-amber-600 text-xs font-mono"
               />
+              <p className="text-[11px] text-stone-500 mt-1">
+                Uploading a new photo completely removes the previous image and updates all customer screens live.
+              </p>
             </div>
 
             {/* Curated Presets */}
@@ -395,16 +456,18 @@ export const HeroCustomizerView: React.FC<HeroCustomizerViewProps> = ({
             <div className="w-full h-full rounded-[34px] overflow-hidden relative flex flex-col justify-between bg-stone-900 select-none">
               
               {/* Background Image Preview */}
-              <div className="absolute inset-0 z-0">
-                <img
-                  src={formData.coverImage}
-                  alt="Preview"
-                  className="w-full h-full object-cover object-center brightness-95"
-                  onError={(e) => {
-                    // Fallback if image fails to load
-                    (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=1400&auto=format&fit=crop&q=85';
-                  }}
-                />
+              <div className="absolute inset-0 z-0 bg-[#16100d]">
+                {formData.coverImage ? (
+                  <img
+                    src={formData.coverImage}
+                    alt="Preview"
+                    className="w-full h-full object-cover object-center brightness-95"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-b from-[#251b17] via-[#1a120e] to-[#0d0908] flex items-center justify-center p-4 text-center">
+                    <span className="text-[10px] text-stone-500 font-bold uppercase tracking-wider">No Background Image Set</span>
+                  </div>
+                )}
                 <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/40 to-transparent pointer-events-none" />
                 <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
               </div>
