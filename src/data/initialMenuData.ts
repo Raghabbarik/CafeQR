@@ -130,7 +130,7 @@ export const DEFAULT_MENU_ITEMS: MenuItem[] = [
       'House-made Genovese basil pine-nut pesto',
       'Melted creamy buffalo mozzarella',
     ],
-    image: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600&auto=format&fit=crop&q=80',
+    image: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=800&auto=format&fit=crop&q=80',
     isVeg: false,
     isBestseller: true,
     isAvailable: true,

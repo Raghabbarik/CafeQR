@@ -144,12 +144,12 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
             </div>
 
             {/* Large Hero Product Image with Skeleton Loading */}
-            <div className="w-full h-56 sm:h-64 flex items-center justify-center py-2">
+            <div className="w-full h-64 sm:h-72 flex items-center justify-center p-2">
               <ImageWithSkeleton
                 src={item.image}
                 alt={item.name}
-                className="max-h-full max-w-[85%] object-contain drop-shadow-xl transition-transform duration-500 hover:scale-105"
-                containerClassName="w-full h-full flex items-center justify-center"
+                className="w-full h-full object-cover rounded-2xl shadow-md transition-transform duration-500 hover:scale-[1.02]"
+                containerClassName="w-full h-full flex items-center justify-center rounded-2xl overflow-hidden bg-white shadow-xs"
               />
             </div>
           </div>

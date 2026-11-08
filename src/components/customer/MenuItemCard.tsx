@@ -63,12 +63,12 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
       </div>
 
       {/* Center: Product Image with Skeleton Loading */}
-      <div className="w-full h-20 sm:h-24 flex items-center justify-center p-0.5 overflow-hidden">
+      <div className="w-full h-28 sm:h-32 flex items-center justify-center p-0.5 overflow-hidden">
         <ImageWithSkeleton
           src={item.image}
           alt={item.name}
-          className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
-          containerClassName="w-full h-full flex items-center justify-center rounded-xl"
+          className="w-full h-full object-cover rounded-xl group-hover:scale-105 transition-transform duration-300"
+          containerClassName="w-full h-full flex items-center justify-center rounded-xl bg-stone-100"
           loading="lazy"
         />
       </div>
