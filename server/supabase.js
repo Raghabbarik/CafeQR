@@ -510,12 +510,15 @@ const DEFAULT_REVIEWS = [
   },
 ];
 
-export async function dbGetReviews(itemId) {
+export async function dbGetReviews(itemId, orderId) {
   // 1. Try querying dedicated Supabase reviews table if created
   try {
     let query = supabase.from('reviews').select('*').order('created_at', { ascending: false });
     if (itemId) {
       query = query.eq('item_id', String(itemId));
+    }
+    if (orderId) {
+      query = query.eq('order_id', String(orderId));
     }
     const { data, error } = await query;
     if (!error && Array.isArray(data)) {
@@ -546,6 +549,9 @@ export async function dbGetReviews(itemId) {
         if (itemId) {
           revs = revs.filter((r) => r.itemId === itemId || r.itemName === itemId);
         }
+        if (orderId) {
+          revs = revs.filter((r) => String(r.orderId) === String(orderId));
+        }
         return revs;
       }
     }
@@ -553,7 +559,10 @@ export async function dbGetReviews(itemId) {
     console.warn('Error reading fallback reviews:', err.message);
   }
 
-  // 3. Return defaults filtered
+  // 3. Return defaults filtered (only when not querying for a specific orderId)
+  if (orderId) {
+    return [];
+  }
   if (itemId) {
     return DEFAULT_REVIEWS.filter((r) => r.itemId === itemId || r.itemName === itemId);
   }
@@ -561,6 +570,14 @@ export async function dbGetReviews(itemId) {
 }
 
 export async function dbAddReview(review) {
+  // Prevent duplicate feedback for the same order (one review per order)
+  if (review.orderId && !String(review.orderId).startsWith('admin_')) {
+    const existing = await dbGetReviews(null, review.orderId);
+    if (existing && existing.length > 0) {
+      throw new Error('Feedback has already been submitted for this order. Double feedback is not allowed.');
+    }
+  }
+
   const newReview = {
     id: review.id || `rev_${Date.now()}`,
     orderId: review.orderId || null,

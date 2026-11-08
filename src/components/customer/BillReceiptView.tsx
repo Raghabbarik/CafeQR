@@ -47,12 +47,47 @@ export const BillReceiptView: React.FC<BillReceiptViewProps> = ({
   const [comment, setComment] = useState<string>('');
   const [reviewerName, setReviewerName] = useState<string>(order.customerName || '');
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState<boolean>(false);
-  const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean>(false);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean>(() => {
+    try {
+      return Boolean(localStorage.getItem(`cafeqr_feedback_${order.id}`));
+    } catch {
+      return false;
+    }
+  });
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
+
+  // Check server & localStorage if feedback has already been submitted for this order
+  useEffect(() => {
+    let isMounted = true;
+    if (order.id) {
+      try {
+        if (localStorage.getItem(`cafeqr_feedback_${order.id}`)) {
+          setFeedbackSubmitted(true);
+        }
+      } catch {}
+
+      // Verify with database to prevent double feedback across devices / sessions
+      api.getReviews(undefined, order.id)
+        .then((existingRevs) => {
+          if (isMounted && Array.isArray(existingRevs) && existingRevs.length > 0) {
+            setFeedbackSubmitted(true);
+            try {
+              localStorage.setItem(`cafeqr_feedback_${order.id}`, 'true');
+            } catch {}
+          }
+        })
+        .catch(() => {
+          // resilient fallback
+        });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [order.id]);
 
   const handleSubmitFeedback = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!comment.trim() || isSubmittingFeedback) return;
+    if (!comment.trim() || isSubmittingFeedback || feedbackSubmitted) return;
 
     setIsSubmittingFeedback(true);
     setFeedbackError(null);
@@ -68,11 +103,22 @@ export const BillReceiptView: React.FC<BillReceiptViewProps> = ({
         comment: comment.trim(),
         status: 'approved',
       });
+      try {
+        localStorage.setItem(`cafeqr_feedback_${order.id}`, 'true');
+      } catch {}
       setFeedbackSubmitted(true);
       confetti({ particleCount: 70, spread: 65, origin: { y: 0.7 } });
     } catch (err: any) {
       console.error('Error submitting feedback:', err);
-      setFeedbackError(err.message || 'Could not submit review. Please try again.');
+      if (err.message && (err.message.includes('already been submitted') || err.message.includes('Double feedback'))) {
+        try {
+          localStorage.setItem(`cafeqr_feedback_${order.id}`, 'true');
+        } catch {}
+        setFeedbackSubmitted(true);
+        setFeedbackError(null);
+      } else {
+        setFeedbackError(err.message || 'Could not submit review. Please try again.');
+      }
     } finally {
       setIsSubmittingFeedback(false);
     }
@@ -281,9 +327,9 @@ export const BillReceiptView: React.FC<BillReceiptViewProps> = ({
                 <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
                   <Check className="w-5 h-5 stroke-[3]" />
                 </div>
-                <h4 className="font-extrabold text-emerald-950 text-sm">Thank You for Your Review!</h4>
+                <h4 className="font-extrabold text-emerald-950 text-sm">Feedback Received!</h4>
                 <p className="text-xs text-emerald-800 font-medium">
-                  Your feedback has been saved and is now visible on the dish's product details page.
+                  Thank you! Your feedback for this order has been submitted. Only one review per order is permitted.
                 </p>
               </div>
             ) : (

@@ -649,11 +649,11 @@ app.post('/api/payment/verify', handleVerifyPayment);
 app.post('/api/razorpay/verify', handleVerifyPayment);
 
 // ---------------- CUSTOMER REVIEWS & FEEDBACK ----------------
-// Get Reviews (optionally filter by itemId)
+// Get Reviews (optionally filter by itemId or orderId)
 app.get('/api/reviews', async (req, res) => {
   try {
-    const { itemId } = req.query;
-    const reviews = await dbGetReviews(itemId);
+    const { itemId, orderId } = req.query;
+    const reviews = await dbGetReviews(itemId, orderId);
     res.json(reviews || []);
   } catch (err) {
     console.error('Error fetching reviews:', err);
@@ -661,7 +661,7 @@ app.get('/api/reviews', async (req, res) => {
   }
 });
 
-// Submit New Customer Feedback / Review (Only for verified orders)
+// Submit New Customer Feedback / Review (Only for verified orders, once per order)
 app.post('/api/reviews', async (req, res) => {
   try {
     const { orderId, itemId, itemName, customerName, customerPhone, rating, comment } = req.body || {};
@@ -671,6 +671,7 @@ app.post('/api/reviews', async (req, res) => {
     if (!itemName) {
       return res.status(400).json({ error: 'Item name is required' });
     }
+
     const newRev = await dbAddReview({
       orderId,
       itemId,
@@ -685,7 +686,8 @@ app.post('/api/reviews', async (req, res) => {
     res.status(201).json(newRev);
   } catch (err) {
     console.error('Error adding review:', err);
-    res.status(500).json({ error: err.message });
+    const isDuplicate = err.message && (err.message.includes('already been submitted') || err.message.includes('Double feedback'));
+    res.status(isDuplicate ? 409 : 500).json({ error: err.message });
   }
 });
 

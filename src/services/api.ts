@@ -385,8 +385,12 @@ export const api = {
   },
 
   // Customer Reviews & Feedback
-  async getReviews(itemId?: string): Promise<Review[]> {
-    const url = itemId ? `/api/reviews?itemId=${encodeURIComponent(itemId)}` : '/api/reviews';
+  async getReviews(itemId?: string, orderId?: string): Promise<Review[]> {
+    const params = new URLSearchParams();
+    if (itemId) params.append('itemId', itemId);
+    if (orderId) params.append('orderId', orderId);
+    const qs = params.toString();
+    const url = qs ? `/api/reviews?${qs}` : '/api/reviews';
     const res = await requestApi(url);
     if (!res.ok) throw new Error('Failed to fetch reviews');
     return res.json();
