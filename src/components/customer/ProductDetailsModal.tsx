@@ -14,7 +14,7 @@ import {
   Star,
   ThumbsUp,
   MessageSquare,
-  Send,
+  ShieldCheck,
   Loader2
 } from 'lucide-react';
 import { ImageWithSkeleton } from '../common/ImageWithSkeleton';
@@ -45,20 +45,12 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
   // Live reviews state
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoadingReviews, setIsLoadingReviews] = useState<boolean>(false);
-  const [isWritingReview, setIsWritingReview] = useState<boolean>(false);
-  const [newReviewRating, setNewReviewRating] = useState<number>(5);
-  const [newReviewName, setNewReviewName] = useState<string>('');
-  const [newReviewComment, setNewReviewComment] = useState<string>('');
-  const [isSubmittingReview, setIsSubmittingReview] = useState<boolean>(false);
-  const [reviewSuccess, setReviewSuccess] = useState<boolean>(false);
 
   // Fetch reviews when modal opens or item changes
   useEffect(() => {
     if (isOpen && item) {
       setQty(currentCartQty > 0 ? currentCartQty : 1);
       setSelectedSize(item.portion || 'Regular');
-      setIsWritingReview(false);
-      setReviewSuccess(false);
 
       setIsLoadingReviews(true);
       api.getReviews(item.id)
@@ -94,34 +86,6 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
 
   const handleIncrease = () => setQty((prev) => prev + 1);
   const handleDecrease = () => setQty((prev) => (prev > 1 ? prev - 1 : 1));
-
-  const handleAddReviewSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newReviewComment.trim() || isSubmittingReview) return;
-
-    setIsSubmittingReview(true);
-    try {
-      const created = await api.submitReview({
-        itemId: item.id,
-        itemName: item.name,
-        customerName: newReviewName.trim() || 'Food Enthusiast',
-        rating: newReviewRating,
-        comment: newReviewComment.trim(),
-        status: 'approved',
-      });
-      setReviews((prev) => [created, ...prev]);
-      setNewReviewComment('');
-      setReviewSuccess(true);
-      setTimeout(() => {
-        setIsWritingReview(false);
-        setReviewSuccess(false);
-      }, 1500);
-    } catch (err: any) {
-      alert(`Could not submit review: ${err.message || 'Error'}`);
-    } finally {
-      setIsSubmittingReview(false);
-    }
-  };
 
   const handleAdd = () => {
     onAddToCart(item, qty);
@@ -305,89 +269,11 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                   <MessageSquare className="w-4 h-4 text-amber-800" />
                   <span>Guest Reviews & Feedback</span>
                 </h3>
-                <button
-                  onClick={() => setIsWritingReview(!isWritingReview)}
-                  className="text-xs font-bold text-amber-800 hover:text-amber-950 underline cursor-pointer"
-                >
-                  {isWritingReview ? 'Cancel' : '+ Write Review'}
-                </button>
+                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                  <span>Verified Orders Only</span>
+                </span>
               </div>
-
-              {/* Inline Write Review Form */}
-              {isWritingReview && (
-                <form
-                  onSubmit={handleAddReviewSubmit}
-                  className="p-3.5 bg-amber-50/60 rounded-2xl border border-amber-200/80 space-y-2.5 animate-in fade-in duration-200"
-                >
-                  <p className="text-xs font-bold text-stone-800">
-                    Share your experience with {item.name}:
-                  </p>
-
-                  {/* Star rating selector */}
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => setNewReviewRating(s)}
-                        className="p-0.5 hover:scale-110 active:scale-95 transition-transform cursor-pointer"
-                      >
-                        <Star
-                          className={`w-5 h-5 ${
-                            newReviewRating >= s
-                              ? 'text-amber-500 fill-amber-400'
-                              : 'text-stone-300'
-                          }`}
-                        />
-                      </button>
-                    ))}
-                    <span className="text-xs font-bold text-stone-600 ml-1">
-                      {newReviewRating} Star{newReviewRating > 1 ? 's' : ''}
-                    </span>
-                  </div>
-
-                  <input
-                    type="text"
-                    value={newReviewName}
-                    onChange={(e) => setNewReviewName(e.target.value)}
-                    placeholder="Your Name (e.g. Rahul S.)"
-                    className="w-full text-xs p-2 bg-white rounded-xl border border-stone-300 outline-none focus:border-amber-600"
-                  />
-
-                  <textarea
-                    rows={2}
-                    required
-                    value={newReviewComment}
-                    onChange={(e) => setNewReviewComment(e.target.value)}
-                    placeholder="How was the taste, presentation, freshness?..."
-                    className="w-full text-xs p-2.5 bg-white rounded-xl border border-stone-300 outline-none focus:border-amber-600 resize-none"
-                  />
-
-                  {reviewSuccess ? (
-                    <div className="p-2 bg-emerald-100 text-emerald-800 rounded-xl text-xs font-bold text-center">
-                      Review posted successfully! Thank you.
-                    </div>
-                  ) : (
-                    <button
-                      type="submit"
-                      disabled={isSubmittingReview || !newReviewComment.trim()}
-                      className="w-full py-2 px-3 bg-amber-800 hover:bg-amber-900 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
-                    >
-                      {isSubmittingReview ? (
-                        <>
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          <span>Posting...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Send className="w-3.5 h-3.5" />
-                          <span>Post Review</span>
-                        </>
-                      )}
-                    </button>
-                  )}
-                </form>
-              )}
 
               {/* Reviews List */}
               {isLoadingReviews ? (
@@ -397,11 +283,11 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                 </div>
               ) : approvedReviews.length === 0 ? (
                 <div className="p-4 text-center bg-stone-50 rounded-2xl border border-stone-100">
-                  <p className="text-xs text-stone-500 font-medium">
+                  <p className="text-xs text-stone-600 font-semibold">
                     No reviews yet for this dish.
                   </p>
-                  <p className="text-[11px] text-amber-800 font-bold mt-0.5">
-                    Order today and be the first to share your thoughts!
+                  <p className="text-[11px] text-stone-400 mt-0.5">
+                    Reviews can only be submitted by verified diners after order delivery.
                   </p>
                 </div>
               ) : (
@@ -431,6 +317,11 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                       </p>
                     </div>
                   ))}
+                  <div className="text-center pt-1">
+                    <p className="text-[10px] text-stone-400">
+                      🔒 Only diners who ordered and received this dish can write reviews.
+                    </p>
+                  </div>
                 </div>
               )}
             </div>

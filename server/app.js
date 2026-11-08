@@ -661,10 +661,13 @@ app.get('/api/reviews', async (req, res) => {
   }
 });
 
-// Submit New Customer Feedback / Review
+// Submit New Customer Feedback / Review (Only for verified orders)
 app.post('/api/reviews', async (req, res) => {
   try {
     const { orderId, itemId, itemName, customerName, customerPhone, rating, comment } = req.body || {};
+    if (!orderId) {
+      return res.status(400).json({ error: 'Feedback can only be submitted after placing and receiving an order.' });
+    }
     if (!itemName) {
       return res.status(400).json({ error: 'Item name is required' });
     }

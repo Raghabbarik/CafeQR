@@ -84,6 +84,7 @@ export const FeedbackManagerView: React.FC<FeedbackManagerViewProps> = ({ menuIt
     try {
       const targetDish = menuItems.find((i) => i.id === newItemId) || menuItems[0];
       const created = await api.submitReview({
+        orderId: `admin_${Date.now()}`,
         itemId: targetDish?.id,
         itemName: targetDish?.name || 'Cafe Special',
         customerName: newCustomerName.trim() || 'Verified Guest',

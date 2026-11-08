@@ -73,3 +73,4 @@ export const ImageWithSkeleton: React.FC<ImageWithSkeletonProps> = ({
     </div>
   );
 };
+
