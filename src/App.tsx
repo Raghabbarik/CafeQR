@@ -84,8 +84,31 @@ export function App() {
       hero: { ...baseHero, coverImage: '' },
     };
   });
-  const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(DEFAULT_MENU_ITEMS);
+  const [categories, setCategories] = useState<string[]>(() => {
+    try {
+      const cached = localStorage.getItem('cafeqr_cached_menu');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed.categories) && parsed.categories.length) {
+          return parsed.categories;
+        }
+      }
+    } catch {}
+    return DEFAULT_CATEGORIES;
+  });
+
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(() => {
+    try {
+      const cached = localStorage.getItem('cafeqr_cached_menu');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed.items) && parsed.items.length) {
+          return parsed.items;
+        }
+      }
+    } catch {}
+    return DEFAULT_MENU_ITEMS;
+  });
 
   // Cart & Checkout state
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -211,11 +234,16 @@ export function App() {
     }
   }, []);
 
-  // 2. Fetch Initial Cafe & Menu Data (updates in background; never blocks screen)
+  // 2. Fetch Initial Cafe & Menu Data in Parallel (High-speed concurrent sync; never blocks screen)
   useEffect(() => {
     async function initData() {
       try {
-        const cafeRes = await api.getCafe();
+        const [cafeRes, menuRes, ordersRes] = await Promise.all([
+          api.getCafe().catch(() => null),
+          api.getMenu().catch(() => null),
+          mode === 'admin' || mode === 'staff' ? api.getOrders().catch(() => []) : Promise.resolve([]),
+        ]);
+
         if (cafeRes && cafeRes.cafe) {
           const freshCafe = cafeRes.cafe;
           const freshCover = freshCafe.hero?.coverImage || freshCafe.coverImage || '';
@@ -234,13 +262,20 @@ export function App() {
           }
         }
 
-        const menuRes = await api.getMenu();
         if (menuRes && Array.isArray(menuRes.items) && menuRes.items.length) {
           setMenuItems(menuRes.items);
+          if (Array.isArray(menuRes.categories) && menuRes.categories.length) {
+            setCategories(menuRes.categories);
+          }
+          try {
+            localStorage.setItem('cafeqr_cached_menu', JSON.stringify({
+              categories: menuRes.categories || [],
+              items: menuRes.items,
+            }));
+          } catch {}
         }
 
-        const ordersRes = await api.getOrders();
-        if (Array.isArray(ordersRes)) {
+        if (Array.isArray(ordersRes) && ordersRes.length) {
           setOrders(ordersRes);
         }
       } catch (err) {
@@ -248,7 +283,7 @@ export function App() {
       }
     }
     initData();
-  }, []);
+  }, [mode]);
 
   // 3. Setup Real-time WebSockets
   useEffect(() => {
@@ -283,7 +318,15 @@ export function App() {
 
     socket.on('menu:updated', (data: { categories: string[]; items: MenuItem[] }) => {
       if (data.categories) setCategories(data.categories);
-      if (data.items) setMenuItems(data.items);
+      if (data.items) {
+        setMenuItems(data.items);
+        try {
+          localStorage.setItem('cafeqr_cached_menu', JSON.stringify({
+            categories: data.categories || [],
+            items: data.items,
+          }));
+        } catch {}
+      }
     });
 
     socket.on('cafe:updated', (updatedCafe: CafeInfo) => {

@@ -28,6 +28,7 @@ import {
   dbUpdateReview,
   dbDeleteReview,
 } from './supabase.js';
+import { cache } from './cache.js';
 
 dotenv.config();
 
@@ -280,12 +281,19 @@ app.put('/api/admin/display/code', async (req, res) => {
 
 // ---------------- REST API ROUTES (BACKED BY SUPABASE) ----------------
 
-// Get Cafe Info & Settings
+// Get Cafe Info & Settings (Cached via Redis / In-Memory + Edge CDN)
 app.get('/api/cafe', async (req, res) => {
   try {
+    const cached = await cache.get('cafeqr:cafe');
+    if (cached) {
+      res.set('X-Cache', 'HIT');
+      res.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+      return res.json(cached);
+    }
+
     const cafe = await dbGetCafe();
     const categories = await dbGetCategories();
-    res.json({
+    const payload = {
       cafe: cafe || {
         name: 'The Roasted Bean Cafe',
         tagline: 'Artisanal Coffee & Fresh Gourmet Bites',
@@ -293,11 +301,16 @@ app.get('/api/cafe', async (req, res) => {
         currency: 'INR',
         tablesCount: 12,
         logo: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=200&auto=format&fit=crop&q=80',
-        coverImage: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=1200&auto=format&fit=crop&q=80',
+        coverImage: '',
         razorpayKeyId: RAZORPAY_KEY_ID,
       },
       categories: categories || [],
-    });
+    };
+
+    await cache.set('cafeqr:cafe', payload, 600);
+    res.set('X-Cache', 'MISS');
+    res.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+    res.json(payload);
   } catch (err) {
     console.error('Error fetching cafe from Supabase:', err);
     res.status(500).json({ error: err.message });
@@ -308,6 +321,7 @@ app.get('/api/cafe', async (req, res) => {
 app.put('/api/cafe', async (req, res) => {
   try {
     await dbUpdateCafe(req.body);
+    await cache.invalidateCafe();
     const cafe = await dbGetCafe();
     safeEmit(req, 'cafe:updated', cafe);
     res.json({ success: true, cafe });
@@ -317,15 +331,27 @@ app.put('/api/cafe', async (req, res) => {
   }
 });
 
-// Get Menu Items
+// Get Menu Items (Cached via Redis / In-Memory + Edge CDN)
 app.get('/api/menu', async (req, res) => {
   try {
+    const cached = await cache.get('cafeqr:menu');
+    if (cached) {
+      res.set('X-Cache', 'HIT');
+      res.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+      return res.json(cached);
+    }
+
     const items = await dbGetMenuItems();
     const categories = await dbGetCategories();
-    res.json({
+    const payload = {
       categories: categories || [],
       items: items || [],
-    });
+    };
+
+    await cache.set('cafeqr:menu', payload, 600);
+    res.set('X-Cache', 'MISS');
+    res.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+    res.json(payload);
   } catch (err) {
     console.error('Error fetching menu from Supabase:', err);
     res.status(500).json({ error: err.message });
@@ -359,6 +385,7 @@ app.post('/api/menu/items', async (req, res) => {
     };
 
     const saved = await dbAddMenuItem(newItem);
+    await cache.invalidateMenu();
 
     const items = await dbGetMenuItems();
     const categories = await dbGetCategories();
@@ -375,6 +402,7 @@ app.post('/api/menu/items', async (req, res) => {
 app.put('/api/menu/items/:id', async (req, res) => {
   try {
     const updated = await dbUpdateMenuItem(req.params.id, req.body || {});
+    await cache.invalidateMenu();
     const items = await dbGetMenuItems();
     const categories = await dbGetCategories();
     safeEmit(req, 'menu:updated', { categories, items });
@@ -389,6 +417,7 @@ app.put('/api/menu/items/:id', async (req, res) => {
 app.delete('/api/menu/items/:id', async (req, res) => {
   try {
     await dbDeleteMenuItem(req.params.id);
+    await cache.invalidateMenu();
     const items = await dbGetMenuItems();
     const categories = await dbGetCategories();
     safeEmit(req, 'menu:updated', { categories, items });
@@ -405,6 +434,7 @@ app.post('/api/categories', async (req, res) => {
     const { name } = req.body;
     if (!name) return res.status(400).json({ error: 'Category name required' });
     await dbAddCategory(name);
+    await cache.invalidateMenu();
     const categories = await dbGetCategories();
     const items = await dbGetMenuItems();
     safeEmit(req, 'menu:updated', { categories, items });
