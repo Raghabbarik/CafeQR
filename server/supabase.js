@@ -198,13 +198,29 @@ export async function dbGetCategories() {
 }
 
 export async function dbAddCategory(name) {
+  const cleanName = (name || '').trim();
+  if (!cleanName) return null;
+
+  try {
+    const { data: existing } = await supabase.from('categories').select('*').eq('name', cleanName).limit(1);
+    if (existing && existing.length > 0) {
+      return existing[0];
+    }
+  } catch (e) {
+    // continue to insert
+  }
+
   const id = `cat_${Date.now()}`;
-  const { data, error } = await supabase.from('categories').insert([{ id, name }]).select().single();
+  const { data, error } = await supabase
+    .from('categories')
+    .upsert([{ id, name: cleanName }], { onConflict: 'name' })
+    .select();
+
   if (error) {
     console.error('dbAddCategory error:', error.message);
     throw new Error(error.message);
   }
-  return data;
+  return data?.[0] || { id, name: cleanName };
 }
 
 // ---------------- MENU ITEMS ----------------
@@ -215,7 +231,7 @@ export async function dbGetMenuItems() {
     return [];
   }
   return data.map((item) => ({
-    id: item.id,
+    id: String(item.id),
     name: item.name,
     category: item.category,
     price: Number(item.price),
@@ -233,33 +249,34 @@ export async function dbGetMenuItems() {
 }
 
 export async function dbAddMenuItem(item) {
-  const id = item.id || `item_${Date.now()}`;
+  const id = item.id ? String(item.id) : `item_${Date.now()}`;
   const row = {
     id,
     name: item.name,
-    category: item.category,
+    category: item.category || 'General',
     price: Number(item.price),
     mrp: item.mrp ? Number(item.mrp) : Math.round(Number(item.price) * 1.25),
     portion: item.portion || 'Regular',
     description: item.description || '',
-    why_love_it: item.whyLoveIt || [],
+    why_love_it: Array.isArray(item.whyLoveIt) ? item.whyLoveIt : [],
     image: item.image || '',
     is_veg: item.isVeg ?? true,
     is_bestseller: item.isBestseller ?? false,
     is_available: item.isAvailable ?? true,
     prep_time: item.prepTime || '10 mins',
-    rating: item.rating || 4.8,
+    rating: item.rating ? Number(item.rating) : 4.8,
   };
 
-  const { data, error } = await supabase.from('menu_items').insert([row]).select().single();
+  const { data, error } = await supabase.from('menu_items').upsert([row]).select();
   if (error) {
     console.error('dbAddMenuItem error:', error.message);
     throw new Error(error.message);
   }
-  return data;
+  return data?.[0] || row;
 }
 
 export async function dbUpdateMenuItem(id, updates) {
+  const strId = String(id);
   const payload = {
     updated_at: new Date().toISOString(),
   };
@@ -271,28 +288,56 @@ export async function dbUpdateMenuItem(id, updates) {
   if (updates.description !== undefined) payload.description = updates.description;
   if (updates.whyLoveIt !== undefined) payload.why_love_it = updates.whyLoveIt;
   if (updates.image !== undefined) payload.image = updates.image;
-  if (updates.isVeg !== undefined) payload.is_veg = updates.isVeg;
-  if (updates.isBestseller !== undefined) payload.is_bestseller = updates.isBestseller;
-  if (updates.isAvailable !== undefined) payload.is_available = updates.isAvailable;
+  if (updates.isVeg !== undefined) payload.is_veg = Boolean(updates.isVeg);
+  if (updates.isBestseller !== undefined) payload.is_bestseller = Boolean(updates.isBestseller);
+  if (updates.isAvailable !== undefined) payload.is_available = Boolean(updates.isAvailable);
   if (updates.prepTime !== undefined) payload.prep_time = updates.prepTime;
-  if (updates.rating !== undefined) payload.rating = updates.rating;
+  if (updates.rating !== undefined) payload.rating = Number(updates.rating);
 
+  // Try update first
   const { data, error } = await supabase
     .from('menu_items')
     .update(payload)
-    .eq('id', id)
-    .select()
-    .single();
+    .eq('id', strId)
+    .select();
 
   if (error) {
-    console.error('dbUpdateMenuItem error:', error.message);
+    console.error('dbUpdateMenuItem update error:', error.message);
     throw new Error(error.message);
   }
-  return data;
+
+  // If item wasn't in Supabase yet, upsert it so it is saved permanently
+  if (!data || data.length === 0) {
+    const fullRow = {
+      id: strId,
+      name: updates.name || 'Menu Item',
+      category: updates.category || 'General',
+      price: updates.price ? Number(updates.price) : 100,
+      mrp: updates.mrp ? Number(updates.mrp) : (updates.price ? Math.round(Number(updates.price) * 1.25) : 125),
+      portion: updates.portion || 'Regular',
+      description: updates.description || '',
+      why_love_it: Array.isArray(updates.whyLoveIt) ? updates.whyLoveIt : [],
+      image: updates.image || '',
+      is_veg: updates.isVeg ?? true,
+      is_bestseller: updates.isBestseller ?? false,
+      is_available: updates.isAvailable ?? true,
+      prep_time: updates.prepTime || '10 mins',
+      rating: updates.rating ? Number(updates.rating) : 4.8,
+    };
+    const insertRes = await supabase.from('menu_items').upsert([fullRow]).select();
+    if (insertRes.error) {
+      console.error('dbUpdateMenuItem upsert fallback error:', insertRes.error.message);
+      throw new Error(insertRes.error.message);
+    }
+    return insertRes.data?.[0] || fullRow;
+  }
+
+  return data[0];
 }
 
 export async function dbDeleteMenuItem(id) {
-  const { error } = await supabase.from('menu_items').delete().eq('id', id);
+  const strId = String(id);
+  const { error } = await supabase.from('menu_items').delete().eq('id', strId);
   if (error) {
     console.error('dbDeleteMenuItem error:', error.message);
     throw new Error(error.message);

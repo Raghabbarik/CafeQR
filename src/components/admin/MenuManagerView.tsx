@@ -5,7 +5,9 @@ import {
   Edit3, 
   Trash2, 
   X, 
-  Search
+  Search,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 
 interface MenuManagerViewProps {
@@ -29,10 +31,15 @@ export const MenuManagerView: React.FC<MenuManagerViewProps> = ({
   const [search, setSearch] = useState<string>('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   // New Category input state
   const [isAddCatOpen, setIsAddCatOpen] = useState(false);
   const [newCatName, setNewCatName] = useState('');
+  const [isAddingCat, setIsAddingCat] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState<Partial<MenuItem>>({
@@ -55,6 +62,7 @@ export const MenuManagerView: React.FC<MenuManagerViewProps> = ({
 
   const handleOpenAdd = () => {
     setEditingItem(null);
+    setFormError(null);
     setFormData({
       name: '',
       category: categories[0] || 'Coffee & Espresso',
@@ -70,32 +78,67 @@ export const MenuManagerView: React.FC<MenuManagerViewProps> = ({
 
   const handleOpenEdit = (item: MenuItem) => {
     setEditingItem(item);
+    setFormError(null);
     setFormData({ ...item });
     setIsAddModalOpen(true);
   };
 
   const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.price) return;
+    if (!formData.name || formData.price === undefined || isSubmitting) return;
 
-    if (editingItem) {
-      await onUpdateItem(editingItem.id, formData);
-    } else {
-      await onAddItem(formData);
+    setIsSubmitting(true);
+    setFormError(null);
+    try {
+      if (editingItem) {
+        await onUpdateItem(editingItem.id, formData);
+      } else {
+        await onAddItem(formData);
+      }
+      setIsAddModalOpen(false);
+      setEditingItem(null);
+    } catch (err: any) {
+      console.error('Error saving menu item:', err);
+      setFormError(err.message || 'Failed to save dish. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsAddModalOpen(false);
   };
 
   const handleToggleStock = async (item: MenuItem) => {
-    await onUpdateItem(item.id, { isAvailable: !item.isAvailable });
+    if (togglingId) return;
+    setTogglingId(item.id);
+    try {
+      await onUpdateItem(item.id, { isAvailable: !item.isAvailable });
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const handleDeleteItem = async (item: MenuItem) => {
+    if (deletingId) return;
+    if (!window.confirm(`Delete "${item.name}" from menu? This cannot be undone.`)) return;
+    setDeletingId(item.id);
+    try {
+      await onDeleteItem(item.id);
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCatName.trim()) return;
-    await onAddCategory(newCatName.trim());
-    setNewCatName('');
-    setIsAddCatOpen(false);
+    if (!newCatName.trim() || isAddingCat) return;
+    setIsAddingCat(true);
+    try {
+      await onAddCategory(newCatName.trim());
+      setNewCatName('');
+      setIsAddCatOpen(false);
+    } catch (err: any) {
+      alert(`Could not create category: ${err.message || 'Error'}`);
+    } finally {
+      setIsAddingCat(false);
+    }
   };
 
   return (
@@ -192,19 +235,26 @@ export const MenuManagerView: React.FC<MenuManagerViewProps> = ({
             <div className="pt-3 mt-3 border-t border-stone-100 flex items-center justify-between">
               {/* In-Stock Toggle */}
               <button
+                type="button"
                 onClick={() => handleToggleStock(item)}
+                disabled={togglingId === item.id}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer border ${
                   item.isAvailable
                     ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
                     : 'bg-stone-200 text-stone-600 border-stone-300 hover:bg-stone-300'
                 }`}
               >
-                <span className={`w-2 h-2 rounded-full ${item.isAvailable ? 'bg-emerald-600' : 'bg-stone-500'}`} />
+                {togglingId === item.id ? (
+                  <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                ) : (
+                  <span className={`w-2 h-2 rounded-full ${item.isAvailable ? 'bg-emerald-600' : 'bg-stone-500'}`} />
+                )}
                 <span>{item.isAvailable ? 'In Stock' : 'Sold Out'}</span>
               </button>
 
               <div className="flex items-center gap-1">
                 <button
+                  type="button"
                   onClick={() => handleOpenEdit(item)}
                   className="p-1.5 text-stone-600 hover:text-amber-800 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
                   title="Edit Dish"
@@ -212,15 +262,17 @@ export const MenuManagerView: React.FC<MenuManagerViewProps> = ({
                   <Edit3 className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => {
-                    if (confirm(`Delete "${item.name}"?`)) {
-                      onDeleteItem(item.id);
-                    }
-                  }}
-                  className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                  type="button"
+                  disabled={deletingId === item.id}
+                  onClick={() => handleDeleteItem(item)}
+                  className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
                   title="Delete Dish"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  {deletingId === item.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-red-600" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
                 </button>
               </div>
             </div>
@@ -242,6 +294,13 @@ export const MenuManagerView: React.FC<MenuManagerViewProps> = ({
             <h3 className="text-lg font-bold text-stone-900 mb-4">
               {editingItem ? 'Edit Dish Details' : 'Add New Dish to Menu'}
             </h3>
+
+            {formError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                <span>{formError}</span>
+              </div>
+            )}
 
             <form onSubmit={handleSubmitForm} className="space-y-3.5 text-xs">
               <div>
@@ -345,9 +404,17 @@ export const MenuManagerView: React.FC<MenuManagerViewProps> = ({
               <div className="pt-3">
                 <button
                   type="submit"
-                  className="w-full py-3 rounded-xl bg-amber-800 hover:bg-amber-900 text-white font-bold text-sm shadow-md transition-colors cursor-pointer"
+                  disabled={isSubmitting}
+                  className="w-full py-3 rounded-xl bg-amber-800 hover:bg-amber-900 disabled:opacity-50 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  {editingItem ? 'Save Changes' : 'Add Dish to Menu'}
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Saving to Menu...</span>
+                    </>
+                  ) : (
+                    <span>{editingItem ? 'Save Changes' : 'Add Dish to Menu'}</span>
+                  )}
                 </button>
               </div>
             </form>
@@ -377,9 +444,17 @@ export const MenuManagerView: React.FC<MenuManagerViewProps> = ({
               />
               <button
                 type="submit"
-                className="w-full py-2.5 rounded-xl bg-amber-800 hover:bg-amber-900 text-white font-bold text-xs"
+                disabled={isAddingCat}
+                className="w-full py-2.5 rounded-xl bg-amber-800 hover:bg-amber-900 disabled:opacity-50 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer"
               >
-                Create Category
+                {isAddingCat ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Creating...</span>
+                  </>
+                ) : (
+                  <span>Create Category</span>
+                )}
               </button>
             </form>
           </div>

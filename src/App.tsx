@@ -479,25 +479,102 @@ export function App() {
     }
   };
 
-  // Admin menu operations
+  // Admin / Staff menu operations (instant local update + persistent cloud save)
   const handleAddMenuItem = async (item: Partial<MenuItem>) => {
-    await api.addMenuItem(item);
+    try {
+      const newItem = await api.addMenuItem(item);
+      // Immediately reflect in UI for admin, staff, and customer menus
+      setMenuItems((prev) => {
+        const without = prev.filter((i) => i.id !== newItem.id);
+        return [newItem, ...without];
+      });
+      if (newItem.category && !categories.includes(newItem.category)) {
+        setCategories((prev) => [...prev, newItem.category]);
+      }
+      // Re-sync with cloud database in background
+      api.getMenu().then((fresh) => {
+        if (fresh?.items && Array.isArray(fresh.items) && fresh.items.length) {
+          setMenuItems(fresh.items);
+        }
+        if (fresh?.categories && Array.isArray(fresh.categories) && fresh.categories.length) {
+          setCategories(fresh.categories);
+        }
+      }).catch((err) => console.warn('Background menu sync notice:', err));
+    } catch (err: any) {
+      console.error('Failed to add menu item:', err);
+      alert(`Could not add dish: ${err.message || 'Server error'}`);
+      throw err;
+    }
   };
 
   const handleUpdateMenuItem = async (id: string, updates: Partial<MenuItem>) => {
-    await api.updateMenuItem(id, updates);
+    try {
+      // Optimistically update UI immediately
+      setMenuItems((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, ...updates } : item))
+      );
+      if (updates.category && !categories.includes(updates.category)) {
+        setCategories((prev) => [...prev, updates.category!]);
+      }
+      await api.updateMenuItem(id, updates);
+      // Re-sync with cloud database
+      api.getMenu().then((fresh) => {
+        if (fresh?.items && Array.isArray(fresh.items) && fresh.items.length) {
+          setMenuItems(fresh.items);
+        }
+      }).catch((err) => console.warn('Background menu sync notice:', err));
+    } catch (err: any) {
+      console.error('Failed to update menu item:', err);
+      alert(`Could not save dish changes: ${err.message || 'Server error'}`);
+      throw err;
+    }
   };
 
   const handleDeleteMenuItem = async (id: string) => {
-    await api.deleteMenuItem(id);
+    try {
+      // Optimistically remove from UI immediately
+      setMenuItems((prev) => prev.filter((item) => item.id !== id));
+      await api.deleteMenuItem(id);
+      // Re-sync with cloud database
+      api.getMenu().then((fresh) => {
+        if (fresh?.items && Array.isArray(fresh.items)) {
+          setMenuItems(fresh.items);
+        }
+      }).catch((err) => console.warn('Background menu sync notice:', err));
+    } catch (err: any) {
+      console.error('Failed to delete menu item:', err);
+      alert(`Could not delete dish: ${err.message || 'Server error'}`);
+      throw err;
+    }
   };
 
   const handleAddCategory = async (name: string) => {
-    await api.addCategory(name);
+    try {
+      const clean = name.trim();
+      setCategories((prev) => (prev.includes(clean) ? prev : [...prev, clean]));
+      const res = await api.addCategory(clean);
+      if (res?.categories && Array.isArray(res.categories)) {
+        setCategories(res.categories);
+      }
+    } catch (err: any) {
+      console.error('Failed to add category:', err);
+      alert(`Could not add category: ${err.message || 'Server error'}`);
+      throw err;
+    }
   };
 
   const handleUpdateCafeSettings = async (updates: Partial<CafeInfo>) => {
-    await api.updateCafe(updates);
+    try {
+      setCafe((prev) => ({ ...prev, ...updates }));
+      const res = await api.updateCafe(updates);
+      if (res?.cafe) {
+        setCafe(res.cafe);
+      }
+    } catch (err: any) {
+      console.error('Failed to update cafe settings:', err);
+      alert(`Could not save cafe settings: ${err.message || 'Server error'}`);
+      throw err;
+    }
   };
 
   // ---------------- TV ORDER DISPLAY BOARD (/orderdisplay) ----------------

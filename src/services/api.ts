@@ -77,17 +77,23 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(item),
     });
-    if (!res.ok) throw new Error('Failed to add menu item');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to add menu item');
+    }
     return res.json();
   },
 
-  async updateMenuItem(id: string, updates: Partial<MenuItem>): Promise<MenuItem> {
+  async updateMenuItem(id: string, updates: Partial<MenuItem>): Promise<any> {
     const res = await requestApi(`/api/menu/items/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates),
     });
-    if (!res.ok) throw new Error('Failed to update menu item');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to update menu item');
+    }
     return res.json();
   },
 
@@ -95,7 +101,10 @@ export const api = {
     const res = await requestApi(`/api/menu/items/${id}`, {
       method: 'DELETE',
     });
-    if (!res.ok) throw new Error('Failed to delete menu item');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to delete menu item');
+    }
   },
 
   async addCategory(name: string): Promise<{ categories: string[] }> {
@@ -104,7 +113,10 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name }),
     });
-    if (!res.ok) throw new Error('Failed to add category');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to add category');
+    }
     return res.json();
   },
 

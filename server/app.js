@@ -44,6 +44,14 @@ export const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Ensure Vercel serverless functions match routes regardless of whether /api prefix is stripped
+app.use((req, res, next) => {
+  if (req.url && !req.url.startsWith('/api') && req.url !== '/' && !req.url.startsWith('/socket.io')) {
+    req.url = '/api' + req.url;
+  }
+  next();
+});
+
 // Helper to safely emit Socket.IO events if running in stateful mode (local server / VPS)
 const safeEmit = (req, event, data, room) => {
   const io = req?.app?.get('io');
@@ -323,14 +331,14 @@ app.get('/api/menu', async (req, res) => {
 // Add Menu Item
 app.post('/api/menu/items', async (req, res) => {
   try {
-    const { name, category, price, mrp, portion, description, whyLoveIt, image, isVeg, isBestseller, prepTime, rating } = req.body;
-    if (!name || !price) {
-      return res.status(400).json({ error: 'Name and price are required' });
+    const { id, name, category, price, mrp, portion, description, whyLoveIt, image, isVeg, isBestseller, prepTime, rating } = req.body || {};
+    if (!name || price === undefined || price === null || isNaN(Number(price))) {
+      return res.status(400).json({ error: 'Name and a valid numeric price are required' });
     }
 
     const p = Number(price);
     const newItem = {
-      id: `item_${Date.now()}`,
+      id: id || `item_${Date.now()}`,
       name,
       category: category || 'General',
       price: p,
@@ -346,13 +354,13 @@ app.post('/api/menu/items', async (req, res) => {
       rating: rating ? Number(rating) : 4.8,
     };
 
-    await dbAddMenuItem(newItem);
+    const saved = await dbAddMenuItem(newItem);
 
     const items = await dbGetMenuItems();
     const categories = await dbGetCategories();
     safeEmit(req, 'menu:updated', { categories, items });
 
-    res.status(201).json(newItem);
+    res.status(201).json(saved || newItem);
   } catch (err) {
     console.error('Error adding menu item to Supabase:', err);
     res.status(500).json({ error: err.message });
@@ -362,11 +370,11 @@ app.post('/api/menu/items', async (req, res) => {
 // Update Menu Item (e.g. stock toggle, price, details)
 app.put('/api/menu/items/:id', async (req, res) => {
   try {
-    await dbUpdateMenuItem(req.params.id, req.body);
+    const updated = await dbUpdateMenuItem(req.params.id, req.body || {});
     const items = await dbGetMenuItems();
     const categories = await dbGetCategories();
     safeEmit(req, 'menu:updated', { categories, items });
-    res.json({ success: true, id: req.params.id });
+    res.json({ success: true, id: req.params.id, item: updated });
   } catch (err) {
     console.error('Error updating menu item in Supabase:', err);
     res.status(500).json({ error: err.message });
@@ -380,7 +388,7 @@ app.delete('/api/menu/items/:id', async (req, res) => {
     const items = await dbGetMenuItems();
     const categories = await dbGetCategories();
     safeEmit(req, 'menu:updated', { categories, items });
-    res.json({ success: true, message: 'Item deleted' });
+    res.json({ success: true, message: 'Item deleted', id: req.params.id });
   } catch (err) {
     console.error('Error deleting menu item from Supabase:', err);
     res.status(500).json({ error: err.message });
