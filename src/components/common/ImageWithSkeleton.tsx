@@ -46,7 +46,7 @@ export const ImageWithSkeleton: React.FC<ImageWithSkeletonProps> = ({
   };
 
   const handleError = () => {
-    if (attempt === 0 && src && src.includes('unsplash.com')) {
+    if (attempt === 0 && src && src.startsWith('http') && !src.includes('images.weserv.nl')) {
       // Attempt 1: Route through high-speed CDN proxy to bypass ISP / hotlinking blocks
       setAttempt(1);
       const cleanUrl = src.replace(/^https?:\/\//, '');

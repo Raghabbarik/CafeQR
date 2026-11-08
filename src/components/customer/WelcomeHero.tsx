@@ -24,26 +24,54 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
 
   const titleLines = heroTitle.split('\n');
 
+  // Resilient background image handling (Dark ambient theme - NEVER turns white)
+  const [bgSrc, setBgSrc] = React.useState<string>(heroImage);
+  const [bgLoaded, setBgLoaded] = React.useState<boolean>(false);
+  const [bgError, setBgError] = React.useState<boolean>(false);
+
+  React.useEffect(() => {
+    setBgSrc(heroImage);
+    setBgLoaded(false);
+    setBgError(false);
+  }, [heroImage]);
+
+  const handleBgError = () => {
+    // If external URL (e.g. Pinterest/CDN hotlink block) fails, route through high-speed weserv proxy
+    if (heroImage && heroImage.startsWith('http') && !bgSrc.includes('images.weserv.nl')) {
+      const cleanUrl = heroImage.replace(/^https?:\/\//, '');
+      setBgSrc(`https://images.weserv.nl/?url=${encodeURIComponent(cleanUrl)}`);
+    } else {
+      setBgError(true);
+    }
+  };
+
   return (
     <div className="min-h-screen h-[100dvh] bg-stone-900 flex flex-col justify-between relative overflow-hidden select-none">
       
-      {/* Full-Bleed Admin Uploaded Hero Background (No Hardcoded Fallback Images) */}
-      <div className="absolute inset-0 z-0 bg-[#16100d]">
-        {heroImage ? (
-          <ImageWithSkeleton
-            src={heroImage}
+      {/* Full-Bleed Admin Uploaded Hero Background (Dark Theme - Never White) */}
+      <div className="absolute inset-0 z-0 bg-[#140e0c] overflow-hidden">
+        {bgSrc && !bgError && (
+          <img
+            src={bgSrc}
             alt={heroCardTitle}
-            className="w-full h-full object-cover object-center brightness-95 scale-102 transition-transform duration-1000"
-            containerClassName="w-full h-full"
-            showIconPlaceholder={false}
+            onLoad={() => setBgLoaded(true)}
+            onError={handleBgError}
+            referrerPolicy="no-referrer"
+            className={`w-full h-full object-cover object-center brightness-95 scale-102 transition-opacity duration-700 ${
+              bgLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
           />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-b from-[#251b17] via-[#1a120e] to-[#0d0908] animate-pulse" />
         )}
+
+        {/* Ambient Dark Espresso Glow while loading or if offline */}
+        {!bgLoaded && (
+          <div className="absolute inset-0 bg-gradient-to-b from-[#241914] via-[#160f0c] to-[#0c0807] animate-pulse" />
+        )}
+
         {/* Soft top gradient for header readability */}
-        <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/40 via-black/15 to-transparent pointer-events-none" />
+        <div className="absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-black/55 via-black/20 to-transparent pointer-events-none" />
         {/* Soft bottom vignette */}
-        <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
+        <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/40 via-black/15 to-transparent pointer-events-none" />
       </div>
 
       {/* Center Hero Heading directly on image: Centered Cafe Logo + ✦ NEW + Headline */}
