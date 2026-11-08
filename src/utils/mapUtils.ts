@@ -75,3 +75,4 @@ export function extractCleanDirectionsUrl(input?: string, fallbackAddress?: stri
 
   return `https://maps.google.com/?q=${encodeURIComponent(trimmed)}`;
 }
+
