@@ -15,6 +15,7 @@ import {
   dbDeleteMenuItem,
   dbGetOrders,
   dbGetOrder,
+  dbLookupOrdersByPhone,
   dbCreateOrder,
   dbUpdateOrderStatus,
   dbCreateAlert,
@@ -281,13 +282,13 @@ app.put('/api/admin/display/code', async (req, res) => {
 
 // ---------------- REST API ROUTES (BACKED BY SUPABASE) ----------------
 
-// Get Cafe Info & Settings (Cached via Redis / In-Memory + Edge CDN)
+// Get Cafe Info & Settings (Fast In-Memory / Redis + Fresh Live Store Status)
 app.get('/api/cafe', async (req, res) => {
   try {
     const cached = await cache.get('cafeqr:cafe');
     if (cached) {
       res.set('X-Cache', 'HIT');
-      res.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+      res.set('Cache-Control', 'no-cache, must-revalidate');
       return res.json(cached);
     }
 
@@ -307,9 +308,9 @@ app.get('/api/cafe', async (req, res) => {
       categories: categories || [],
     };
 
-    await cache.set('cafeqr:cafe', payload, 600);
+    await cache.set('cafeqr:cafe', payload, 30);
     res.set('X-Cache', 'MISS');
-    res.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+    res.set('Cache-Control', 'no-cache, must-revalidate');
     res.json(payload);
   } catch (err) {
     console.error('Error fetching cafe from Supabase:', err);
@@ -456,7 +457,7 @@ app.get('/api/orders', async (req, res) => {
   }
 });
 
-// Lookup Orders by Phone & Name (Customer Bill Search)
+// Lookup Orders by Phone & Name (Customer Bill Search - Fast Indexed Query)
 app.get('/api/orders/lookup/by-phone', async (req, res) => {
   try {
     const { phone, name } = req.query || {};
@@ -467,28 +468,8 @@ app.get('/api/orders/lookup/by-phone', async (req, res) => {
     const cleanInputPhone = String(phone).replace(/\D/g, '');
     const cleanInputName = name ? String(name).toLowerCase().trim() : '';
 
-    const allOrders = await dbGetOrders();
-    const matched = (allOrders || []).filter((o) => {
-      const orderPhone = String(o.customerPhone || '').replace(/\D/g, '');
-      
-      const phoneMatch =
-        (orderPhone.length >= 10 && cleanInputPhone.length >= 10 && orderPhone.slice(-10) === cleanInputPhone.slice(-10)) ||
-        orderPhone.includes(cleanInputPhone) ||
-        cleanInputPhone.includes(orderPhone);
-
-      if (!phoneMatch) return false;
-
-      if (cleanInputName) {
-        const orderName = (o.customerName || '').toLowerCase().trim();
-        if (!orderName.includes(cleanInputName) && !cleanInputName.includes(orderName)) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-
-    res.json(matched);
+    const matched = await dbLookupOrdersByPhone(cleanInputPhone, cleanInputName);
+    res.json(matched || []);
   } catch (err) {
     console.error('Error looking up orders by phone in Supabase:', err);
     res.status(500).json({ error: err.message });

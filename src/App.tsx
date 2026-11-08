@@ -356,27 +356,60 @@ export function App() {
     };
   }, [soundEnabled]);
 
-  // 4. Background polling fallback for Vercel Serverless (when WebSockets are disconnected)
+  // 4. Fast live background sync for Vercel Serverless (Orders + Real-Time Store Open/Close Status)
   useEffect(() => {
-    const pollTimer = setInterval(() => {
-      if (!socket.connected) {
-        if (mode === 'admin' || mode === 'staff') {
-          api.getOrders().then(setOrders).catch(() => {});
-        }
-        if (currentOrder && currentOrder.orderStatus !== 'completed' && currentOrder.orderStatus !== 'cancelled') {
-          api.getOrder(currentOrder.id)
-            .then((fresh) => {
-              if (fresh && fresh.orderStatus !== currentOrder.orderStatus) {
-                if (soundEnabled) sound.playStatusChime();
-                setCurrentOrder(fresh);
+    const pollUpdates = () => {
+      // 1. Fast Store Open/Close Status sync
+      api.getCafe()
+        .then((res) => {
+          if (res && res.cafe) {
+            setCafe((prev) => {
+              if (
+                prev.isOpen !== res.cafe.isOpen ||
+                prev.closedMessage !== res.cafe.closedMessage
+              ) {
+                return {
+                  ...prev,
+                  isOpen: res.cafe.isOpen,
+                  closedMessage: res.cafe.closedMessage,
+                };
               }
-            })
-            .catch(() => {});
-        }
-      }
-    }, 5000);
+              return prev;
+            });
+          }
+        })
+        .catch(() => {});
 
-    return () => clearInterval(pollTimer);
+      // 2. Kitchen / Staff Orders sync
+      if (mode === 'admin' || mode === 'staff') {
+        api.getOrders().then(setOrders).catch(() => {});
+      }
+
+      // 3. Customer Active Order tracking
+      if (currentOrder && currentOrder.orderStatus !== 'completed' && currentOrder.orderStatus !== 'cancelled') {
+        api.getOrder(currentOrder.id)
+          .then((fresh) => {
+            if (fresh && fresh.orderStatus !== currentOrder.orderStatus) {
+              if (soundEnabled) sound.playStatusChime();
+              setCurrentOrder(fresh);
+            }
+          })
+          .catch(() => {});
+      }
+    };
+
+    // Fast polling every 2.5 seconds
+    const pollTimer = setInterval(pollUpdates, 2500);
+
+    // Instant sync when tab gains focus or visibility
+    window.addEventListener('focus', pollUpdates);
+    document.addEventListener('visibilitychange', pollUpdates);
+
+    return () => {
+      clearInterval(pollTimer);
+      window.removeEventListener('focus', pollUpdates);
+      document.removeEventListener('visibilitychange', pollUpdates);
+    };
   }, [mode, currentOrder, soundEnabled]);
 
   // Cart operations
@@ -568,10 +601,25 @@ export function App() {
     }
   };
 
-  // Admin order status update
+  // Admin order status update (Instant 0ms Optimistic UI + Cloud Persistence)
   const handleUpdateOrderStatus = async (id: string, status: OrderStatus) => {
+    // 1. Instant 0ms Optimistic local update for admin, KDS and customer
+    setOrders((prev) =>
+      prev.map((o) => (o.id === id ? { ...o, orderStatus: status, updatedAt: new Date().toISOString() } : o))
+    );
+    if (currentOrder && currentOrder.id === id) {
+      setCurrentOrder((prev) => (prev ? { ...prev, orderStatus: status, updatedAt: new Date().toISOString() } : null));
+    }
+
+    // 2. Persist to Supabase backend
     try {
-      await api.updateOrderStatus(id, status);
+      const updated = await api.updateOrderStatus(id, status);
+      if (updated) {
+        setOrders((prev) => prev.map((o) => (o.id === id ? updated : o)));
+        if (currentOrder && currentOrder.id === id) {
+          setCurrentOrder(updated);
+        }
+      }
     } catch (err) {
       console.error('Failed to update status:', err);
     }

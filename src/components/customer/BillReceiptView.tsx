@@ -20,10 +20,12 @@ import {
   Star,
   MessageSquareHeart,
   Send,
-  Loader2
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
 import { ImageWithSkeleton } from '../common/ImageWithSkeleton';
 import { api } from '../../services/api';
+import { sound } from '../../services/sound';
 
 interface BillReceiptViewProps {
   order: Order;
@@ -38,7 +40,52 @@ export const BillReceiptView: React.FC<BillReceiptViewProps> = ({
   onOrderMore,
   onLookupBills,
 }) => {
+  const [liveOrder, setLiveOrder] = useState<Order>(order);
+  const [isRefreshingStatus, setIsRefreshingStatus] = useState<boolean>(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  // Sync prop changes immediately
+  useEffect(() => {
+    setLiveOrder(order);
+  }, [order]);
+
+  // Fast 2-second Live Order Status Polling directly on the Receipt & Tracker view
+  useEffect(() => {
+    if (!order?.id || liveOrder.orderStatus === 'completed' || liveOrder.orderStatus === 'cancelled') return;
+
+    let isMounted = true;
+    const checkFreshStatus = async () => {
+      try {
+        const fresh = await api.getOrder(order.id);
+        if (isMounted && fresh && fresh.orderStatus !== liveOrder.orderStatus) {
+          setLiveOrder(fresh);
+          sound.playStatusChime();
+        }
+      } catch {}
+    };
+
+    const timer = setInterval(checkFreshStatus, 2000);
+    return () => {
+      isMounted = false;
+      clearInterval(timer);
+    };
+  }, [order?.id, liveOrder.orderStatus]);
+
+  const handleManualRefresh = async () => {
+    if (!order?.id) return;
+    setIsRefreshingStatus(true);
+    try {
+      const fresh = await api.getOrder(order.id);
+      if (fresh) {
+        setLiveOrder(fresh);
+        if (fresh.orderStatus !== liveOrder.orderStatus) {
+          sound.playStatusChime();
+        }
+      }
+    } finally {
+      setTimeout(() => setIsRefreshingStatus(false), 500);
+    }
+  };
 
   // Customer Feedback state (asked after delivery / on receipt)
   const [rating, setRating] = useState<number>(5);
@@ -157,7 +204,7 @@ export const BillReceiptView: React.FC<BillReceiptViewProps> = ({
       .map((i) => `• ${i.quantity}x ${i.name} - ₹${i.price * i.quantity}`)
       .join('\n');
 
-    const message = `🧾 *${cafe.name}*\n"${cafe.tagline}"\n\n*Unique Order ID:* ${order.id}\n*Razorpay Payment ID:* ${order.paymentId}\n*Order Type:* ${isParcel ? '🛍️ Parcel (Takeaway)' : '🍽️ Eat Now (Dine-In)'}\n*Customer:* ${order.customerName}\n\n*Items Ordered:*\n${itemsList}\n\nSubtotal: ₹${order.subtotal}\nGST (${order.taxRate}%): ₹${order.tax}\n*Total Paid:* ₹${order.total} (Razorpay)\n*Status:* ${order.orderStatus.toUpperCase()}\n\nThank you for dining with us! ☕`;
+    const message = `🧾 *${cafe.name}*\n"${cafe.tagline}"\n\n*Unique Order ID:* ${order.id}\n*Razorpay Payment ID:* ${order.paymentId}\n*Order Type:* ${isParcel ? '🛍️ Parcel (Takeaway)' : '🍽️ Eat Now (Dine-In)'}\n*Customer:* ${order.customerName}\n\n*Items Ordered:*\n${itemsList}\n\nSubtotal: ₹${order.subtotal}\nGST (${order.taxRate}%): ₹${order.tax}\n*Total Paid:* ₹${order.total} (Razorpay)\n*Status:* ${liveOrder.orderStatus.toUpperCase()}\n\nThank you for dining with us! ☕`;
 
     const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
@@ -180,7 +227,7 @@ export const BillReceiptView: React.FC<BillReceiptViewProps> = ({
     }
   };
 
-  const currentStep = getStepIndex(order.orderStatus);
+  const currentStep = getStepIndex(liveOrder.orderStatus);
 
   return (
     <div className="min-h-screen bg-stone-100 py-6 px-4">
@@ -241,17 +288,29 @@ export const BillReceiptView: React.FC<BillReceiptViewProps> = ({
               </span>
             </div>
 
-            <span className={`px-2.5 py-1 rounded-full text-xs font-extrabold uppercase tracking-wide ${
-              order.orderStatus === 'completed'
-                ? 'bg-emerald-100 text-emerald-800'
-                : order.orderStatus === 'ready'
-                ? 'bg-blue-100 text-blue-800 animate-pulse'
-                : order.orderStatus === 'preparing'
-                ? 'bg-amber-100 text-amber-900'
-                : 'bg-stone-100 text-stone-800'
-            }`}>
-              {order.orderStatus}
-            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleManualRefresh}
+                disabled={isRefreshingStatus}
+                className="p-1 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
+                title="Refresh Live Status"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingStatus ? 'animate-spin text-amber-700' : ''}`} />
+              </button>
+
+              <span className={`px-2.5 py-1 rounded-full text-xs font-extrabold uppercase tracking-wide ${
+                liveOrder.orderStatus === 'completed'
+                  ? 'bg-emerald-100 text-emerald-800'
+                  : liveOrder.orderStatus === 'ready'
+                  ? 'bg-blue-100 text-blue-800 animate-pulse'
+                  : liveOrder.orderStatus === 'preparing'
+                  ? 'bg-amber-100 text-amber-900'
+                  : 'bg-stone-100 text-stone-800'
+              }`}>
+                {liveOrder.orderStatus}
+              </span>
+            </div>
           </div>
 
           {/* Stepper Progress Bar */}
@@ -300,7 +359,7 @@ export const BillReceiptView: React.FC<BillReceiptViewProps> = ({
         </div>
 
         {/* ================= Customer Feedback & Rating (Post-Delivery ONLY) ================= */}
-        {order.orderStatus === 'completed' && (
+        {liveOrder.orderStatus === 'completed' && (
           <div className="bg-gradient-to-br from-amber-50/70 via-white to-stone-50 rounded-3xl p-5 border border-amber-200/80 shadow-md no-print space-y-3.5 animate-in fade-in duration-300">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -612,7 +671,7 @@ export const BillReceiptView: React.FC<BillReceiptViewProps> = ({
             <div className="flex items-center justify-between text-xs bg-amber-50 p-3 rounded-2xl border border-amber-200/80">
               <span className="font-bold text-stone-700">Kitchen Order Status</span>
               <span className="font-black uppercase tracking-wider text-amber-950 text-xs bg-amber-200/70 px-2.5 py-0.5 rounded-lg">
-                {order.orderStatus}
+                {liveOrder.orderStatus}
               </span>
             </div>
           </div>

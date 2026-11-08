@@ -474,32 +474,63 @@ export async function dbDeleteMenuItem(id) {
 }
 
 // ---------------- ORDERS ----------------
+function formatOrderRow(o) {
+  const isParcel =
+    String(o.table_number || '').toLowerCase().includes('parcel') ||
+    String(o.table_number || '').toLowerCase().includes('takeaway');
+  return {
+    id: o.id,
+    tableNumber: isParcel ? 'Parcel' : 'Eat Now',
+    diningOption: isParcel ? 'parcel' : 'dine_in',
+    customerName: o.customer_name,
+    customerPhone: o.customer_phone,
+    items: o.items,
+    subtotal: Number(o.subtotal),
+    tax: Number(o.tax),
+    total: Number(o.total),
+    paymentMethod: o.payment_method,
+    paymentId: o.payment_id,
+    orderStatus: o.order_status,
+    notes: o.notes,
+    createdAt: o.created_at,
+    updatedAt: o.updated_at,
+  };
+}
+
 export async function dbGetOrders() {
   const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
   if (error || !data) {
     if (error) console.error('dbGetOrders error:', error.message);
     return [];
   }
-  return data.map((o) => {
-    const isParcel = String(o.table_number || '').toLowerCase().includes('parcel') || String(o.table_number || '').toLowerCase().includes('takeaway');
-    return {
-      id: o.id,
-      tableNumber: isParcel ? 'Parcel' : 'Eat Now',
-      diningOption: isParcel ? 'parcel' : 'dine_in',
-      customerName: o.customer_name,
-      customerPhone: o.customer_phone,
-      items: o.items,
-      subtotal: Number(o.subtotal),
-      tax: Number(o.tax),
-      total: Number(o.total),
-      paymentMethod: o.payment_method,
-      paymentId: o.payment_id,
-      orderStatus: o.order_status,
-      notes: o.notes,
-      createdAt: o.created_at,
-      updatedAt: o.updated_at,
-    };
-  });
+  return data.map(formatOrderRow);
+}
+
+export async function dbLookupOrdersByPhone(phone, name) {
+  const cleanInputPhone = String(phone || '').replace(/\D/g, '');
+  if (!cleanInputPhone) return [];
+
+  // Match on last 10 digits for instant indexed lookup
+  const searchDigits = cleanInputPhone.length >= 10 ? cleanInputPhone.slice(-10) : cleanInputPhone;
+
+  const { data, error } = await supabase
+    .from('orders')
+    .select('*')
+    .ilike('customer_phone', `%${searchDigits}%`)
+    .order('created_at', { ascending: false })
+    .limit(25);
+
+  if (error || !data) {
+    if (error) console.error('dbLookupOrdersByPhone error:', error.message);
+    return [];
+  }
+
+  let mapped = data.map(formatOrderRow);
+  if (name && name.trim()) {
+    const cleanName = name.toLowerCase().trim();
+    mapped = mapped.filter((o) => (o.customerName || '').toLowerCase().includes(cleanName));
+  }
+  return mapped;
 }
 
 export async function dbGetOrder(id) {
@@ -508,24 +539,7 @@ export async function dbGetOrder(id) {
     if (error) console.error('dbGetOrder error:', error.message);
     return null;
   }
-  const isParcel = String(data.table_number || '').toLowerCase().includes('parcel') || String(data.table_number || '').toLowerCase().includes('takeaway');
-  return {
-    id: data.id,
-    tableNumber: isParcel ? 'Parcel' : 'Eat Now',
-    diningOption: isParcel ? 'parcel' : 'dine_in',
-    customerName: data.customer_name,
-    customerPhone: data.customer_phone,
-    items: data.items,
-    subtotal: Number(data.subtotal),
-    tax: Number(data.tax),
-    total: Number(data.total),
-    paymentMethod: data.payment_method,
-    paymentId: data.payment_id,
-    orderStatus: data.order_status,
-    notes: data.notes,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
-  };
+  return formatOrderRow(data);
 }
 
 export async function dbCreateOrder(order) {
