@@ -1134,7 +1134,7 @@ export function App() {
       <>
         <ToastNotification toasts={toasts} onDismiss={removeToast} />
         <div
-          className={`min-h-screen bg-stone-900 overflow-y-auto scroll-smooth ${
+          className={`min-h-screen bg-stone-900 scroll-smooth w-full ${
             pageTransition === 'to-menu'
               ? 'page-slide-exit-left'
               : pageTransition === 'to-welcome'
@@ -1230,10 +1230,12 @@ export function App() {
     <>
       <ToastNotification toasts={toasts} onDismiss={removeToast} />
       <div
-        className={`min-h-screen bg-[#f8f9fa] pb-28 ${
+        className={`min-h-screen bg-[#f8f9fa] pb-28 w-full ${
           pageTransition === 'to-welcome'
             ? 'page-slide-exit-right'
-            : 'page-slide-enter-right'
+            : pageTransition === 'to-menu'
+            ? 'page-slide-enter-right'
+            : ''
         }`}
       >
         {!isOnline && (

@@ -234,7 +234,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   return (
     <>
       {/* Top Search & Filter Bar (Replaces the messy double-row pill bar) */}
-      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-stone-200/80 px-4 py-3 shadow-2xs">
+      <div className="sticky top-16 z-20 bg-white/95 backdrop-blur-md border-b border-stone-200/80 px-4 py-3 shadow-2xs">
         <div className="max-w-6xl mx-auto flex items-center gap-2.5">
           
           {/* Search Input */}
