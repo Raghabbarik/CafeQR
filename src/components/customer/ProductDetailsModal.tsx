@@ -97,6 +97,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
   const handleDecrease = () => setQty((prev) => (prev > 1 ? prev - 1 : 1));
 
   const handleAdd = () => {
+    if (isStoreClosed || item.isAvailable === false) return;
     onAddToCart(item, qty);
     setAddedToast(true);
     setTimeout(() => {
@@ -246,6 +247,14 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                   {item.name}
                 </h2>
                 
+                {item.isAvailable === false && (
+                  <div className="mt-1">
+                    <span className="text-[10px] sm:text-[11px] font-black uppercase text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-md border border-rose-200 inline-block">
+                      Sold Out • Unavailable
+                    </span>
+                  </div>
+                )}
+
                 {/* Price & Savings */}
                 <div className="flex items-baseline gap-2 mt-1">
                   <span className="text-2xl font-black text-[#133e2c]">
@@ -434,10 +443,13 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
         <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 bg-white/95 backdrop-blur-md border-t border-stone-200/80 shadow-2xl flex items-center gap-3 z-30">
           
           {/* Quantity selector `[-] 01 [+]` */}
-          <div className="flex items-center justify-between bg-stone-100 rounded-2xl px-3 py-2 border border-stone-200/80 min-w-[105px]">
+          <div className={`flex items-center justify-between bg-stone-100 rounded-2xl px-3 py-2 border border-stone-200/80 min-w-[105px] ${
+            item.isAvailable === false || isStoreClosed ? 'opacity-40 pointer-events-none' : ''
+          }`}>
             <button
               onClick={handleDecrease}
-              className="w-7 h-7 rounded-full bg-[#133e2c] text-white flex items-center justify-center font-bold active:scale-90 transition-transform cursor-pointer"
+              disabled={item.isAvailable === false || isStoreClosed}
+              className="w-7 h-7 rounded-full bg-[#133e2c] text-white flex items-center justify-center font-bold active:scale-90 transition-transform cursor-pointer disabled:opacity-50"
               title="Decrease"
             >
               <Minus className="w-3.5 h-3.5" />
@@ -447,7 +459,8 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
             </span>
             <button
               onClick={handleIncrease}
-              className="w-7 h-7 rounded-full bg-[#133e2c] text-white flex items-center justify-center font-bold active:scale-90 transition-transform cursor-pointer"
+              disabled={item.isAvailable === false || isStoreClosed}
+              className="w-7 h-7 rounded-full bg-[#133e2c] text-white flex items-center justify-center font-bold active:scale-90 transition-transform cursor-pointer disabled:opacity-50"
               title="Increase"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -458,9 +471,16 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
           {isStoreClosed ? (
             <button
               disabled
-              className="flex-1 py-3.5 px-5 rounded-2xl font-black text-sm text-stone-500 bg-stone-300 shadow-none flex items-center justify-center gap-2 cursor-not-allowed"
+              className="flex-1 py-3.5 px-5 rounded-2xl font-black text-sm text-stone-500 bg-stone-300 shadow-none flex items-center justify-center gap-2 cursor-not-allowed select-none"
             >
               <span>Cafe Closed for Orders</span>
+            </button>
+          ) : item.isAvailable === false ? (
+            <button
+              disabled
+              className="flex-1 py-3.5 px-5 rounded-2xl font-black text-xs sm:text-sm text-stone-500 bg-stone-200 border border-stone-300 shadow-none flex items-center justify-center gap-2 cursor-not-allowed select-none"
+            >
+              <span>Sold Out (Unavailable)</span>
             </button>
           ) : (
             <button

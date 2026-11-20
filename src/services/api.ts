@@ -49,7 +49,7 @@ async function requestApi(url: string, options?: RequestInit): Promise<Response>
 export const api = {
   // Cafe details
   async getCafe(): Promise<{ cafe: CafeInfo; categories: string[] }> {
-    const res = await requestApi('/api/cafe');
+    const res = await requestApi(`/api/cafe?_t=${Date.now()}`);
     if (!res.ok) throw new Error('Failed to fetch cafe details');
     return res.json();
   },
@@ -66,7 +66,7 @@ export const api = {
 
   // Menu items
   async getMenu(): Promise<{ categories: string[]; items: MenuItem[] }> {
-    const res = await requestApi('/api/menu');
+    const res = await requestApi(`/api/menu?_t=${Date.now()}`);
     if (!res.ok) throw new Error('Failed to fetch menu');
     return res.json();
   },

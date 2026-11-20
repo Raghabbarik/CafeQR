@@ -79,11 +79,21 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
         </button>
 
         {/* Floating Bottom-Left: Bestseller Pill */}
-        {item.isBestseller && (
+        {item.isBestseller && item.isAvailable && (
           <div className="absolute bottom-1.5 left-1.5 z-10">
             <span className="text-[9px] font-black uppercase bg-amber-500 text-white px-1.5 py-0.5 rounded shadow-xs tracking-tight">
               ★ Bestseller
             </span>
+          </div>
+        )}
+
+        {/* Prominent Sold Out Overlay directly on Image */}
+        {!item.isAvailable && (
+          <div className="absolute inset-0 z-20 bg-black/60 backdrop-blur-[1.5px] flex flex-col items-center justify-center p-2 text-center pointer-events-none">
+            <span className="bg-rose-600 text-white font-black text-[10px] sm:text-[11px] uppercase tracking-wider px-2.5 py-1 rounded-full shadow-lg border border-white/20">
+              Sold Out
+            </span>
+            <span className="text-stone-300 text-[9px] font-medium mt-0.5">Currently unavailable</span>
           </div>
         )}
       </div>
@@ -126,7 +136,7 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({
                 Closed
               </span>
             ) : !item.isAvailable ? (
-              <span className="text-[9px] font-bold text-stone-400 bg-stone-100 px-1.5 py-0.5 rounded">
+              <span className="text-[10px] font-bold text-stone-500 bg-stone-100 border border-stone-200 px-2 py-0.5 rounded-full select-none cursor-not-allowed">
                 Sold Out
               </span>
             ) : quantity > 0 ? (

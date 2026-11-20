@@ -315,9 +315,9 @@ app.get('/api/cafe', async (req, res) => {
       categories: categories || [],
     };
 
-    await cache.set('cafeqr:cafe', payload, 30);
-    res.set('X-Cache', 'MISS');
-    res.set('Cache-Control', 'no-cache, must-revalidate');
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
     res.json(payload);
   } catch (err) {
     console.error('Error fetching cafe from Supabase:', err);
@@ -339,16 +339,9 @@ app.put('/api/cafe', async (req, res) => {
   }
 });
 
-// Get Menu Items (Cached via Redis / In-Memory + Edge CDN)
+// Get Menu Items (Live Supabase sync - no stale CDN edge caching)
 app.get('/api/menu', async (req, res) => {
   try {
-    const cached = await cache.get('cafeqr:menu');
-    if (cached) {
-      res.set('X-Cache', 'HIT');
-      res.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
-      return res.json(cached);
-    }
-
     const items = await dbGetMenuItems();
     const categories = await dbGetCategories();
     const payload = {
@@ -356,9 +349,9 @@ app.get('/api/menu', async (req, res) => {
       items: items || [],
     };
 
-    await cache.set('cafeqr:menu', payload, 600);
-    res.set('X-Cache', 'MISS');
-    res.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
     res.json(payload);
   } catch (err) {
     console.error('Error fetching menu from Supabase:', err);
@@ -518,6 +511,18 @@ app.post('/api/orders', async (req, res) => {
 
     if (!customerName || !customerPhone || !items || items.length === 0) {
       return res.status(400).json({ error: 'Missing required customer order details' });
+    }
+
+    // Verify no ordered items are sold out (isAvailable === false)
+    const currentMenuItems = await dbGetMenuItems();
+    const stockMap = new Map((currentMenuItems || []).map((m) => [String(m.id), Boolean(m.isAvailable)]));
+    for (const orderItem of items) {
+      const isAvailable = stockMap.get(String(orderItem.id));
+      if (isAvailable === false) {
+        return res.status(400).json({
+          error: `"${orderItem.name}" is currently sold out. Please remove it from your order to proceed.`
+        });
+      }
     }
 
     const isParcel = diningOption === 'parcel' || String(tableNumber || '').toLowerCase().includes('parcel');

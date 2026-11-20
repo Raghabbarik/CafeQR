@@ -602,6 +602,24 @@ export function App() {
 
   // Cart operations
   const handleAddToCart = (item: MenuItem) => {
+    if (cafe.isOpen === false) {
+      addToast({
+        type: 'info',
+        title: 'Cafe Closed',
+        message: cafe.closedMessage || 'The cafe is currently closed for orders.',
+        duration: 4000,
+      });
+      return;
+    }
+    if (item.isAvailable === false) {
+      addToast({
+        type: 'info',
+        title: 'Sold Out',
+        message: `"${item.name}" is currently sold out and cannot be ordered.`,
+        duration: 4000,
+      });
+      return;
+    }
     setCart((prev) => {
       const existing = prev.find((i) => i.id === item.id);
       if (existing) {
@@ -612,6 +630,24 @@ export function App() {
   };
 
   const handleAddToCartWithQty = (item: MenuItem, qty: number) => {
+    if (cafe.isOpen === false) {
+      addToast({
+        type: 'info',
+        title: 'Cafe Closed',
+        message: cafe.closedMessage || 'The cafe is currently closed for orders.',
+        duration: 4000,
+      });
+      return;
+    }
+    if (item.isAvailable === false) {
+      addToast({
+        type: 'info',
+        title: 'Sold Out',
+        message: `"${item.name}" is currently sold out and cannot be ordered.`,
+        duration: 4000,
+      });
+      return;
+    }
     setCart((prev) => {
       const existing = prev.find((i) => i.id === item.id);
       if (existing) {
@@ -644,6 +680,15 @@ export function App() {
 
   // Checkout flow
   const handleProceedToCheckout = () => {
+    if (cafe.isOpen === false) {
+      alert(cafe.closedMessage || 'The cafe is currently closed for orders.');
+      return;
+    }
+    const soldOutItem = cart.find((i) => i.isAvailable === false);
+    if (soldOutItem) {
+      alert(`"${soldOutItem.name}" is currently sold out. Please remove it from your cart to proceed.`);
+      return;
+    }
     setIsCartOpen(false);
     setIsCheckoutModalOpen(true);
   };
@@ -675,6 +720,16 @@ export function App() {
 
   const handleOpenRazorpay = async () => {
     try {
+      if (cafe?.isOpen === false) {
+        alert(cafe?.closedMessage || 'The cafe is currently closed for orders.');
+        return;
+      }
+      const soldOutItem = cart.find((i) => i.isAvailable === false);
+      if (soldOutItem) {
+        alert(`"${soldOutItem.name}" is currently sold out.\nPlease remove it from your cart before paying.`);
+        return;
+      }
+
       setIsPaymentLoading(true);
 
       // Ensure Razorpay SDK is ready
@@ -871,11 +926,20 @@ export function App() {
       if (updates.category && !categories.includes(updates.category)) {
         setCategories((prev) => [...prev, updates.category!]);
       }
+      if (updates.isAvailable !== undefined) {
+        setCart((prev) =>
+          prev.map((i) => (i.id === id ? { ...i, isAvailable: updates.isAvailable! } : i))
+        );
+      }
       await api.updateMenuItem(id, updates);
       // Re-sync with cloud database
       api.getMenu().then((fresh) => {
         if (fresh?.items && Array.isArray(fresh.items) && fresh.items.length) {
           setMenuItems(fresh.items);
+          const freshMap = new Map(fresh.items.map((i) => [i.id, i.isAvailable]));
+          setCart((prev) =>
+            prev.map((i) => (freshMap.has(i.id) ? { ...i, isAvailable: freshMap.get(i.id)! } : i))
+          );
         }
       }).catch((err) => console.warn('Background menu sync notice:', err));
     } catch (err: any) {
@@ -1330,7 +1394,37 @@ export function App() {
 
       </div>
 
-      {/* Product Details Sheet / Modal (matches mock left screen) */}
+        {/* Floating Bottom Cart Bar */}
+        {totalCartItems > 0 && (
+          <div className="fixed bottom-4 left-4 right-4 max-w-md mx-auto z-40 animate-in slide-in-from-bottom-4 duration-200">
+            <button
+              onClick={() => setIsCartOpen(true)}
+              className="w-full bg-gradient-to-r from-amber-800 to-amber-900 hover:from-amber-900 hover:to-amber-950 text-white rounded-2xl p-4 shadow-xl shadow-amber-950/30 flex items-center justify-between active:scale-[0.99] transition-all cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center font-extrabold text-sm">
+                  {totalCartItems}
+                </div>
+                <div className="text-left leading-tight">
+                  <p className="font-extrabold text-sm">View Cart</p>
+                  <p className="text-[11px] text-amber-200">
+                    {diningOption === 'parcel' ? 'Takeaway Parcel 🛍️' : 'Eat in Cafe 🍽️'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="font-black text-base">₹{cartTotal}</span>
+                <span className="text-xs bg-white/25 px-2.5 py-1 rounded-lg font-bold">
+                  Checkout →
+                </span>
+              </div>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Product Details Sheet / Modal (Rendered outside the page container so fixed positioning is viewport-relative) */}
       <ProductDetailsModal
         item={selectedProduct}
         isOpen={Boolean(selectedProduct)}
@@ -1343,35 +1437,6 @@ export function App() {
           setIsSearchOpen(true);
         }}
       />
-
-      {/* Floating Bottom Cart Bar */}
-      {totalCartItems > 0 && (
-        <div className="fixed bottom-4 left-4 right-4 max-w-md mx-auto z-40 animate-in slide-in-from-bottom-4 duration-200">
-          <button
-            onClick={() => setIsCartOpen(true)}
-            className="w-full bg-gradient-to-r from-amber-800 to-amber-900 hover:from-amber-900 hover:to-amber-950 text-white rounded-2xl p-4 shadow-xl shadow-amber-950/30 flex items-center justify-between active:scale-[0.99] transition-all cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center font-extrabold text-sm">
-                {totalCartItems}
-              </div>
-              <div className="text-left leading-tight">
-                <p className="font-extrabold text-sm">View Cart</p>
-                <p className="text-[11px] text-amber-200">
-                  {diningOption === 'parcel' ? 'Takeaway Parcel 🛍️' : 'Eat in Cafe 🍽️'}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="font-black text-base">₹{cartTotal}</span>
-              <span className="text-xs bg-white/25 px-2.5 py-1 rounded-lg font-bold">
-                Checkout →
-              </span>
-            </div>
-          </button>
-        </div>
-      )}
 
       {/* Cart Drawer */}
       <CartDrawer
@@ -1413,7 +1478,6 @@ export function App() {
         initialPhone={customerPhone}
         initialName={customerName}
       />
-    </div>
     </>
   );
 }

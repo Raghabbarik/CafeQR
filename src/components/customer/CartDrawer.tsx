@@ -190,7 +190,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                         </div>
                         <div className="min-w-0">
                           <p className="font-bold text-stone-900 text-sm truncate">{item.name}</p>
-                          <p className="text-xs text-stone-500">₹{item.price} each</p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-xs text-stone-500">₹{item.price} each</span>
+                            {item.isAvailable === false && (
+                              <span className="text-[10px] font-black text-rose-700 bg-rose-100 border border-rose-300 px-1.5 py-0.5 rounded">
+                                Sold Out
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
 
@@ -270,7 +277,19 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               </div>
 
               {/* Checkout Button */}
-              {cafe.isOpen !== false ? (
+              {cartItems.some((i) => i.isAvailable === false) ? (
+                <div className="space-y-1">
+                  <button
+                    disabled
+                    className="w-full py-3 px-4 rounded-xl bg-rose-100 border border-rose-300 text-rose-800 font-bold text-xs shadow-none flex items-center justify-center gap-2 cursor-not-allowed"
+                  >
+                    <span>Remove Sold Out Item(s) to Proceed</span>
+                  </button>
+                  <p className="text-[11px] text-center text-rose-700 font-medium">
+                    Some items in your cart are currently sold out. Please remove them using [-] to place order.
+                  </p>
+                </div>
+              ) : cafe.isOpen !== false ? (
                 <button
                   onClick={onProceedToCheckout}
                   className="w-full py-3.5 px-4 rounded-xl bg-amber-800 hover:bg-amber-900 text-white font-bold text-sm shadow-md active:scale-[0.99] transition-all flex items-center justify-between cursor-pointer"
