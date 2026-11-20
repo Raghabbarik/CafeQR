@@ -166,13 +166,16 @@ export const CategoryBar: React.FC<CategoryBarProps> = ({
         </div>
 
         {/* Horizontal Category Badges Bar */}
-        <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pt-1">
+        <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pt-1 scroll-smooth">
           {allCategories.map((cat) => {
             const isActive = selectedCategory === cat || (cat === 'All Items' && selectedCategory === 'All');
             return (
               <button
                 key={cat}
-                onClick={() => onSelectCategory(cat === 'All Items' ? 'All' : cat)}
+                onClick={(e) => {
+                  onSelectCategory(cat === 'All Items' ? 'All' : cat);
+                  e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                }}
                 className={`whitespace-nowrap px-3.5 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
                   isActive
                     ? 'bg-[#133e2c] text-white shadow-xs'

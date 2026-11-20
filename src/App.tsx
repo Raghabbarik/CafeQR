@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type { CafeInfo, MenuItem, CartItem, Order, StaffAlert, OrderStatus, StaffMember, DiningOption } from './types';
 import { api } from './services/api';
 import { socket } from './services/socket';
-import { sound } from './services/sound';
+import { sound, sendBrowserNotification } from './services/sound';
+import { ToastNotification, type ToastMessage } from './components/common/ToastNotification';
 
 // Customer Components
 import { WelcomeHero } from './components/customer/WelcomeHero';
@@ -49,6 +50,45 @@ export function App() {
 
   // Customer Step: 'welcome' | 'menu' | 'bill'
   const [customerStep, setCustomerStep] = useState<'welcome' | 'menu' | 'bill'>('welcome');
+  const [pageTransition, setPageTransition] = useState<'to-menu' | 'to-welcome' | null>(null);
+
+  // Real-time Toasts & Notifications
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const prevOrderIdsRef = useRef<Set<string>>(new Set());
+  const initialOrdersLoadedRef = useRef<boolean>(false);
+  const prevAlertIdsRef = useRef<Set<string>>(new Set());
+  const initialAlertsLoadedRef = useRef<boolean>(false);
+
+  const addToast = useCallback((toast: Omit<ToastMessage, 'id'>) => {
+    const id = `toast_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    setToasts((prev) => [...prev.slice(-3), { ...toast, id }]);
+  }, []);
+
+  const removeToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  const handleExploreMenu = useCallback(() => {
+    setPageTransition('to-menu');
+    setTimeout(() => {
+      setCustomerStep('menu');
+      setPageTransition(null);
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      }
+    }, 260);
+  }, []);
+
+  const handleBackToHome = useCallback(() => {
+    setPageTransition('to-welcome');
+    setTimeout(() => {
+      setCustomerStep('welcome');
+      setPageTransition(null);
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      }
+    }, 260);
+  }, []);
 
   // Dining option: 'dine_in' (Eat Now) or 'parcel' (Takeaway)
   const [diningOption, setDiningOption] = useState<DiningOption>('dine_in');
@@ -293,8 +333,21 @@ export function App() {
   useEffect(() => {
     socket.on('order:new', (newOrder: Order) => {
       setOrders((prev) => [newOrder, ...prev]);
+      prevOrderIdsRef.current.add(newOrder.id);
       if (soundEnabled) {
         sound.playOrderBell();
+      }
+      if (mode === 'admin' || mode === 'staff') {
+        addToast({
+          type: 'new_order',
+          title: 'New Order Received! 🛎️',
+          message: `Order #${newOrder.id} (${newOrder.diningOption === 'parcel' ? 'Parcel' : 'Dine-In'}) • ₹${newOrder.total}`,
+          orderId: newOrder.id,
+          duration: 6000,
+        });
+        sendBrowserNotification('New Order Received! 🛎️', {
+          body: `Order #${newOrder.id} • ₹${newOrder.total}`,
+        });
       }
     });
 
@@ -304,8 +357,44 @@ export function App() {
       // Update customer view in real-time if tracking this order
       setCurrentOrder((prev) => {
         if (prev && prev.id === updatedOrder.id) {
-          if (soundEnabled) {
-            sound.playStatusChime();
+          if (prev.orderStatus !== updatedOrder.orderStatus) {
+            if (updatedOrder.orderStatus === 'ready') {
+              sound.playOrderReady();
+              addToast({
+                type: 'order_ready',
+                title: 'Your Order is Ready! 🔔',
+                message: `Order #${updatedOrder.id} is ready for pick-up. Enjoy your meal!`,
+                orderId: updatedOrder.id,
+                duration: 7000,
+              });
+              sendBrowserNotification('Your Order is Ready! ☕', {
+                body: `Order #${updatedOrder.id} is freshly prepared and ready for pick-up!`,
+              });
+            } else if (updatedOrder.orderStatus === 'preparing') {
+              if (soundEnabled) sound.playStatusChime();
+              addToast({
+                type: 'order_preparing',
+                title: 'Kitchen Preparing 👨‍🍳',
+                message: `Order #${updatedOrder.id} is now being prepared!`,
+                orderId: updatedOrder.id,
+                duration: 5000,
+              });
+              sendBrowserNotification('Order in Kitchen 👨‍🍳', {
+                body: `Chefs have started preparing order #${updatedOrder.id}!`,
+              });
+            } else if (updatedOrder.orderStatus === 'completed') {
+              if (soundEnabled) sound.playStatusChime();
+              addToast({
+                type: 'order_completed',
+                title: 'Order Completed ✅',
+                message: `Order #${updatedOrder.id} has been served. Thank you!`,
+                orderId: updatedOrder.id,
+                duration: 5000,
+              });
+              sendBrowserNotification('Order Completed ✅', {
+                body: `Order #${updatedOrder.id} served!`,
+              });
+            }
           }
           return updatedOrder;
         }
@@ -315,8 +404,20 @@ export function App() {
 
     socket.on('staff:alert', (alert: StaffAlert) => {
       setAlerts((prev) => [alert, ...prev]);
+      prevAlertIdsRef.current.add(alert.id);
       if (soundEnabled) {
         sound.playOrderBell();
+      }
+      if (mode === 'admin' || mode === 'staff') {
+        addToast({
+          type: 'staff_alert',
+          title: 'Table Assistance Needed! 🛎️',
+          message: `Table ${alert.tableNumber}: ${alert.type || 'Assistance requested'}`,
+          duration: 7000,
+        });
+        sendBrowserNotification('Table Calling for Assistance 🛎️', {
+          body: `Table ${alert.tableNumber}: ${alert.type || 'Assistance requested'}`,
+        });
       }
     });
 
@@ -354,9 +455,9 @@ export function App() {
       socket.off('menu:updated');
       socket.off('cafe:updated');
     };
-  }, [soundEnabled]);
+  }, [soundEnabled, mode, addToast]);
 
-  // 4. Fast live background sync for Vercel Serverless (Orders + Real-Time Store Open/Close Status)
+  // 4. Fast live background sync for Vercel Serverless (Orders + Alerts + Real-Time Store Open/Close Status)
   useEffect(() => {
     const pollUpdates = () => {
       // 1. Fast Store Open/Close Status sync
@@ -380,9 +481,60 @@ export function App() {
         })
         .catch(() => {});
 
-      // 2. Kitchen / Staff Orders sync
+      // 2. Kitchen / Staff Orders & Alerts sync
       if (mode === 'admin' || mode === 'staff') {
-        api.getOrders().then(setOrders).catch(() => {});
+        api.getOrders().then((freshOrders) => {
+          if (Array.isArray(freshOrders)) {
+            if (initialOrdersLoadedRef.current) {
+              const newOrders = freshOrders.filter((o) => !prevOrderIdsRef.current.has(o.id));
+              if (newOrders.length > 0) {
+                if (soundEnabled) sound.playOrderBell();
+                newOrders.forEach((o) => {
+                  addToast({
+                    type: 'new_order',
+                    title: 'New Order Received! 🛎️',
+                    message: `Order #${o.id} (${o.diningOption === 'parcel' ? 'Parcel' : 'Dine-In'}) • ₹${o.total}`,
+                    orderId: o.id,
+                    duration: 6000,
+                  });
+                  sendBrowserNotification('New Order Received! 🛎️', {
+                    body: `Order #${o.id} • ₹${o.total}`,
+                  });
+                });
+              }
+            } else {
+              initialOrdersLoadedRef.current = true;
+            }
+            prevOrderIdsRef.current = new Set(freshOrders.map((o) => o.id));
+            setOrders(freshOrders);
+          }
+        }).catch(() => {});
+
+        api.getStaffAlerts().then((freshAlerts) => {
+          if (Array.isArray(freshAlerts)) {
+            if (initialAlertsLoadedRef.current) {
+              const newAlerts = freshAlerts.filter((a) => !prevAlertIdsRef.current.has(a.id));
+              if (newAlerts.length > 0) {
+                if (soundEnabled) sound.playOrderBell();
+                newAlerts.forEach((a) => {
+                  addToast({
+                    type: 'staff_alert',
+                    title: 'Table Assistance Needed! 🛎️',
+                    message: `Table ${a.tableNumber}: ${a.type || 'Assistance requested'}`,
+                    duration: 7000,
+                  });
+                  sendBrowserNotification('Table Calling for Assistance 🛎️', {
+                    body: `Table ${a.tableNumber}: ${a.type || 'Assistance requested'}`,
+                  });
+                });
+              }
+            } else {
+              initialAlertsLoadedRef.current = true;
+            }
+            prevAlertIdsRef.current = new Set(freshAlerts.map((a) => a.id));
+            setAlerts(freshAlerts);
+          }
+        }).catch(() => {});
       }
 
       // 3. Customer Active Order tracking
@@ -390,7 +542,43 @@ export function App() {
         api.getOrder(currentOrder.id)
           .then((fresh) => {
             if (fresh && fresh.orderStatus !== currentOrder.orderStatus) {
-              if (soundEnabled) sound.playStatusChime();
+              if (fresh.orderStatus === 'ready') {
+                sound.playOrderReady();
+                addToast({
+                  type: 'order_ready',
+                  title: 'Your Order is Ready! 🔔',
+                  message: `Order #${fresh.id} is ready for pick-up. Enjoy your meal!`,
+                  orderId: fresh.id,
+                  duration: 7000,
+                });
+                sendBrowserNotification('Your Order is Ready! ☕', {
+                  body: `Order #${fresh.id} is freshly prepared and ready for pick-up!`,
+                });
+              } else if (fresh.orderStatus === 'preparing') {
+                if (soundEnabled) sound.playStatusChime();
+                addToast({
+                  type: 'order_preparing',
+                  title: 'Kitchen Preparing 👨‍🍳',
+                  message: `Order #${fresh.id} is being prepared!`,
+                  orderId: fresh.id,
+                  duration: 5000,
+                });
+                sendBrowserNotification('Order in Kitchen 👨‍🍳', {
+                  body: `Chefs have started preparing order #${fresh.id}!`,
+                });
+              } else if (fresh.orderStatus === 'completed') {
+                if (soundEnabled) sound.playStatusChime();
+                addToast({
+                  type: 'order_completed',
+                  title: 'Order Completed ✅',
+                  message: `Order #${fresh.id} has been served. Thank you!`,
+                  orderId: fresh.id,
+                  duration: 5000,
+                });
+                sendBrowserNotification('Order Completed ✅', {
+                  body: `Order #${fresh.id} served!`,
+                });
+              }
               setCurrentOrder(fresh);
             }
           })
@@ -410,7 +598,7 @@ export function App() {
       window.removeEventListener('focus', pollUpdates);
       document.removeEventListener('visibilitychange', pollUpdates);
     };
-  }, [mode, currentOrder, soundEnabled]);
+  }, [mode, currentOrder, soundEnabled, addToast]);
 
   // Cart operations
   const handleAddToCart = (item: MenuItem) => {
@@ -769,10 +957,13 @@ export function App() {
   // ---------------- TV ORDER DISPLAY BOARD (/orderdisplay) ----------------
   if (mode === 'display') {
     return (
-      <OrderDisplayBoard
-        cafe={cafe}
-        onExitToCustomer={navigateToCustomer}
-      />
+      <>
+        <ToastNotification toasts={toasts} onDismiss={removeToast} />
+        <OrderDisplayBoard
+          cafe={cafe}
+          onExitToCustomer={navigateToCustomer}
+        />
+      </>
     );
   }
 
@@ -780,37 +971,43 @@ export function App() {
   if (mode === 'staff') {
     if (!isStaffAuthenticated) {
       return (
-        <StaffLoginView
-          cafe={cafe}
-          onLoginSuccess={(staff) => {
-            setIsStaffAuthenticated(true);
-            setCurrentStaff(staff);
-          }}
-          onExitToCustomer={navigateToCustomer}
-          onGoToAdmin={navigateToAdmin}
-        />
+        <>
+          <ToastNotification toasts={toasts} onDismiss={removeToast} />
+          <StaffLoginView
+            cafe={cafe}
+            onLoginSuccess={(staff) => {
+              setIsStaffAuthenticated(true);
+              setCurrentStaff(staff);
+            }}
+            onExitToCustomer={navigateToCustomer}
+            onGoToAdmin={navigateToAdmin}
+          />
+        </>
       );
     }
 
     return (
-      <StaffDashboard
-        cafe={cafe}
-        currentStaff={currentStaff}
-        orders={orders}
-        alerts={alerts}
-        categories={categories}
-        menuItems={menuItems}
-        soundEnabled={soundEnabled}
-        onToggleSound={() => setSoundEnabled(!soundEnabled)}
-        onExitStaff={navigateToCustomer}
-        onLogout={handleStaffLogout}
-        onDismissAlert={(id) => setAlerts((prev) => prev.filter((a) => a.id !== id))}
-        onUpdateOrderStatus={handleUpdateOrderStatus}
-        onAddItem={handleAddMenuItem}
-        onUpdateItem={handleUpdateMenuItem}
-        onDeleteItem={handleDeleteMenuItem}
-        onAddCategory={handleAddCategory}
-      />
+      <>
+        <ToastNotification toasts={toasts} onDismiss={removeToast} />
+        <StaffDashboard
+          cafe={cafe}
+          currentStaff={currentStaff}
+          orders={orders}
+          alerts={alerts}
+          categories={categories}
+          menuItems={menuItems}
+          soundEnabled={soundEnabled}
+          onToggleSound={() => setSoundEnabled(!soundEnabled)}
+          onExitStaff={navigateToCustomer}
+          onLogout={handleStaffLogout}
+          onDismissAlert={(id) => setAlerts((prev) => prev.filter((a) => a.id !== id))}
+          onUpdateOrderStatus={handleUpdateOrderStatus}
+          onAddItem={handleAddMenuItem}
+          onUpdateItem={handleUpdateMenuItem}
+          onDeleteItem={handleDeleteMenuItem}
+          onAddCategory={handleAddCategory}
+        />
+      </>
     );
   }
 
@@ -818,38 +1015,44 @@ export function App() {
   if (mode === 'admin') {
     if (!isAdminAuthenticated) {
       return (
-        <AdminLoginView
-          cafe={cafe}
-          onLoginSuccess={() => {
-            setIsAdminAuthenticated(true);
-          }}
-          onExitToCustomer={navigateToCustomer}
-          onGoToStaff={navigateToStaff}
-        />
+        <>
+          <ToastNotification toasts={toasts} onDismiss={removeToast} />
+          <AdminLoginView
+            cafe={cafe}
+            onLoginSuccess={() => {
+              setIsAdminAuthenticated(true);
+            }}
+            onExitToCustomer={navigateToCustomer}
+            onGoToStaff={navigateToStaff}
+          />
+        </>
       );
     }
 
     return (
-      <AdminDashboard
-        cafe={cafe}
-        adminTab={adminTab}
-        setAdminTab={setAdminTab}
-        orders={orders}
-        alerts={alerts}
-        categories={categories}
-        menuItems={menuItems}
-        soundEnabled={soundEnabled}
-        onToggleSound={() => setSoundEnabled(!soundEnabled)}
-        onExitAdmin={navigateToCustomer}
-        onLogout={handleAdminLogout}
-        onDismissAlert={(id) => setAlerts((prev) => prev.filter((a) => a.id !== id))}
-        onUpdateOrderStatus={handleUpdateOrderStatus}
-        onAddItem={handleAddMenuItem}
-        onUpdateItem={handleUpdateMenuItem}
-        onDeleteItem={handleDeleteMenuItem}
-        onAddCategory={handleAddCategory}
-        onUpdateCafeSettings={handleUpdateCafeSettings}
-      />
+      <>
+        <ToastNotification toasts={toasts} onDismiss={removeToast} />
+        <AdminDashboard
+          cafe={cafe}
+          adminTab={adminTab}
+          setAdminTab={setAdminTab}
+          orders={orders}
+          alerts={alerts}
+          categories={categories}
+          menuItems={menuItems}
+          soundEnabled={soundEnabled}
+          onToggleSound={() => setSoundEnabled(!soundEnabled)}
+          onExitAdmin={navigateToCustomer}
+          onLogout={handleAdminLogout}
+          onDismissAlert={(id) => setAlerts((prev) => prev.filter((a) => a.id !== id))}
+          onUpdateOrderStatus={handleUpdateOrderStatus}
+          onAddItem={handleAddMenuItem}
+          onUpdateItem={handleUpdateMenuItem}
+          onDeleteItem={handleDeleteMenuItem}
+          onAddCategory={handleAddCategory}
+          onUpdateCafeSettings={handleUpdateCafeSettings}
+        />
+      </>
     );
   }
 
@@ -864,31 +1067,42 @@ export function App() {
   // ---------------- CUSTOMER VIEW: STEP 1 (WELCOME + CAFE DETAILS) ----------------
   if (customerStep === 'welcome') {
     return (
-      <div className="min-h-screen bg-stone-900 overflow-y-auto scroll-smooth">
-        {!isOnline && (
-          <div className="bg-amber-600 text-white text-xs font-bold text-center py-2 px-4 sticky top-0 z-50 flex items-center justify-center gap-2 shadow-md">
-            <WifiOff className="w-3.5 h-3.5 animate-pulse" />
-            <span>Offline Mode: Internet disconnected. Menu items are loaded from local cache.</span>
-          </div>
-        )}
-        <WelcomeHero
-          cafe={cafe}
-          onGetStarted={() => setCustomerStep('menu')}
-          onCheckBill={() => setIsBillLookupOpen(true)}
-        />
-        <CafeDetailsSection
-          cafe={cafe}
-          onOrderNow={() => setCustomerStep('menu')}
-        />
-        <BillLookupModal
-          isOpen={isBillLookupOpen}
-          onClose={() => setIsBillLookupOpen(false)}
-          onSelectOrder={handleSelectLookupOrder}
-          currentOrder={currentOrder}
-          initialPhone={customerPhone}
-          initialName={customerName}
-        />
-      </div>
+      <>
+        <ToastNotification toasts={toasts} onDismiss={removeToast} />
+        <div
+          className={`min-h-screen bg-stone-900 overflow-y-auto scroll-smooth ${
+            pageTransition === 'to-menu'
+              ? 'page-slide-exit-left'
+              : pageTransition === 'to-welcome'
+              ? 'page-slide-enter-left'
+              : ''
+          }`}
+        >
+          {!isOnline && (
+            <div className="bg-amber-600 text-white text-xs font-bold text-center py-2 px-4 sticky top-0 z-50 flex items-center justify-center gap-2 shadow-md">
+              <WifiOff className="w-3.5 h-3.5 animate-pulse" />
+              <span>Offline Mode: Internet disconnected. Menu items are loaded from local cache.</span>
+            </div>
+          )}
+          <WelcomeHero
+            cafe={cafe}
+            onGetStarted={handleExploreMenu}
+            onCheckBill={() => setIsBillLookupOpen(true)}
+          />
+          <CafeDetailsSection
+            cafe={cafe}
+            onOrderNow={handleExploreMenu}
+          />
+          <BillLookupModal
+            isOpen={isBillLookupOpen}
+            onClose={() => setIsBillLookupOpen(false)}
+            onSelectOrder={handleSelectLookupOrder}
+            currentOrder={currentOrder}
+            initialPhone={customerPhone}
+            initialName={customerName}
+          />
+        </div>
+      </>
     );
   }
 
@@ -896,6 +1110,7 @@ export function App() {
   if (customerStep === 'bill' && currentOrder) {
     return (
       <>
+        <ToastNotification toasts={toasts} onDismiss={removeToast} />
         <BillReceiptView
           order={currentOrder}
           cafe={cafe}
@@ -948,18 +1163,26 @@ export function App() {
   }, {} as Record<string, number>);
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] pb-28">
-      {!isOnline && (
-        <div className="bg-amber-600 text-white text-xs font-bold text-center py-2 px-4 sticky top-0 z-50 flex items-center justify-center gap-2 shadow-md">
-          <WifiOff className="w-3.5 h-3.5 animate-pulse" />
-          <span>Offline Mode: Internet disconnected. Menu items are loaded from local cache.</span>
-        </div>
-      )}
-      {/* Sticky Top Navbar */}
-      <Navbar
-        cafe={cafe}
-        totalCartItems={totalCartItems}
-        onBackToHome={() => setCustomerStep('welcome')}
+    <>
+      <ToastNotification toasts={toasts} onDismiss={removeToast} />
+      <div
+        className={`min-h-screen bg-[#f8f9fa] pb-28 ${
+          pageTransition === 'to-welcome'
+            ? 'page-slide-exit-right'
+            : 'page-slide-enter-right'
+        }`}
+      >
+        {!isOnline && (
+          <div className="bg-amber-600 text-white text-xs font-bold text-center py-2 px-4 sticky top-0 z-50 flex items-center justify-center gap-2 shadow-md">
+            <WifiOff className="w-3.5 h-3.5 animate-pulse" />
+            <span>Offline Mode: Internet disconnected. Menu items are loaded from local cache.</span>
+          </div>
+        )}
+        {/* Sticky Top Navbar */}
+        <Navbar
+          cafe={cafe}
+          totalCartItems={totalCartItems}
+          onBackToHome={handleBackToHome}
         onOpenCart={() => setIsCartOpen(true)}
         onOpenBill={() => {
           if (currentOrder) {
@@ -1191,6 +1414,7 @@ export function App() {
         initialName={customerName}
       />
     </div>
+    </>
   );
 }
 

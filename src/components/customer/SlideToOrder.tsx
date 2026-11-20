@@ -39,17 +39,18 @@ export const SlideToOrder: React.FC<SlideToOrderProps> = ({
 
   const startDragXRef = useRef<number>(0);
   const currentDragXRef = useRef<number>(0);
+  const rafIdRef = useRef<number | null>(null);
 
   const triggerCompletion = useCallback(() => {
     setIsCompleted(true);
     setDragX(maxDrag);
     // Haptic vibration on mobile if supported
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      navigator.vibrate([40, 60, 40]);
+      navigator.vibrate([30, 50, 40]);
     }
     setTimeout(() => {
       onComplete();
-    }, 320);
+    }, 300);
   }, [maxDrag, onComplete]);
 
   // Touch event handlers (Mobile)
@@ -64,22 +65,25 @@ export const SlideToOrder: React.FC<SlideToOrderProps> = ({
     const clientX = e.touches[0].clientX;
     const newX = Math.max(0, Math.min(clientX - startDragXRef.current, maxDrag));
     currentDragXRef.current = newX;
-    setDragX(newX);
 
-    // If dragged past 85% of distance, snap to complete
-    if (newX >= maxDrag * 0.85) {
-      setIsDragging(false);
-      triggerCompletion();
-    }
+    if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+    rafIdRef.current = requestAnimationFrame(() => {
+      setDragX(newX);
+      // Snap to complete smoothly when 70% is reached
+      if (newX >= maxDrag * 0.72) {
+        setIsDragging(false);
+        triggerCompletion();
+      }
+    });
   };
 
   const handleTouchEnd = () => {
     if (!isDragging || isCompleted) return;
     setIsDragging(false);
-    if (currentDragXRef.current >= maxDrag * 0.75) {
+    if (currentDragXRef.current >= maxDrag * 0.65) {
       triggerCompletion();
     } else {
-      // Spring back to 0
+      // Fluid spring back to 0
       setDragX(0);
       currentDragXRef.current = 0;
     }
@@ -95,21 +99,24 @@ export const SlideToOrder: React.FC<SlideToOrderProps> = ({
       const clientX = moveEvent.clientX;
       const newX = Math.max(0, Math.min(clientX - startDragXRef.current, maxDrag));
       currentDragXRef.current = newX;
-      setDragX(newX);
 
-      if (newX >= maxDrag * 0.85) {
-        window.removeEventListener('mousemove', handleMouseMove);
-        window.removeEventListener('mouseup', handleMouseUp);
-        setIsDragging(false);
-        triggerCompletion();
-      }
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = requestAnimationFrame(() => {
+        setDragX(newX);
+        if (newX >= maxDrag * 0.72) {
+          window.removeEventListener('mousemove', handleMouseMove);
+          window.removeEventListener('mouseup', handleMouseUp);
+          setIsDragging(false);
+          triggerCompletion();
+        }
+      });
     };
 
     const handleMouseUp = () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
       setIsDragging(false);
-      if (currentDragXRef.current >= maxDrag * 0.75) {
+      if (currentDragXRef.current >= maxDrag * 0.65) {
         triggerCompletion();
       } else {
         setDragX(0);
@@ -117,14 +124,13 @@ export const SlideToOrder: React.FC<SlideToOrderProps> = ({
       }
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
     window.addEventListener('mouseup', handleMouseUp);
   };
 
   // Click on track: smooth auto-slide to unlock
   const handleTrackClick = () => {
     if (isCompleted || disabled) return;
-    // If user clicked the right side or just tapped the button, animate slide
     setIsDragging(false);
     setDragX(maxDrag);
     triggerCompletion();
@@ -137,22 +143,25 @@ export const SlideToOrder: React.FC<SlideToOrderProps> = ({
       <div
         ref={trackRef}
         onClick={handleTrackClick}
-        className="relative w-full h-[62px] sm:h-[66px] bg-[#111111] hover:bg-black rounded-full p-1.5 flex items-center shadow-xl shadow-black/25 overflow-hidden border border-white/10 cursor-pointer"
+        className="relative w-full h-[62px] sm:h-[66px] bg-[#111111] hover:bg-black rounded-full p-1.5 flex items-center shadow-xl shadow-black/25 overflow-hidden border border-white/10 cursor-pointer transition-colors"
       >
         {/* Fill Track Background Progress */}
         <div
-          className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-emerald-700 via-emerald-600 to-emerald-500 rounded-full transition-all duration-75"
+          className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-emerald-800 via-emerald-600 to-emerald-500 rounded-full transition-all"
           style={{
-            width: `calc(${dragX}px + 56px)`,
-            opacity: progressPercent > 5 ? 0.95 : 0,
+            width: `calc(${dragX}px + 54px)`,
+            opacity: progressPercent > 4 ? 0.95 : 0,
+            transitionDuration: !isDragging ? '320ms' : '0ms',
+            transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         />
 
         {/* Track Label Text & Animated Chevrons */}
         <div
-          className="absolute inset-0 flex items-center justify-center pointer-events-none transition-opacity duration-150 pl-8 pr-4"
+          className="absolute inset-0 flex items-center justify-center pointer-events-none transition-all pl-8 pr-4"
           style={{
-            opacity: isCompleted ? 0 : Math.max(0.15, 1 - (progressPercent / 60)),
+            opacity: isCompleted ? 0 : Math.max(0.12, 1 - (progressPercent / 55)),
+            transform: `translate3d(${dragX * 0.15}px, 0, 0)`,
           }}
         >
           <div className="flex items-center gap-2 text-white font-black text-sm sm:text-base tracking-wide uppercase">
@@ -175,20 +184,23 @@ export const SlideToOrder: React.FC<SlideToOrderProps> = ({
           </div>
         )}
 
-        {/* Draggable Circle Arrow Handle */}
+        {/* Draggable Circle Arrow Handle with GPU Acceleration */}
         <div
           ref={handleRef}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onMouseDown={handleMouseDown}
-          className={`relative z-10 w-12 h-12 sm:w-[50px] sm:h-[50px] rounded-full flex items-center justify-center shadow-[0_4px_16px_rgba(0,0,0,0.4)] cursor-grab active:cursor-grabbing transition-transform ${
+          className={`relative z-10 w-12 h-12 sm:w-[50px] sm:h-[50px] rounded-full flex items-center justify-center shadow-[0_4px_16px_rgba(0,0,0,0.4)] cursor-grab active:cursor-grabbing will-change-transform ${
             isCompleted
               ? 'bg-emerald-500 text-white scale-105'
               : 'bg-white text-stone-900 hover:scale-105'
-          } ${!isDragging ? 'transition-all duration-300 ease-out' : ''}`}
+          }`}
           style={{
-            transform: `translateX(${dragX}px)`,
+            transform: `translate3d(${dragX}px, 0, 0)`,
+            transition: !isDragging
+              ? 'transform 340ms cubic-bezier(0.16, 1, 0.3, 1), background-color 200ms ease'
+              : 'none',
           }}
         >
           {isCompleted ? (
@@ -196,7 +208,6 @@ export const SlideToOrder: React.FC<SlideToOrderProps> = ({
           ) : (
             <div className="flex items-center justify-center relative">
               <ArrowRight className="w-5 h-5 text-stone-950 stroke-[2.5] group-hover:translate-x-0.5 transition-transform" />
-              {/* Subtle pulse ring on handle to prompt user to slide */}
               {!isDragging && (
                 <span className="absolute -inset-1 rounded-full bg-white/30 animate-ping pointer-events-none opacity-40" />
               )}
@@ -204,7 +215,7 @@ export const SlideToOrder: React.FC<SlideToOrderProps> = ({
           )}
         </div>
 
-        {/* Instruction pill hint on left */}
+        {/* Instruction pill hint on right */}
         <div
           className="absolute right-4 text-[10px] font-bold text-white/40 uppercase tracking-widest pointer-events-none transition-opacity hidden sm:block"
           style={{ opacity: dragX > 20 ? 0 : 0.6 }}

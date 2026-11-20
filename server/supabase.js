@@ -644,6 +644,31 @@ export async function dbCreateAlert(alert) {
   return alert;
 }
 
+export async function dbGetAlerts() {
+  const { data, error } = await supabase
+    .from('staff_alerts')
+    .select('*')
+    .eq('resolved', false)
+    .order('created_at', { ascending: false })
+    .limit(20);
+  if (error || !data) return [];
+  return data.map((a) => ({
+    id: a.id,
+    tableNumber: a.table_number,
+    type: a.type,
+    time: a.created_at,
+  }));
+}
+
+export async function dbResolveAlert(id) {
+  const { error } = await supabase
+    .from('staff_alerts')
+    .update({ resolved: true })
+    .eq('id', id);
+  if (error) console.error('dbResolveAlert error:', error.message);
+  return { success: true };
+}
+
 // ---------------- REVIEWS & FEEDBACK ----------------
 const DEFAULT_REVIEWS = [
   {

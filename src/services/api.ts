@@ -1,4 +1,4 @@
-import type { CafeInfo, MenuItem, Order, StaffMember, DiningOption, Review } from '../types';
+import type { CafeInfo, MenuItem, Order, StaffMember, DiningOption, Review, StaffAlert } from '../types';
 
 // Dynamic backend URL fallback if relative fetch fails (only for local dev on port 3000 -> 5000)
 const getBackendDirectUrl = () => {
@@ -177,6 +177,25 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tableNumber, type }),
     });
+  },
+
+  async getStaffAlerts(): Promise<StaffAlert[]> {
+    try {
+      const res = await requestApi('/api/staff/alerts');
+      if (!res.ok) return [];
+      return await res.json();
+    } catch {
+      return [];
+    }
+  },
+
+  async resolveStaffAlert(id: string): Promise<boolean> {
+    try {
+      const res = await requestApi(`/api/staff/alerts/${id}`, { method: 'DELETE' });
+      return res.ok;
+    } catch {
+      return false;
+    }
   },
 
   // Razorpay order creation helper (uses /api/payment/order which is immune to adblockers)

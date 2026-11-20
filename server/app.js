@@ -19,6 +19,8 @@ import {
   dbCreateOrder,
   dbUpdateOrderStatus,
   dbCreateAlert,
+  dbGetAlerts,
+  dbResolveAlert,
   dbGetStaff,
   dbAddStaff,
   dbDeleteStaff,
@@ -604,6 +606,29 @@ app.post('/api/assistance', async (req, res) => {
     res.json({ success: true, message: 'Staff notified' });
   } catch (err) {
     console.error('Error creating staff alert in Supabase:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get Active Staff Alerts (for KDS / Staff polling on serverless)
+app.get('/api/staff/alerts', async (req, res) => {
+  try {
+    const alerts = await dbGetAlerts();
+    res.json(alerts || []);
+  } catch (err) {
+    console.error('Error fetching staff alerts:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Resolve Staff Alert (Dismiss)
+app.delete('/api/staff/alerts/:id', async (req, res) => {
+  try {
+    await dbResolveAlert(req.params.id);
+    safeEmit(req, 'staff:alert:resolved', req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error resolving staff alert:', err);
     res.status(500).json({ error: err.message });
   }
 });
