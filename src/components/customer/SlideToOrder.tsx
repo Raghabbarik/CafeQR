@@ -149,24 +149,24 @@ export const SlideToOrder: React.FC<SlideToOrderProps> = ({
         <div
           className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-emerald-800 via-emerald-600 to-emerald-500 rounded-full transition-all"
           style={{
-            width: `calc(${dragX}px + 54px)`,
-            opacity: progressPercent > 4 ? 0.95 : 0,
+            width: isCompleted ? '100%' : `calc(${dragX}px + 52px)`,
+            opacity: progressPercent > 2 || isCompleted ? 1 : 0,
             transitionDuration: !isDragging ? '320ms' : '0ms',
             transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         />
 
-        {/* Track Label Text & Animated Chevrons */}
+        {/* Track Label Text & Animated Chevrons (Clear of left handle) */}
         <div
-          className="absolute inset-0 flex items-center justify-center pointer-events-none transition-all pl-8 pr-4"
+          className="absolute inset-y-0 left-14 right-4 flex items-center justify-center pointer-events-none transition-all"
           style={{
-            opacity: isCompleted ? 0 : Math.max(0.12, 1 - (progressPercent / 55)),
-            transform: `translate3d(${dragX * 0.15}px, 0, 0)`,
+            opacity: isCompleted ? 0 : Math.max(0, 1 - (progressPercent / 45)),
+            transform: `translate3d(${dragX * 0.12}px, 0, 0)`,
           }}
         >
-          <div className="flex items-center gap-2 text-white font-black text-sm sm:text-base tracking-wide uppercase">
-            <span>{label}</span>
-            <div className="flex items-center text-white/50 text-xs animate-pulse">
+          <div className="flex items-center gap-2 text-white font-black text-xs sm:text-sm tracking-wide uppercase truncate">
+            <span className="truncate">{label}</span>
+            <div className="flex items-center text-white/50 text-xs animate-pulse shrink-0">
               <span>›</span>
               <span>›</span>
               <span>›</span>
@@ -174,12 +174,12 @@ export const SlideToOrder: React.FC<SlideToOrderProps> = ({
           </div>
         </div>
 
-        {/* Completion Message */}
+        {/* Completion Message (Clear of right handle) */}
         {isCompleted && (
-          <div className="absolute inset-0 flex items-center justify-center text-white font-black text-sm sm:text-base tracking-wider animate-in fade-in zoom-in-95 duration-200">
-            <span className="flex items-center gap-1.5 text-white">
-              <Check className="w-5 h-5 text-emerald-300 stroke-[3]" />
-              Opening Menu...
+          <div className="absolute inset-y-0 left-4 right-14 flex items-center justify-center text-white font-black text-xs sm:text-sm tracking-wider animate-in fade-in zoom-in-95 duration-200 pointer-events-none">
+            <span className="flex items-center gap-1.5 text-white drop-shadow-sm">
+              <Check className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-300 stroke-[3]" />
+              <span>Opening Menu...</span>
             </span>
           </div>
         )}
@@ -191,7 +191,7 @@ export const SlideToOrder: React.FC<SlideToOrderProps> = ({
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onMouseDown={handleMouseDown}
-          className={`relative z-10 w-12 h-12 sm:w-[50px] sm:h-[50px] rounded-full flex items-center justify-center shadow-[0_4px_16px_rgba(0,0,0,0.4)] cursor-grab active:cursor-grabbing will-change-transform ${
+          className={`relative z-10 w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shadow-[0_4px_16px_rgba(0,0,0,0.4)] cursor-grab active:cursor-grabbing will-change-transform ${
             isCompleted
               ? 'bg-emerald-500 text-white scale-105'
               : 'bg-white text-stone-900 hover:scale-105'
@@ -213,14 +213,6 @@ export const SlideToOrder: React.FC<SlideToOrderProps> = ({
               )}
             </div>
           )}
-        </div>
-
-        {/* Instruction pill hint on right */}
-        <div
-          className="absolute right-4 text-[10px] font-bold text-white/40 uppercase tracking-widest pointer-events-none transition-opacity hidden sm:block"
-          style={{ opacity: dragX > 20 ? 0 : 0.6 }}
-        >
-          Slide →
         </div>
 
       </div>

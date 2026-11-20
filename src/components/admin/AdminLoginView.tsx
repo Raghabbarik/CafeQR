@@ -16,8 +16,8 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({
   onExitToCustomer,
   onGoToStaff,
 }) => {
-  const [email, setEmail] = useState('cafemanue@gmail.com');
-  const [password, setPassword] = useState('Cafemanue@2062');
+  const [email, setEmail] = useState('cafeqe2026@gmail.com');
+  const [password, setPassword] = useState('Cafeqe2026@2062');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -111,7 +111,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="cafemanue@gmail.com"
+                  placeholder="cafeqe2026@gmail.com"
                   className="w-full pl-10 pr-4 py-3 bg-[#11100f] rounded-2xl border border-stone-800 focus:border-amber-600 outline-none text-xs text-white placeholder-stone-600 font-medium transition-all"
                 />
               </div>
@@ -129,7 +129,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Cafemanue@2062"
+                  placeholder="Cafeqe2026@2062"
                   className="w-full pl-10 pr-10 py-3 bg-[#11100f] rounded-2xl border border-stone-800 focus:border-amber-600 outline-none text-xs text-white placeholder-stone-600 font-medium transition-all"
                 />
                 <button
@@ -166,10 +166,10 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({
           <div className="pt-2 border-t border-stone-800/60 text-center space-y-2">
             <div>
               <p className="text-[11px] text-stone-400">
-                Admin Email: <span className="text-stone-300 font-mono font-semibold">cafemanue@gmail.com</span>
+                Admin Email: <span className="text-stone-300 font-mono font-semibold">cafeqe2026@gmail.com</span>
               </p>
               <p className="text-[11px] text-stone-400 mt-0.5">
-                Password: <span className="text-stone-300 font-mono font-semibold">Cafemanue@2062</span>
+                Password: <span className="text-stone-300 font-mono font-semibold">Cafeqe2026@2062</span>
               </p>
             </div>
 

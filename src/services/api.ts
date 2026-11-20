@@ -360,6 +360,17 @@ export const api = {
     return data.staff;
   },
 
+  async updateStaff(id: string, updates: { name?: string; email?: string; password?: string }): Promise<StaffMember[]> {
+    const res = await requestApi(`/api/admin/staff/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to update staff member');
+    return data.staff;
+  },
+
   async deleteStaff(id: string): Promise<StaffMember[]> {
     const res = await requestApi(`/api/admin/staff/${id}`, {
       method: 'DELETE',

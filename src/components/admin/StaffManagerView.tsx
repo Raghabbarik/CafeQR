@@ -17,7 +17,9 @@ import {
   Eye,
   EyeOff,
   Sparkles,
-  UtensilsCrossed
+  UtensilsCrossed,
+  X,
+  Loader2
 } from 'lucide-react';
 
 interface StaffManagerViewProps {
@@ -43,6 +45,15 @@ export const StaffManagerView: React.FC<StaffManagerViewProps> = ({ cafe }) => {
   const [isSavingCode, setIsSavingCode] = useState(false);
   const [codeSuccessMsg, setCodeSuccessMsg] = useState('');
   const [codeErrorMsg, setCodeErrorMsg] = useState('');
+
+  // Edit Staff State (Admin Password Management)
+  const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editPassword, setEditPassword] = useState('');
+  const [showEditPassword, setShowEditPassword] = useState(false);
+  const [isUpdatingStaff, setIsUpdatingStaff] = useState(false);
+  const [editErrorMsg, setEditErrorMsg] = useState('');
 
   // Load initial staff from backend
   useEffect(() => {
@@ -107,6 +118,48 @@ export const StaffManagerView: React.FC<StaffManagerViewProps> = ({ cafe }) => {
       setStaffList(updated);
     } catch (err: any) {
       alert(err.message || 'Failed to delete staff member.');
+    }
+  };
+
+  const handleOpenEditModal = (member: StaffMember) => {
+    setEditingStaff(member);
+    setEditName(member.name);
+    setEditEmail(member.email);
+    setEditPassword(member.password || '');
+    setShowEditPassword(false);
+    setEditErrorMsg('');
+  };
+
+  const handleUpdateStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingStaff) return;
+    setEditErrorMsg('');
+
+    if (!editName.trim() || !editEmail.trim() || !editPassword.trim()) {
+      setEditErrorMsg('Name, email, and password are required.');
+      return;
+    }
+
+    if (editPassword.length < 4) {
+      setEditErrorMsg('Password should be at least 4 characters long.');
+      return;
+    }
+
+    setIsUpdatingStaff(true);
+    try {
+      const updated = await api.updateStaff(editingStaff.id, {
+        name: editName.trim(),
+        email: editEmail.trim(),
+        password: editPassword.trim(),
+      });
+      setStaffList(updated);
+      setEditingStaff(null);
+      setStaffSuccessMsg(`Staff "${editName}" password and account updated successfully!`);
+      setTimeout(() => setStaffSuccessMsg(''), 5000);
+    } catch (err: any) {
+      setEditErrorMsg(err.message || 'Failed to update staff member.');
+    } finally {
+      setIsUpdatingStaff(false);
     }
   };
 
@@ -349,10 +402,21 @@ export const StaffManagerView: React.FC<StaffManagerViewProps> = ({ cafe }) => {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       <button
+                        type="button"
+                        onClick={() => handleOpenEditModal(member)}
+                        className="py-1.5 px-2.5 text-stone-600 hover:text-amber-900 bg-stone-100 hover:bg-amber-100 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold border border-stone-200 hover:border-amber-300 shadow-2xs"
+                        title="Edit staff password & credentials"
+                      >
+                        <KeyRound className="w-3.5 h-3.5 text-amber-700" />
+                        <span>Edit Password</span>
+                      </button>
+
+                      <button
+                        type="button"
                         onClick={() => handleDeleteStaff(member.id, member.name)}
-                        className="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                        className="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
                         title="Remove staff account"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -474,6 +538,128 @@ export const StaffManagerView: React.FC<StaffManagerViewProps> = ({ cafe }) => {
         </div>
 
       </div>
+
+      {/* Edit Staff Password & Credentials Modal */}
+      {editingStaff && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div
+            className="fixed inset-0"
+            onClick={() => !isUpdatingStaff && setEditingStaff(null)}
+          />
+          <div className="relative z-10 w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-stone-200 space-y-5 animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-900 flex items-center justify-center">
+                  <KeyRound className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-stone-900 text-base">Edit Staff Password</h3>
+                  <p className="text-xs text-stone-400">Update login credentials for {editingStaff.name}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingStaff(null)}
+                disabled={isUpdatingStaff}
+                className="p-1 rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {editErrorMsg && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{editErrorMsg}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleUpdateStaff} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-stone-700">Staff Name</label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    required
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-stone-50 rounded-xl border border-stone-200 focus:border-amber-600 focus:bg-white outline-none text-xs font-medium text-stone-900 transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-stone-700">Staff Email (Login ID)</label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="email"
+                    required
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-stone-50 rounded-xl border border-stone-200 focus:border-amber-600 focus:bg-white outline-none text-xs font-medium text-stone-900 transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-stone-700">New Password</label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type={showEditPassword ? 'text' : 'password'}
+                    required
+                    value={editPassword}
+                    onChange={(e) => setEditPassword(e.target.value)}
+                    placeholder="Enter new password (min 4 characters)"
+                    className="w-full pl-10 pr-10 py-2.5 bg-stone-50 rounded-xl border border-stone-200 focus:border-amber-600 focus:bg-white outline-none text-xs font-medium text-stone-900 transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowEditPassword(!showEditPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 cursor-pointer"
+                  >
+                    {showEditPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-[11px] text-stone-400">
+                  Staff member can sign in at <code className="bg-stone-100 px-1 py-0.5 rounded font-mono text-stone-700">/staff</code> immediately with this new password.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  disabled={isUpdatingStaff}
+                  onClick={() => setEditingStaff(null)}
+                  className="px-4 py-2.5 rounded-xl border border-stone-200 text-stone-600 hover:bg-stone-50 text-xs font-bold transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdatingStaff}
+                  className="px-5 py-2.5 rounded-xl bg-amber-700 hover:bg-amber-800 disabled:opacity-50 text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  {isUpdatingStaff ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Saving Password...</span>
+                    </>
+                  ) : (
+                    <>
+                      <KeyRound className="w-4 h-4" />
+                      <span>Save New Password</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

@@ -342,6 +342,23 @@ export async function dbAddStaff(newStaff) {
   return updatedStaff;
 }
 
+export async function dbUpdateStaff(staffId, updates) {
+  const cafe = await dbGetCafe();
+  const currentStaff = cafe?.staff || [];
+  const index = currentStaff.findIndex((s) => s.id === staffId);
+  if (index === -1) {
+    throw new Error('Staff member not found');
+  }
+  const updatedStaff = [...currentStaff];
+  updatedStaff[index] = {
+    ...updatedStaff[index],
+    ...updates,
+    updatedAt: new Date().toISOString(),
+  };
+  await dbUpdateCafe({ staff: updatedStaff });
+  return updatedStaff;
+}
+
 export async function dbDeleteStaff(staffId) {
   const cafe = await dbGetCafe();
   const currentStaff = cafe?.staff || [];

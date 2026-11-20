@@ -84,8 +84,8 @@ This project is fully configured for seamless one-click deployment on **Vercel**
 
 - **Customer Ordering Page**: `https://your-domain.vercel.app/`
 - **Admin Dashboard**: `https://your-domain.vercel.app/admin`
-  - *Email*: `cafemanue@gmail.com`
-  - *Password*: `Cafemanue@2062`
+  - *Email*: `cafeqe2026@gmail.com`
+  - *Password*: `Cafeqe2026@2062`
 - **Staff Portal**: `https://your-domain.vercel.app/staff`
 - **TV Order Display Screen**: `https://your-domain.vercel.app/orderdisplay`
   - *PIN Code*: `8899`

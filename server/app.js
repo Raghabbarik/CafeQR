@@ -23,6 +23,7 @@ import {
   dbResolveAlert,
   dbGetStaff,
   dbAddStaff,
+  dbUpdateStaff,
   dbDeleteStaff,
   dbGetOrderDisplayCode,
   dbUpdateOrderDisplayCode,
@@ -35,9 +36,9 @@ import { cache } from './cache.js';
 
 dotenv.config();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'cafeqr_jwt_super_secret_key_2026_cafemanue';
-const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'cafemanue@gmail.com').toLowerCase().trim();
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Cafemanue@2062';
+const JWT_SECRET = process.env.JWT_SECRET || 'cafeqr_jwt_super_secret_key_2026_cafeqe';
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'cafeqe2026@gmail.com').toLowerCase().trim();
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Cafeqe2026@2062';
 
 // Razorpay Live keys — loaded from environment variables with live defaults.
 // The KEY_SECRET never leaves the server. The KEY_ID is returned to the
@@ -237,6 +238,25 @@ app.post('/api/admin/staff', async (req, res) => {
 
     const updated = await dbAddStaff(newStaff);
     res.status(201).json({ success: true, staff: updated });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/admin/staff/:id', async (req, res) => {
+  try {
+    const { name, email, password } = req.body || {};
+    const updates = {};
+    if (name && String(name).trim()) updates.name = String(name).trim();
+    if (email && String(email).trim()) updates.email = String(email).toLowerCase().trim();
+    if (password && String(password).trim()) updates.password = String(password).trim();
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: 'At least one field (name, email, or password) is required to update' });
+    }
+
+    const updated = await dbUpdateStaff(req.params.id, updates);
+    res.json({ success: true, staff: updated });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
