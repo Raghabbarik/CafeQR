@@ -37,20 +37,16 @@ const JWT_SECRET = process.env.JWT_SECRET || 'cafeqr_jwt_super_secret_key_2026_c
 const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'cafemanue@gmail.com').toLowerCase().trim();
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Cafemanue@2062';
 
-// Razorpay keys — loaded exclusively from environment variables.
+// Razorpay Live keys — loaded from environment variables with live defaults.
 // The KEY_SECRET never leaves the server. The KEY_ID is returned to the
-// frontend only as part of a /api/payment/order response so it is never
-// hard-coded in client bundles or the database.
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
+// frontend only as part of a /api/payment/order response.
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_live_U2R4yZ5v96bLov';
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'LP2NXAlN746YtZrSsA6NPwXj';
 
-if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
-  console.error('⚠️  RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET environment variable is missing. Payment endpoints will return an error until they are set.');
-}
-
-const razorpay = RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET
-  ? new Razorpay({ key_id: RAZORPAY_KEY_ID, key_secret: RAZORPAY_KEY_SECRET })
-  : null;
+const razorpay = new Razorpay({
+  key_id: RAZORPAY_KEY_ID,
+  key_secret: RAZORPAY_KEY_SECRET,
+});
 
 export const app = express();
 

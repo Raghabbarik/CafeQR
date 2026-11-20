@@ -527,13 +527,13 @@ export function App() {
       // Only pass order_id if Razorpay issued a real order
       const hasRealOrderId = rzpOrder.isReal && rzpOrder.id && !rzpOrder.id.startsWith('order_rzp_');
 
-      // 2. Open official Razorpay Checkout popup.
-      //    Key comes from server response — never hard-coded in the client.
+      // 2. Open official Razorpay Checkout popup in LIVE REAL-TIME mode.
+      //    Key comes from server response (or fallback live key).
       const options: any = {
-        key: rzpOrder.keyId,  // ← public key delivered by server, secret stays server-side
+        key: rzpOrder.keyId || 'rzp_live_U2R4yZ5v96bLov',  // Live Razorpay Public Key ID
         amount: rzpOrder.amount, // in paise
         currency: rzpOrder.currency || 'INR',
-        name: cafe?.name || 'The Roasted Bean Cafe',
+        name: cafe?.name || 'Cafe Date Corner (CDC)',
         description: `${diningOption === 'parcel' ? 'Parcel Takeaway' : 'Eat in Cafe'} — ₹${cartTotal}`,
         image: cafe?.logo || '',
         order_id: hasRealOrderId ? rzpOrder.id : undefined,

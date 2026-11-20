@@ -1,5 +1,5 @@
 // Service Worker for CafeQR - Prevents ERR_INTERNET_DISCONNECTED
-const CACHE_NAME = 'cafeqr-cache-v1';
+const CACHE_NAME = 'cafeqr-cache-v3';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
