@@ -149,7 +149,9 @@ export async function dbGetCafe() {
     taxRate: Number(data.tax_rate),
     currency: data.currency,
     tablesCount: Number(data.tables_count),
-    razorpayKeyId: data.razorpay_key_id,
+    // razorpayKeyId intentionally NOT returned here — the public key is served
+    // only inside /api/payment/order responses, so it never appears in the
+    // public /api/cafe payload or the DB column.
     hero: heroConfig,
     staff: staffList,
     orderDisplayCode: orderDisplayCode,

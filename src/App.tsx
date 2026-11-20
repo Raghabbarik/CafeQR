@@ -489,7 +489,7 @@ export function App() {
     try {
       setIsPaymentLoading(true);
 
-      // Ensure SDK is ready
+      // Ensure Razorpay SDK is ready
       const isLoaded = await loadRazorpaySDK();
       if (!isLoaded || !(window as any).Razorpay) {
         const confirmPlace = window.confirm(
@@ -503,40 +503,61 @@ export function App() {
         return;
       }
 
-      // 1. Create order on backend (fail-safe fallback prevents "Failed to fetch")
+      // 1. Create Razorpay order on the backend.
+      //    The backend returns keyId (public key). The secret never reaches the browser.
       const rzpOrder = await api.createRazorpayOrder(cartTotal);
-      console.log('✅ Razorpay order prepared:', rzpOrder);
+      console.log('✅ Razorpay order prepared:', rzpOrder?.id);
 
-      // Close guest modal
+      // If backend was unreachable, offer counter payment
+      if (!rzpOrder?.keyId || rzpOrder?.error) {
+        setIsPaymentLoading(false);
+        const confirmPlace = window.confirm(
+          'Payment gateway is temporarily unavailable.\n\nWould you like to confirm the order and pay via UPI / Cash at the counter?'
+        );
+        if (confirmPlace) {
+          setIsCheckoutModalOpen(false);
+          await handlePaymentSuccess(`counter_${Date.now()}`);
+        }
+        return;
+      }
+
+      // Close guest info modal
       setIsCheckoutModalOpen(false);
 
-      // Only pass order_id if it's a real order id from Razorpay API
+      // Only pass order_id if Razorpay issued a real order
       const hasRealOrderId = rzpOrder.isReal && rzpOrder.id && !rzpOrder.id.startsWith('order_rzp_');
 
-      // 2. Open official Razorpay Checkout popup directly
+      // 2. Open official Razorpay Checkout popup.
+      //    Key comes from server response — never hard-coded in the client.
       const options: any = {
-        key: rzpOrder.keyId || cafe?.razorpayKeyId || 'rzp_test_TxJ87ji7k95ncJ',
+        key: rzpOrder.keyId,  // ← public key delivered by server, secret stays server-side
         amount: rzpOrder.amount, // in paise
         currency: rzpOrder.currency || 'INR',
         name: cafe?.name || 'The Roasted Bean Cafe',
-        description: `${diningOption === 'parcel' ? 'Parcel Takeaway' : 'Eat in Cafe'} - Order Total: ₹${cartTotal}`,
-        image: cafe?.logo || 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=200&auto=format&fit=crop&q=80',
+        description: `${diningOption === 'parcel' ? 'Parcel Takeaway' : 'Eat in Cafe'} — ₹${cartTotal}`,
+        image: cafe?.logo || '',
         order_id: hasRealOrderId ? rzpOrder.id : undefined,
         prefill: {
           name: customerName.trim() || 'Guest',
-          contact: customerPhone.replace(/\D/g, '').slice(-10) || '9876543210',
+          contact: customerPhone.replace(/\D/g, '').slice(-10) || '',
         },
         theme: {
           color: '#133e2c',
         },
         handler: async function (response: any) {
-          console.log('✅ Official Razorpay payment succeeded:', response);
+          console.log('✅ Razorpay payment callback received');
           try {
+            // 3. Verify payment signature on server (uses KEY_SECRET server-side)
             const verifyRes = await api.verifyRazorpayPayment({
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
             });
+            if (!verifyRes.verified) {
+              alert('Payment could not be verified. Please contact cafe staff with your payment ID: ' + response.razorpay_payment_id);
+              setIsPaymentLoading(false);
+              return;
+            }
             await handlePaymentSuccess(verifyRes.paymentId || response.razorpay_payment_id);
           } catch {
             await handlePaymentSuccess(response.razorpay_payment_id || `pay_${Date.now()}`);
@@ -553,7 +574,7 @@ export function App() {
       rzp.on('payment.failed', function (resp: any) {
         console.warn('Razorpay payment failed:', resp);
         const desc = resp.error?.description || resp.error?.reason || 'Transaction was declined or cancelled.';
-        alert(`Payment Not Completed: ${desc}\n\nTip: In Razorpay Test Mode, select "Success" to simulate a completed payment.`);
+        alert(`Payment Not Completed: ${desc}\n\nPlease try again or inform cafe staff.`);
         setIsPaymentLoading(false);
       });
       rzp.open();

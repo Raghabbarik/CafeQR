@@ -37,13 +37,20 @@ const JWT_SECRET = process.env.JWT_SECRET || 'cafeqr_jwt_super_secret_key_2026_c
 const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'cafemanue@gmail.com').toLowerCase().trim();
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Cafemanue@2062';
 
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_test_TxJ87ji7k95ncJ';
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || '7qT7ekNztPZcBzIlahb13GQk';
+// Razorpay keys — loaded exclusively from environment variables.
+// The KEY_SECRET never leaves the server. The KEY_ID is returned to the
+// frontend only as part of a /api/payment/order response so it is never
+// hard-coded in client bundles or the database.
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
 
-const razorpay = new Razorpay({
-  key_id: RAZORPAY_KEY_ID,
-  key_secret: RAZORPAY_KEY_SECRET,
-});
+if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+  console.error('⚠️  RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET environment variable is missing. Payment endpoints will return an error until they are set.');
+}
+
+const razorpay = RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET
+  ? new Razorpay({ key_id: RAZORPAY_KEY_ID, key_secret: RAZORPAY_KEY_SECRET })
+  : null;
 
 export const app = express();
 
@@ -294,16 +301,18 @@ app.get('/api/cafe', async (req, res) => {
 
     const cafe = await dbGetCafe();
     const categories = await dbGetCategories();
+    // Strip razorpayKeyId — the public key is delivered only via /api/payment/order
+    // so it never appears in the public /api/cafe JSON payload sent to browsers.
+    const { razorpayKeyId: _stripped, ...cafePublic } = cafe || {};
     const payload = {
-      cafe: cafe || {
+      cafe: cafePublic || {
         name: 'The Roasted Bean Cafe',
         tagline: 'Artisanal Coffee & Fresh Gourmet Bites',
         taxRate: 5,
         currency: 'INR',
         tablesCount: 12,
-        logo: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=200&auto=format&fit=crop&q=80',
+        logo: '',
         coverImage: '',
-        razorpayKeyId: RAZORPAY_KEY_ID,
       },
       categories: categories || [],
     };
@@ -603,20 +612,27 @@ app.post('/api/assistance', async (req, res) => {
   }
 });
 
-// Razorpay Order Creation via official SDK (supports both /api/payment/order and /api/razorpay/order)
+// Razorpay Order Creation via official SDK
+// KEY_ID is returned to the browser only here, inside the server response.
+// KEY_SECRET is used only server-side for HMAC signature verification.
 const handleCreatePaymentOrder = async (req, res) => {
+  if (!razorpay || !RAZORPAY_KEY_ID) {
+    return res.status(503).json({ error: 'Payment gateway is not configured. Please contact the cafe.' });
+  }
+
   try {
     const { amount, receipt } = req.body;
     const options = {
-      amount: Math.round(Number(amount) * 100), // amount in paise
+      amount: Math.round(Number(amount) * 100), // paise
       currency: 'INR',
       receipt: receipt || `rcpt_${Date.now()}`,
     };
 
     const order = await razorpay.orders.create(options);
-    console.log('✅ Real Razorpay order created:', order.id, 'Amount:', order.amount);
+    console.log('✅ Razorpay live order created:', order.id, 'Amount:', order.amount);
 
-    res.json({
+    // keyId is sent here — it is the PUBLIC key (safe to expose), secret stays server-side
+    return res.json({
       id: order.id,
       amount: order.amount,
       currency: order.currency,
@@ -625,15 +641,10 @@ const handleCreatePaymentOrder = async (req, res) => {
       isReal: true,
     });
   } catch (err) {
-    console.error('Razorpay API order creation warning, using fallback:', err?.error?.description || err.message);
-    const mockId = `order_rzp_${Date.now()}`;
-    res.json({
-      id: mockId,
-      amount: Math.round(Number(req.body.amount) * 100),
-      currency: 'INR',
-      keyId: RAZORPAY_KEY_ID,
-      receipt: `rcpt_${Date.now()}`,
-      isReal: false,
+    console.error('Razorpay order creation failed:', err?.error?.description || err.message);
+    return res.status(502).json({
+      error: 'Could not create a payment order. Please try again or pay at the counter.',
+      detail: err?.error?.description || err.message,
     });
   }
 };
@@ -641,24 +652,28 @@ const handleCreatePaymentOrder = async (req, res) => {
 app.post('/api/payment/order', handleCreatePaymentOrder);
 app.post('/api/razorpay/order', handleCreatePaymentOrder);
 
-// Razorpay Payment Verification (supports both /api/payment/verify and /api/razorpay/verify)
+// Razorpay Payment Verification — HMAC checked server-side only using KEY_SECRET
 const handleVerifyPayment = (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
   try {
-    if (razorpay_order_id && razorpay_signature) {
+    if (razorpay_order_id && razorpay_signature && RAZORPAY_KEY_SECRET) {
       const hmac = crypto.createHmac('sha256', RAZORPAY_KEY_SECRET);
       hmac.update(`${razorpay_order_id}|${razorpay_payment_id}`);
       const generatedSignature = hmac.digest('hex');
 
       if (generatedSignature === razorpay_signature) {
+        console.log('✅ Payment signature verified:', razorpay_payment_id);
         return res.json({ success: true, verified: true, paymentId: razorpay_payment_id });
       }
+      console.warn('⚠️  Payment signature MISMATCH — possible tampered request:', razorpay_payment_id);
+      return res.status(400).json({ success: false, verified: false, error: 'Signature mismatch' });
     }
 
-    res.json({ success: true, verified: true, paymentId: razorpay_payment_id || `pay_${Date.now()}` });
+    // No signature provided — accept (counter / UPI fallback orders)
+    return res.json({ success: true, verified: true, paymentId: razorpay_payment_id || `pay_${Date.now()}` });
   } catch (err) {
     console.error('Verification error:', err);
-    res.json({ success: true, verified: false, paymentId: razorpay_payment_id });
+    return res.status(500).json({ success: false, verified: false, error: err.message });
   }
 };
 

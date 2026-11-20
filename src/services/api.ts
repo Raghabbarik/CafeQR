@@ -181,12 +181,13 @@ export const api = {
 
   // Razorpay order creation helper (uses /api/payment/order which is immune to adblockers)
   async createRazorpayOrder(amount: number): Promise<{
-    id: string;
+    id: string | null;
     currency: string;
     amount: number;
-    keyId: string;
-    receipt: string;
+    keyId: string | null;
+    receipt: string | null;
     isReal?: boolean;
+    error?: string;
   }> {
     try {
       const res = await requestApi('/api/payment/order', {
@@ -197,26 +198,20 @@ export const api = {
       if (res.ok) {
         return await res.json();
       }
+      // Server returned an error (e.g. 503 — keys not configured)
+      const errBody = await res.json().catch(() => ({}));
+      return { id: null, currency: 'INR', amount: Math.round(Number(amount) * 100), keyId: null, receipt: null, isReal: false, error: errBody.error || 'Server error' };
     } catch (err) {
-      console.warn('Backend payment order endpoint unreachable, using client fallback order:', err);
+      console.warn('Backend payment order endpoint unreachable:', err);
+      return { id: null, currency: 'INR', amount: Math.round(Number(amount) * 100), keyId: null, receipt: null, isReal: false, error: 'Payment gateway unreachable' };
     }
-
-    // Always provide a resilient fallback so the official Razorpay checkout popup still opens in direct mode!
-    return {
-      id: `order_rzp_${Date.now()}`,
-      currency: 'INR',
-      amount: Math.round(Number(amount) * 100),
-      keyId: 'rzp_test_TxJ87ji7k95ncJ',
-      receipt: `rcpt_${Date.now()}`,
-      isReal: false,
-    };
   },
 
   async verifyRazorpayPayment(payload: {
     razorpay_order_id?: string;
     razorpay_payment_id: string;
     razorpay_signature?: string;
-  }): Promise<{ success: boolean; paymentId: string }> {
+  }): Promise<{ success: boolean; paymentId: string; verified?: boolean }> {
     const res = await requestApi('/api/payment/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
