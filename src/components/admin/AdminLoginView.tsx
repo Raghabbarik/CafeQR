@@ -16,8 +16,8 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({
   onExitToCustomer,
   onGoToStaff,
 }) => {
-  const [email, setEmail] = useState('cafeqe2026@gmail.com');
-  const [password, setPassword] = useState('Cafeqe2026@2062');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -111,7 +111,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="cafeqe2026@gmail.com"
+                  placeholder="admin@yourcafe.com"
                   className="w-full pl-10 pr-4 py-3 bg-[#11100f] rounded-2xl border border-stone-800 focus:border-amber-600 outline-none text-xs text-white placeholder-stone-600 font-medium transition-all"
                 />
               </div>
@@ -129,7 +129,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Cafeqe2026@2062"
+                  placeholder="••••••••••••"
                   className="w-full pl-10 pr-10 py-3 bg-[#11100f] rounded-2xl border border-stone-800 focus:border-amber-600 outline-none text-xs text-white placeholder-stone-600 font-medium transition-all"
                 />
                 <button
@@ -162,29 +162,18 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({
             </button>
           </form>
 
-          {/* Quick Credential Hint */}
-          <div className="pt-2 border-t border-stone-800/60 text-center space-y-2">
-            <div>
-              <p className="text-[11px] text-stone-400">
-                Admin Email: <span className="text-stone-300 font-mono font-semibold">cafeqe2026@gmail.com</span>
-              </p>
-              <p className="text-[11px] text-stone-400 mt-0.5">
-                Password: <span className="text-stone-300 font-mono font-semibold">Cafeqe2026@2062</span>
-              </p>
+          {/* Staff Portal Link */}
+          {onGoToStaff && (
+            <div className="pt-3 border-t border-stone-800/60 text-center">
+              <button
+                type="button"
+                onClick={onGoToStaff}
+                className="text-xs font-bold text-amber-500 hover:text-amber-400 cursor-pointer transition-colors"
+              >
+                Staff Member? Log in at /staff &rarr;
+              </button>
             </div>
-
-            {onGoToStaff && (
-              <div className="pt-1">
-                <button
-                  type="button"
-                  onClick={onGoToStaff}
-                  className="text-xs font-bold text-amber-500 hover:text-amber-400 cursor-pointer transition-colors"
-                >
-                  Staff Member? Log in at /staff &rarr;
-                </button>
-              </div>
-            )}
-          </div>
+          )}
 
         </div>
       </div>

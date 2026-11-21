@@ -12,7 +12,7 @@ export const DEFAULT_CAFE: CafeInfo = {
   taxRate: 5,
   currency: '₹',
   themeColor: '#78350f',
-  razorpayKeyId: 'rzp_live_U2R4yZ5v96bLov',
+  razorpayKeyId: '',
   tablesCount: 12,
   logo: DEFAULT_CAFE_LOGO,
   coverImage: 'https://i.pinimg.com/736x/3c/05/c5/3c05c5bb573c8774bac97aab37b2fcbd.jpg',

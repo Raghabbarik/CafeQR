@@ -280,7 +280,7 @@ export const OrderDisplayBoard: React.FC<OrderDisplayBoardProps> = ({ cafe, onEx
             </form>
 
             <div className="pt-4 border-t border-stone-100 text-[11px] text-stone-500">
-              Default code is <span className="font-mono font-bold text-stone-800">8899</span> unless changed in Admin Panel &rarr; Staff & TV Screen
+              Enter the 4-digit PIN configured by Admin in Cafe Settings to unlock TV Display.
             </div>
 
           </div>

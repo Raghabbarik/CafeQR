@@ -319,9 +319,13 @@ app.get('/api/cafe', async (req, res) => {
 
     const cafe = await dbGetCafe();
     const categories = await dbGetCategories();
-    // Strip razorpayKeyId — the public key is delivered only via /api/payment/order
-    // so it never appears in the public /api/cafe JSON payload sent to browsers.
-    const { razorpayKeyId: _stripped, ...cafePublic } = cafe || {};
+    // Strip confidential admin/staff data & razorpayKeyId from public /api/cafe
+    const { 
+      razorpayKeyId: _strippedRazorpay, 
+      staff: _strippedStaff, 
+      orderDisplayCode: _strippedCode, 
+      ...cafePublic 
+    } = cafe || {};
     const payload = {
       cafe: cafePublic || {
         name: 'The Roasted Bean Cafe',

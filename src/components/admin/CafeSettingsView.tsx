@@ -67,7 +67,7 @@ export const CafeSettingsView: React.FC<CafeSettingsViewProps> = ({
           ],
     fssaiNumber: cafe.fssaiNumber || '11223344556677',
     gstNumber: cafe.gstNumber || '29ABCDE1234F1Z5',
-    razorpayKeyId: cafe.razorpayKeyId || 'rzp_live_U2R4yZ5v96bLov',
+    razorpayKeyId: cafe.razorpayKeyId || '',
   });
 
   const [isSaving, setIsSaving] = useState(false);
