@@ -38,13 +38,17 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
 
   const titleLines = heroTitle.split('\n');
 
+  const effectiveGoogleReviewUrl =
+    cafe.googleReviewUrl?.trim() ||
+    cafe.googleMapsUrl ||
+    'https://maps.app.goo.gl/2WWS7A7RCckxzvpa9';
+
   const socialLinks = [
     {
       id: 'instagram',
       url: cafe.instagramUrl,
       icon: InstagramIcon,
       label: 'Instagram',
-      hoverColor: 'hover:text-pink-600 hover:border-pink-300',
     },
     {
       id: 'whatsapp',
@@ -52,31 +56,27 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
         ? (cafe.whatsappUrl.startsWith('http')
             ? cafe.whatsappUrl
             : `https://wa.me/${cafe.whatsappUrl.replace(/[^0-9]/g, '')}`)
-        : '',
+        : (cafe.phone ? `https://wa.me/${cafe.phone.replace(/[^0-9]/g, '')}` : ''),
       icon: WhatsAppIcon,
       label: 'WhatsApp',
-      hoverColor: 'hover:text-emerald-600 hover:border-emerald-300',
     },
     {
       id: 'facebook',
       url: cafe.facebookUrl,
       icon: FacebookIcon,
       label: 'Facebook',
-      hoverColor: 'hover:text-blue-600 hover:border-blue-300',
     },
     {
       id: 'youtube',
       url: cafe.youtubeUrl,
       icon: YouTubeIcon,
       label: 'YouTube',
-      hoverColor: 'hover:text-red-600 hover:border-red-300',
     },
     {
       id: 'twitter',
       url: cafe.twitterUrl,
       icon: TwitterXIcon,
       label: 'X (Twitter)',
-      hoverColor: 'hover:text-stone-900 hover:border-stone-400',
     },
   ].filter((item) => Boolean(item.url && item.url.trim()));
 
@@ -195,23 +195,27 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
             </button>
           )}
 
-          {/* Google Review Badge & Social Media Icons */}
-          {(Boolean(cafe.googleReviewUrl?.trim()) || socialLinks.length > 0) && (
-            <div className="w-full flex flex-wrap items-center justify-center gap-1.5 pt-0.5">
-              {cafe.googleReviewUrl && cafe.googleReviewUrl.trim() && (
+          {/* Google Review Badge & Real Social Media Icons */}
+          {(Boolean(effectiveGoogleReviewUrl) || socialLinks.length > 0) && (
+            <div className="w-full flex flex-wrap items-center justify-center gap-2 pt-1 pb-0.5">
+              {/* Real Google Review Pill */}
+              {effectiveGoogleReviewUrl && (
                 <a
-                  href={cafe.googleReviewUrl}
+                  href={effectiveGoogleReviewUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-50 hover:bg-stone-100 text-stone-800 text-[11px] font-bold border border-stone-200 transition-all active:scale-95 cursor-pointer shadow-2xs"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white hover:bg-stone-50 text-stone-800 text-xs font-bold border border-stone-200/90 shadow-xs transition-all hover:scale-105 active:scale-95 cursor-pointer group"
                   title="Review us on Google"
                 >
-                  <GoogleIcon className="w-3.5 h-3.5" />
-                  <span>Google Review</span>
-                  <span className="text-amber-500 font-extrabold tracking-tight">★ 5.0</span>
+                  <GoogleIcon className="w-4 h-4 shrink-0" />
+                  <span className="font-bold text-stone-800">Google Review</span>
+                  <span className="text-amber-500 font-extrabold flex items-center text-xs">
+                    ★ 5.0
+                  </span>
                 </a>
               )}
 
+              {/* Real Brand Social Icons */}
               {socialLinks.map((s) => {
                 const IconComp = s.icon;
                 return (
@@ -220,11 +224,11 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
                     href={s.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`w-7 h-7 rounded-full bg-stone-50 border border-stone-200 flex items-center justify-center text-stone-600 transition-all active:scale-90 cursor-pointer shadow-2xs ${s.hoverColor}`}
+                    className="w-7 h-7 rounded-full shadow-xs flex items-center justify-center transition-all hover:scale-115 active:scale-95 cursor-pointer overflow-hidden p-0.5 bg-white border border-stone-200 hover:shadow-sm"
                     title={s.label}
                     aria-label={s.label}
                   >
-                    <IconComp className="w-3.5 h-3.5" />
+                    <IconComp className="w-full h-full" />
                   </a>
                 );
               })}

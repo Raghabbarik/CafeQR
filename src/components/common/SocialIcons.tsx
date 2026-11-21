@@ -4,56 +4,96 @@ interface IconProps {
   className?: string;
 }
 
-export const GoogleIcon: React.FC<IconProps> = ({ className = 'w-4 h-4' }) => (
+/**
+ * Authentic Google 4-Color 'G' Logo
+ */
+export const GoogleIcon: React.FC<IconProps> = ({ className = 'w-5 h-5' }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none">
     <path
-      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
       fill="#4285F4"
+      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
     />
     <path
-      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
       fill="#34A853"
+      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"
     />
     <path
-      d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.04 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
       fill="#FBBC05"
+      d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.04 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
     />
     <path
-      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
       fill="#EA4335"
+      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
     />
   </svg>
 );
 
-export const InstagramIcon: React.FC<IconProps> = ({ className = 'w-4 h-4' }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+/**
+ * Authentic Instagram Logo with Official Vibrant Gradient & White Camera Glyph
+ */
+export const InstagramIcon: React.FC<IconProps> = ({ className = 'w-5 h-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none">
+    <defs>
+      <linearGradient id="real-instagram-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+        <stop offset="0%" stopColor="#f09433" />
+        <stop offset="25%" stopColor="#e6683c" />
+        <stop offset="50%" stopColor="#dc2743" />
+        <stop offset="75%" stopColor="#cc2366" />
+        <stop offset="100%" stopColor="#bc1888" />
+      </linearGradient>
+    </defs>
+    <rect width="24" height="24" rx="6.5" fill="url(#real-instagram-grad)" />
+    <rect x="5.5" y="5.5" width="13" height="13" rx="3.5" stroke="#ffffff" strokeWidth="1.6" fill="none" />
+    <circle cx="12" cy="12" r="3.2" stroke="#ffffff" strokeWidth="1.6" fill="none" />
+    <circle cx="15.8" cy="8.2" r="0.9" fill="#ffffff" />
   </svg>
 );
 
-export const WhatsAppIcon: React.FC<IconProps> = ({ className = 'w-4 h-4' }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M17.472 14.382c-.301-.15-1.78-.879-2.056-.98-.276-.1-.477-.15-.678.15-.2.301-.778.98-.954 1.18-.175.201-.351.226-.652.075-.301-.15-1.272-.469-2.423-1.496-.895-.798-1.5-1.784-1.676-2.085-.175-.301-.019-.464.132-.614.136-.135.301-.351.452-.527.15-.175.2-.301.301-.502.101-.201.05-.377-.025-.527-.075-.15-.678-1.634-.929-2.237-.245-.588-.493-.508-.678-.518l-.578-.01c-.2 0-.527.075-.803.377s-1.054 1.03-1.054 2.511c0 1.482 1.079 2.912 1.23 3.113.15.201 2.124 3.243 5.145 4.549.719.311 1.28.497 1.718.636.722.23 1.379.197 1.898.12.578-.087 1.78-.727 2.031-1.43.251-.703.251-1.305.176-1.43-.076-.126-.277-.201-.578-.352z" />
-    <path d="M12 0C5.373 0 0 5.373 0 12c0 2.115.549 4.101 1.514 5.828L.062 23.378l5.727-1.498C7.457 23.003 9.648 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.933c-1.928 0-3.719-.556-5.231-1.517l-.375-.236-3.391.887.904-3.303-.258-.411C2.569 15.748 2 13.927 2 12c0-5.514 4.486-10 10-10s10 4.486 10 10-4.486 9.933-10 9.933z" />
+/**
+ * Authentic WhatsApp Logo with #25D366 Green Bubble & White Handset
+ */
+export const WhatsAppIcon: React.FC<IconProps> = ({ className = 'w-5 h-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="12" fill="#25D366" />
+    <path
+      fill="#FFFFFF"
+      d="M12.012 3.84c-4.506 0-8.172 3.666-8.172 8.172 0 1.44.378 2.844 1.092 4.086l-1.164 4.248 4.356-1.14c1.194.654 2.538 1 3.888 1 4.506 0 8.172-3.666 8.172-8.172 0-4.506-3.666-8.172-8.172-8.172zm4.77 11.55c-.198.558-.996 1.026-1.428 1.068-.396.036-.912.066-2.928-.768-2.424-1.002-3.996-3.48-4.116-3.642-.12-.162-.978-1.302-.978-2.484 0-1.182.618-1.764.84-2.004.222-.24.48-.3.642-.3.162 0 .324 0 .468.006.15.006.348-.06.546.414.204.492.696 1.698.756 1.818.06.12.102.264.018.426-.078.162-.12.264-.24.402-.12.144-.252.318-.36.426-.12.12-.246.252-.108.492.138.24.618 1.02 1.326 1.65.912.81 1.68 1.062 1.92 1.182.24.12.378.102.516-.06.144-.162.618-.72.78-.966.162-.246.324-.204.546-.12.222.078 1.41.666 1.65.786.24.12.396.18.456.282.06.102.06.588-.138 1.146z"
+    />
   </svg>
 );
 
-export const FacebookIcon: React.FC<IconProps> = ({ className = 'w-4 h-4' }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+/**
+ * Authentic Facebook Logo with #1877F2 Blue Circle & White Bold 'f'
+ */
+export const FacebookIcon: React.FC<IconProps> = ({ className = 'w-5 h-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="12" fill="#1877F2" />
+    <path
+      fill="#FFFFFF"
+      d="M15.117 12.723l.412-2.684h-2.576V8.295c0-.735.36-1.452 1.515-1.452h1.172V4.557c-.647-.09-1.3-.135-1.954-.135-1.993 0-3.293 1.209-3.293 3.393v2.224H8.05v2.684h2.343V20.25a12.08 12.08 0 0 0 3.737 0v-7.527h1.987z"
+    />
   </svg>
 );
 
-export const YouTubeIcon: React.FC<IconProps> = ({ className = 'w-4 h-4' }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+/**
+ * Authentic YouTube Logo with #FF0000 Red Badge & White Play Glyph
+ */
+export const YouTubeIcon: React.FC<IconProps> = ({ className = 'w-5 h-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none">
+    <rect width="24" height="24" rx="6" fill="#FF0000" />
+    <path fill="#FFFFFF" d="M10 8.5l5.5 3.5-5.5 3.5v-7z" />
   </svg>
 );
 
-export const TwitterXIcon: React.FC<IconProps> = ({ className = 'w-4 h-4' }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+/**
+ * Authentic X Logo with #000000 Black Badge & White X Mark
+ */
+export const TwitterXIcon: React.FC<IconProps> = ({ className = 'w-5 h-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none">
+    <rect width="24" height="24" rx="6" fill="#000000" />
+    <path
+      fill="#FFFFFF"
+      d="M17.16 5.5h2.15l-4.7 5.37L20.14 18.5h-4.32l-3.39-4.43-3.87 4.43H6.41l5.03-5.75L6 5.5h4.43l3.07 4.06 3.66-4.06zm-.76 11.71h1.19L9.93 6.72H8.65l7.75 10.49z"
+    />
   </svg>
 );

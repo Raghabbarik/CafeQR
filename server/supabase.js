@@ -136,16 +136,27 @@ export async function dbGetCafe() {
         if (Array.isArray(parsed.features)) features = parsed.features;
         if (parsed.gstNumber) gstNumber = parsed.gstNumber;
         if (parsed.fssaiNumber) fssaiNumber = parsed.fssaiNumber;
-        if (parsed.instagramUrl) instagramUrl = parsed.instagramUrl;
-        if (parsed.googleReviewUrl) googleReviewUrl = parsed.googleReviewUrl;
-        if (parsed.whatsappUrl) whatsappUrl = parsed.whatsappUrl;
-        if (parsed.facebookUrl) facebookUrl = parsed.facebookUrl;
-        if (parsed.youtubeUrl) youtubeUrl = parsed.youtubeUrl;
-        if (parsed.twitterUrl) twitterUrl = parsed.twitterUrl;
+        if (parsed.instagramUrl !== undefined) instagramUrl = parsed.instagramUrl;
+        if (parsed.googleReviewUrl !== undefined) googleReviewUrl = parsed.googleReviewUrl;
+        if (parsed.whatsappUrl !== undefined) whatsappUrl = parsed.whatsappUrl;
+        if (parsed.facebookUrl !== undefined) facebookUrl = parsed.facebookUrl;
+        if (parsed.youtubeUrl !== undefined) youtubeUrl = parsed.youtubeUrl;
+        if (parsed.twitterUrl !== undefined) twitterUrl = parsed.twitterUrl;
       }
     }
   } catch (e) {
     // tagline is plain string
+  }
+
+  // Smart fallbacks for Google Review and WhatsApp if not explicitly configured
+  if (!googleReviewUrl && (googleMapsUrl || address)) {
+    googleReviewUrl = googleMapsUrl || 'https://maps.app.goo.gl/2WWS7A7RCckxzvpa9';
+  }
+  if (!whatsappUrl && phone) {
+    const cleanDigits = phone.replace(/[^0-9]/g, '');
+    if (cleanDigits) {
+      whatsappUrl = `https://wa.me/${cleanDigits}`;
+    }
   }
 
   const heroCover = heroConfig.coverImage || data.cover_image || '';
