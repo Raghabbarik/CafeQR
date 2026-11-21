@@ -1,46 +1,49 @@
 import type { CafeInfo, MenuItem, Order, StaffMember, DiningOption, Review, StaffAlert } from '../types';
 
-// Dynamic backend URL fallback if relative fetch fails (only for local dev on port 3000 -> 5000)
-const getBackendDirectUrl = () => {
+// Dynamic backend URL resolution for local dev, Cloudflare Pages/Workers, and custom domains
+export const getBackendBaseUrl = (): string => {
+  const envUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
+  if (envUrl) {
+    return envUrl.replace(/\/+$/, '');
+  }
+
   if (typeof window !== 'undefined') {
     const host = window.location.hostname;
-    const isLocalDev = host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.') || host.startsWith('10.');
+    // 1. Local development (Vite port 3000 -> Express port 5000)
+    const isLocalDev =
+      host === 'localhost' ||
+      host === '127.0.0.1' ||
+      host.startsWith('192.168.') ||
+      host.startsWith('10.');
     if (isLocalDev && window.location.port === '3000') {
       return `${window.location.protocol}//${host}:5000`;
     }
-    // In production (Vercel, custom domain), use relative same-origin URL!
-    return '';
+
+    // 2. Cloudflare (workers.dev or pages.dev) -> connect to live Render backend
+    if (host.includes('workers.dev') || host.includes('pages.dev')) {
+      return 'https://cafeqr-tckh.onrender.com';
+    }
   }
+
   return '';
 };
 
 async function requestApi(url: string, options?: RequestInit): Promise<Response> {
+  const baseUrl = getBackendBaseUrl();
+  const targetUrl = baseUrl && url.startsWith('/api') ? `${baseUrl}${url}` : url;
+
   try {
-    const res = await fetch(url, options);
-    // If relative proxy returns 404/502/504 in local dev, try direct backend fallback
-    if (!res.ok && (res.status === 404 || res.status === 502 || res.status === 504) && url.startsWith('/api')) {
-      const fallbackPrefix = getBackendDirectUrl();
-      if (fallbackPrefix) {
-        const fallbackUrl = `${fallbackPrefix}${url}`;
-        console.warn(`[API] Fetch to ${url} returned ${res.status}, retrying directly to ${fallbackUrl}`);
-        return await fetch(fallbackUrl, options);
-      }
+    const res = await fetch(targetUrl, options);
+    // If targeted endpoint fails with 404/502 and baseUrl was empty, try Render fallback
+    if (!res.ok && (res.status === 404 || res.status === 502 || res.status === 504) && !baseUrl && url.startsWith('/api')) {
+      const fallbackUrl = `https://cafeqr-tckh.onrender.com${url}`;
+      return await fetch(fallbackUrl, options);
     }
     return res;
   } catch (err: any) {
-    if (url.startsWith('/api')) {
-      const fallbackPrefix = getBackendDirectUrl();
-      if (fallbackPrefix) {
-        const fallbackUrl = `${fallbackPrefix}${url}`;
-        console.warn(`[API] Fetch to ${url} failed (${err.message}), retrying directly to ${fallbackUrl}`);
-        try {
-          const fallbackRes = await fetch(fallbackUrl, options);
-          return fallbackRes;
-        } catch (fallbackErr: any) {
-          console.error(`[API] Direct fallback to ${fallbackUrl} also failed:`, fallbackErr);
-          throw fallbackErr;
-        }
-      }
+    if (!baseUrl && url.startsWith('/api')) {
+      const fallbackUrl = `https://cafeqr-tckh.onrender.com${url}`;
+      return await fetch(fallbackUrl, options);
     }
     throw err;
   }
