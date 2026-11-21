@@ -3,6 +3,14 @@ import type { CafeInfo } from '../../types';
 import { Sparkles, Receipt, ChevronDown, AlertCircle } from 'lucide-react';
 import { SlideToOrder } from './SlideToOrder';
 import { ImageWithSkeleton } from '../common/ImageWithSkeleton';
+import {
+  GoogleIcon,
+  InstagramIcon,
+  WhatsAppIcon,
+  FacebookIcon,
+  YouTubeIcon,
+  TwitterXIcon
+} from '../common/SocialIcons';
 
 interface WelcomeHeroProps {
   cafe: CafeInfo;
@@ -29,6 +37,48 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
     'https://i.pinimg.com/736x/3c/05/c5/3c05c5bb573c8774bac97aab37b2fcbd.jpg';
 
   const titleLines = heroTitle.split('\n');
+
+  const socialLinks = [
+    {
+      id: 'instagram',
+      url: cafe.instagramUrl,
+      icon: InstagramIcon,
+      label: 'Instagram',
+      hoverColor: 'hover:text-pink-600 hover:border-pink-300',
+    },
+    {
+      id: 'whatsapp',
+      url: cafe.whatsappUrl
+        ? (cafe.whatsappUrl.startsWith('http')
+            ? cafe.whatsappUrl
+            : `https://wa.me/${cafe.whatsappUrl.replace(/[^0-9]/g, '')}`)
+        : '',
+      icon: WhatsAppIcon,
+      label: 'WhatsApp',
+      hoverColor: 'hover:text-emerald-600 hover:border-emerald-300',
+    },
+    {
+      id: 'facebook',
+      url: cafe.facebookUrl,
+      icon: FacebookIcon,
+      label: 'Facebook',
+      hoverColor: 'hover:text-blue-600 hover:border-blue-300',
+    },
+    {
+      id: 'youtube',
+      url: cafe.youtubeUrl,
+      icon: YouTubeIcon,
+      label: 'YouTube',
+      hoverColor: 'hover:text-red-600 hover:border-red-300',
+    },
+    {
+      id: 'twitter',
+      url: cafe.twitterUrl,
+      icon: TwitterXIcon,
+      label: 'X (Twitter)',
+      hoverColor: 'hover:text-stone-900 hover:border-stone-400',
+    },
+  ].filter((item) => Boolean(item.url && item.url.trim()));
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
@@ -143,6 +193,42 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
               <Receipt className="w-3.5 h-3.5 text-amber-800" />
               <span>Check Bill / View Past Orders</span>
             </button>
+          )}
+
+          {/* Google Review Badge & Social Media Icons */}
+          {(Boolean(cafe.googleReviewUrl?.trim()) || socialLinks.length > 0) && (
+            <div className="w-full flex flex-wrap items-center justify-center gap-1.5 pt-0.5">
+              {cafe.googleReviewUrl && cafe.googleReviewUrl.trim() && (
+                <a
+                  href={cafe.googleReviewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-stone-50 hover:bg-stone-100 text-stone-800 text-[11px] font-bold border border-stone-200 transition-all active:scale-95 cursor-pointer shadow-2xs"
+                  title="Review us on Google"
+                >
+                  <GoogleIcon className="w-3.5 h-3.5" />
+                  <span>Google Review</span>
+                  <span className="text-amber-500 font-extrabold tracking-tight">★ 5.0</span>
+                </a>
+              )}
+
+              {socialLinks.map((s) => {
+                const IconComp = s.icon;
+                return (
+                  <a
+                    key={s.id}
+                    href={s.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`w-7 h-7 rounded-full bg-stone-50 border border-stone-200 flex items-center justify-center text-stone-600 transition-all active:scale-90 cursor-pointer shadow-2xs ${s.hoverColor}`}
+                    title={s.label}
+                    aria-label={s.label}
+                  >
+                    <IconComp className="w-3.5 h-3.5" />
+                  </a>
+                );
+              })}
+            </div>
           )}
 
           {/* Scroll down to Cafe Details indicator */}

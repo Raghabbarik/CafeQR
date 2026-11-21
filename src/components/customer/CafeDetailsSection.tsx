@@ -16,6 +16,14 @@ import {
 } from 'lucide-react';
 import { ImageWithSkeleton } from '../common/ImageWithSkeleton';
 import { extractCleanMapEmbedUrl, extractCleanDirectionsUrl } from '../../utils/mapUtils';
+import {
+  GoogleIcon,
+  InstagramIcon,
+  WhatsAppIcon,
+  FacebookIcon,
+  YouTubeIcon,
+  TwitterXIcon
+} from '../common/SocialIcons';
 
 interface CafeDetailsSectionProps {
   cafe: CafeInfo;
@@ -28,6 +36,53 @@ export const CafeDetailsSection: React.FC<CafeDetailsSectionProps> = ({
 }) => {
   const [copiedWifi, setCopiedWifi] = useState(false);
   const isCafeOpen = cafe.isOpen !== false;
+
+  const socialLinks = [
+    {
+      id: 'instagram',
+      url: cafe.instagramUrl,
+      icon: InstagramIcon,
+      label: 'Instagram',
+      handle: '@' + (cafe.instagramUrl?.replace(/https?:\/\/(www\.)?instagram\.com\/?/, '').replace(/\/$/, '') || 'instagram'),
+      hoverColor: 'hover:border-pink-300 hover:text-pink-600',
+    },
+    {
+      id: 'whatsapp',
+      url: cafe.whatsappUrl
+        ? (cafe.whatsappUrl.startsWith('http')
+            ? cafe.whatsappUrl
+            : `https://wa.me/${cafe.whatsappUrl.replace(/[^0-9]/g, '')}`)
+        : '',
+      icon: WhatsAppIcon,
+      label: 'WhatsApp',
+      handle: 'Chat & Inquiry',
+      hoverColor: 'hover:border-emerald-300 hover:text-emerald-600',
+    },
+    {
+      id: 'facebook',
+      url: cafe.facebookUrl,
+      icon: FacebookIcon,
+      label: 'Facebook',
+      handle: 'Follow on Facebook',
+      hoverColor: 'hover:border-blue-300 hover:text-blue-600',
+    },
+    {
+      id: 'youtube',
+      url: cafe.youtubeUrl,
+      icon: YouTubeIcon,
+      label: 'YouTube',
+      handle: 'Watch Videos',
+      hoverColor: 'hover:border-red-300 hover:text-red-600',
+    },
+    {
+      id: 'twitter',
+      url: cafe.twitterUrl,
+      icon: TwitterXIcon,
+      label: 'X (Twitter)',
+      handle: 'Follow updates',
+      hoverColor: 'hover:border-stone-400 hover:text-stone-900',
+    },
+  ].filter((item) => Boolean(item.url && item.url.trim()));
 
   const handleCopyWifi = () => {
     if (!cafe.wifiPassword) return;
@@ -195,6 +250,76 @@ export const CafeDetailsSection: React.FC<CafeDetailsSectionProps> = ({
             </span>
           </div>
         </div>
+
+        {/* Google Reviews & Social Media Connect Card */}
+        {(Boolean(cafe.googleReviewUrl?.trim()) || socialLinks.length > 0) && (
+          <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-stone-200/90 space-y-4">
+            <div className="flex items-center justify-between pb-2.5 border-b border-stone-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center text-amber-800">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-stone-900 text-sm">Connect & Reviews</h3>
+                  <p className="text-[11px] text-stone-500">Follow our socials & rate your experience</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Google Reviews Banner */}
+            {cafe.googleReviewUrl && cafe.googleReviewUrl.trim() && (
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-50 via-stone-50 to-amber-50/60 border border-amber-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-white shadow-2xs border border-stone-200 flex items-center justify-center shrink-0">
+                    <GoogleIcon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-center sm:justify-start gap-1">
+                      <span className="font-black text-stone-900 text-sm">Rate Us On Google</span>
+                      <span className="text-amber-500 font-bold text-xs">★★★★★</span>
+                    </div>
+                    <p className="text-[11px] text-stone-500">Love our coffee & bites? Leave us a quick 5-star review!</p>
+                  </div>
+                </div>
+                <a
+                  href={cafe.googleReviewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 rounded-xl bg-amber-800 hover:bg-amber-900 text-white font-bold text-xs shadow-xs transition-all active:scale-95 shrink-0 inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  <span>Write Review</span>
+                  <ExternalLink className="w-3.5 h-3.5 text-amber-200" />
+                </a>
+              </div>
+            )}
+
+            {/* Social Links Grid */}
+            {socialLinks.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
+                {socialLinks.map((s) => {
+                  const IconComp = s.icon;
+                  return (
+                    <a
+                      key={s.id}
+                      href={s.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`flex items-center gap-2.5 p-3 rounded-2xl bg-stone-50/80 hover:bg-amber-50/60 border border-stone-200 text-stone-800 transition-all active:scale-95 cursor-pointer group ${s.hoverColor}`}
+                    >
+                      <div className="w-7 h-7 rounded-xl bg-white shadow-2xs border border-stone-200/80 flex items-center justify-center text-stone-700 group-hover:text-amber-900 transition-colors shrink-0">
+                        <IconComp className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <span className="text-xs font-bold block truncate">{s.label}</span>
+                        <span className="text-[10px] text-stone-400 font-medium block truncate">{s.handle}</span>
+                      </div>
+                    </a>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Location & Embedded Interactive Map */}
         <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-stone-200/90 space-y-3.5">

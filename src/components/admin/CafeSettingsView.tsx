@@ -15,9 +15,19 @@ import {
   Plus,
   X,
   RotateCcw,
-  Sparkle
+  Sparkle,
+  Share2,
+  Trash2
 } from 'lucide-react';
 import { extractCleanMapEmbedUrl, extractCleanDirectionsUrl } from '../../utils/mapUtils';
+import {
+  GoogleIcon,
+  InstagramIcon,
+  WhatsAppIcon,
+  FacebookIcon,
+  YouTubeIcon,
+  TwitterXIcon
+} from '../common/SocialIcons';
 
 interface CafeSettingsViewProps {
   cafe: CafeInfo;
@@ -68,6 +78,12 @@ export const CafeSettingsView: React.FC<CafeSettingsViewProps> = ({
     fssaiNumber: cafe.fssaiNumber || '11223344556677',
     gstNumber: cafe.gstNumber || '29ABCDE1234F1Z5',
     razorpayKeyId: cafe.razorpayKeyId || '',
+    googleReviewUrl: cafe.googleReviewUrl || '',
+    instagramUrl: cafe.instagramUrl || '',
+    whatsappUrl: cafe.whatsappUrl || '',
+    facebookUrl: cafe.facebookUrl || '',
+    youtubeUrl: cafe.youtubeUrl || '',
+    twitterUrl: cafe.twitterUrl || '',
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -693,6 +709,270 @@ export const CafeSettingsView: React.FC<CafeSettingsViewProps> = ({
                 className="w-full px-3 py-2 bg-white rounded-xl border border-stone-300 outline-none focus:border-blue-600 font-mono text-[11px]"
               />
             </div>
+          </div>
+        </div>
+
+        {/* 8. SOCIAL MEDIA LINKS & GOOGLE REVIEWS */}
+        <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-xs space-y-4">
+          <div className="flex items-center gap-3 pb-3 border-b border-stone-100">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-800">
+              <Share2 className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-stone-900 text-base">
+                Social Media Links & Google Reviews
+              </h3>
+              <p className="text-xs text-stone-500">
+                Connect your social channels and Google reviews. Displayed on the Home Page and Cafe Details page.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {/* Google Review URL */}
+            <div className="p-3.5 bg-amber-50/40 rounded-2xl border border-amber-200/80 space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="font-bold text-stone-800 flex items-center gap-2">
+                  <GoogleIcon className="w-4 h-4" />
+                  <span>Google Review Link</span>
+                  <span className="text-[10px] text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full font-semibold">Recommended for 5★ reviews</span>
+                </label>
+                {formData.googleReviewUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, googleReviewUrl: '' })}
+                    className="text-rose-600 hover:text-rose-800 text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Clear / Delete</span>
+                  </button>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  value={formData.googleReviewUrl || ''}
+                  onChange={(e) => setFormData({ ...formData, googleReviewUrl: e.target.value })}
+                  placeholder="https://g.page/r/.../review or https://maps.app.goo.gl/..."
+                  className="flex-1 px-3 py-2 bg-white rounded-xl border border-stone-300 outline-none focus:border-amber-600 font-mono text-[11px]"
+                />
+                {formData.googleReviewUrl && (
+                  <a
+                    href={formData.googleReviewUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl border border-stone-300 flex items-center gap-1 font-bold text-[11px]"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Test</span>
+                  </a>
+                )}
+              </div>
+              <p className="text-[10px] text-stone-400">
+                Customers can tap this on the home page and details view to write a direct 5-star Google review.
+              </p>
+            </div>
+
+            {/* Instagram */}
+            <div className="p-3 rounded-2xl bg-stone-50 border border-stone-200 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="font-bold text-stone-700 flex items-center gap-2">
+                  <InstagramIcon className="w-4 h-4 text-pink-600" />
+                  <span>Instagram Profile URL</span>
+                </label>
+                {formData.instagramUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, instagramUrl: '' })}
+                    className="text-rose-600 hover:text-rose-800 text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span>Clear / Delete</span>
+                  </button>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  value={formData.instagramUrl || ''}
+                  onChange={(e) => setFormData({ ...formData, instagramUrl: e.target.value })}
+                  placeholder="https://instagram.com/yourcafename"
+                  className="flex-1 px-3 py-2 bg-white rounded-xl border border-stone-300 outline-none focus:border-amber-600 text-[11px]"
+                />
+                {formData.instagramUrl && (
+                  <a
+                    href={formData.instagramUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3 py-2 bg-white hover:bg-stone-100 text-stone-700 rounded-xl border border-stone-300 flex items-center gap-1 font-bold text-[11px]"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Test</span>
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* WhatsApp */}
+            <div className="p-3 rounded-2xl bg-stone-50 border border-stone-200 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="font-bold text-stone-700 flex items-center gap-2">
+                  <WhatsAppIcon className="w-4 h-4 text-emerald-600" />
+                  <span>WhatsApp Contact / Link</span>
+                </label>
+                {formData.whatsappUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, whatsappUrl: '' })}
+                    className="text-rose-600 hover:text-rose-800 text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span>Clear / Delete</span>
+                  </button>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={formData.whatsappUrl || ''}
+                  onChange={(e) => setFormData({ ...formData, whatsappUrl: e.target.value })}
+                  placeholder="https://wa.me/919876543210 or 9876543210"
+                  className="flex-1 px-3 py-2 bg-white rounded-xl border border-stone-300 outline-none focus:border-amber-600 text-[11px]"
+                />
+                {formData.whatsappUrl && (
+                  <a
+                    href={formData.whatsappUrl.startsWith('http') ? formData.whatsappUrl : `https://wa.me/${formData.whatsappUrl.replace(/[^0-9]/g, '')}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3 py-2 bg-white hover:bg-stone-100 text-stone-700 rounded-xl border border-stone-300 flex items-center gap-1 font-bold text-[11px]"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Test</span>
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* Facebook */}
+            <div className="p-3 rounded-2xl bg-stone-50 border border-stone-200 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="font-bold text-stone-700 flex items-center gap-2">
+                  <FacebookIcon className="w-4 h-4 text-blue-600" />
+                  <span>Facebook Page URL</span>
+                </label>
+                {formData.facebookUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, facebookUrl: '' })}
+                    className="text-rose-600 hover:text-rose-800 text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span>Clear / Delete</span>
+                  </button>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  value={formData.facebookUrl || ''}
+                  onChange={(e) => setFormData({ ...formData, facebookUrl: e.target.value })}
+                  placeholder="https://facebook.com/yourcafe"
+                  className="flex-1 px-3 py-2 bg-white rounded-xl border border-stone-300 outline-none focus:border-amber-600 text-[11px]"
+                />
+                {formData.facebookUrl && (
+                  <a
+                    href={formData.facebookUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3 py-2 bg-white hover:bg-stone-100 text-stone-700 rounded-xl border border-stone-300 flex items-center gap-1 font-bold text-[11px]"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Test</span>
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* YouTube */}
+            <div className="p-3 rounded-2xl bg-stone-50 border border-stone-200 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="font-bold text-stone-700 flex items-center gap-2">
+                  <YouTubeIcon className="w-4 h-4 text-red-600" />
+                  <span>YouTube Channel URL</span>
+                </label>
+                {formData.youtubeUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, youtubeUrl: '' })}
+                    className="text-rose-600 hover:text-rose-800 text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span>Clear / Delete</span>
+                  </button>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  value={formData.youtubeUrl || ''}
+                  onChange={(e) => setFormData({ ...formData, youtubeUrl: e.target.value })}
+                  placeholder="https://youtube.com/@yourcafe"
+                  className="flex-1 px-3 py-2 bg-white rounded-xl border border-stone-300 outline-none focus:border-amber-600 text-[11px]"
+                />
+                {formData.youtubeUrl && (
+                  <a
+                    href={formData.youtubeUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3 py-2 bg-white hover:bg-stone-100 text-stone-700 rounded-xl border border-stone-300 flex items-center gap-1 font-bold text-[11px]"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Test</span>
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* X (Twitter) */}
+            <div className="p-3 rounded-2xl bg-stone-50 border border-stone-200 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="font-bold text-stone-700 flex items-center gap-2">
+                  <TwitterXIcon className="w-4 h-4 text-stone-900" />
+                  <span>X (Twitter) Profile URL</span>
+                </label>
+                {formData.twitterUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, twitterUrl: '' })}
+                    className="text-rose-600 hover:text-rose-800 text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span>Clear / Delete</span>
+                  </button>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  value={formData.twitterUrl || ''}
+                  onChange={(e) => setFormData({ ...formData, twitterUrl: e.target.value })}
+                  placeholder="https://x.com/yourcafe"
+                  className="flex-1 px-3 py-2 bg-white rounded-xl border border-stone-300 outline-none focus:border-amber-600 text-[11px]"
+                />
+                {formData.twitterUrl && (
+                  <a
+                    href={formData.twitterUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3 py-2 bg-white hover:bg-stone-100 text-stone-700 rounded-xl border border-stone-300 flex items-center gap-1 font-bold text-[11px]"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Test</span>
+                  </a>
+                )}
+              </div>
+            </div>
+
           </div>
         </div>
 

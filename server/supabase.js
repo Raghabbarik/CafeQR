@@ -98,6 +98,11 @@ export async function dbGetCafe() {
   let gstNumber = '29ABCDE1234F1Z5';
   let fssaiNumber = '11223344556677';
   let instagramUrl = '';
+  let googleReviewUrl = '';
+  let whatsappUrl = '';
+  let facebookUrl = '';
+  let youtubeUrl = '';
+  let twitterUrl = '';
 
   try {
     if (data.tagline && data.tagline.trim().startsWith('{')) {
@@ -132,6 +137,11 @@ export async function dbGetCafe() {
         if (parsed.gstNumber) gstNumber = parsed.gstNumber;
         if (parsed.fssaiNumber) fssaiNumber = parsed.fssaiNumber;
         if (parsed.instagramUrl) instagramUrl = parsed.instagramUrl;
+        if (parsed.googleReviewUrl) googleReviewUrl = parsed.googleReviewUrl;
+        if (parsed.whatsappUrl) whatsappUrl = parsed.whatsappUrl;
+        if (parsed.facebookUrl) facebookUrl = parsed.facebookUrl;
+        if (parsed.youtubeUrl) youtubeUrl = parsed.youtubeUrl;
+        if (parsed.twitterUrl) twitterUrl = parsed.twitterUrl;
       }
     }
   } catch (e) {
@@ -172,6 +182,11 @@ export async function dbGetCafe() {
     gstNumber,
     fssaiNumber,
     instagramUrl,
+    googleReviewUrl,
+    whatsappUrl,
+    facebookUrl,
+    youtubeUrl,
+    twitterUrl,
   };
 }
 
@@ -243,6 +258,11 @@ export async function dbUpdateCafe(updates) {
       if (parsed.gstNumber) currentDetails.gstNumber = parsed.gstNumber;
       if (parsed.fssaiNumber) currentDetails.fssaiNumber = parsed.fssaiNumber;
       if (parsed.instagramUrl) currentDetails.instagramUrl = parsed.instagramUrl;
+      if (parsed.googleReviewUrl) currentDetails.googleReviewUrl = parsed.googleReviewUrl;
+      if (parsed.whatsappUrl) currentDetails.whatsappUrl = parsed.whatsappUrl;
+      if (parsed.facebookUrl) currentDetails.facebookUrl = parsed.facebookUrl;
+      if (parsed.youtubeUrl) currentDetails.youtubeUrl = parsed.youtubeUrl;
+      if (parsed.twitterUrl) currentDetails.twitterUrl = parsed.twitterUrl;
     } catch (e) {}
   }
 
@@ -291,6 +311,11 @@ export async function dbUpdateCafe(updates) {
     ...(updates.gstNumber !== undefined && { gstNumber: updates.gstNumber }),
     ...(updates.fssaiNumber !== undefined && { fssaiNumber: updates.fssaiNumber }),
     ...(updates.instagramUrl !== undefined && { instagramUrl: updates.instagramUrl }),
+    ...(updates.googleReviewUrl !== undefined && { googleReviewUrl: updates.googleReviewUrl }),
+    ...(updates.whatsappUrl !== undefined && { whatsappUrl: updates.whatsappUrl }),
+    ...(updates.facebookUrl !== undefined && { facebookUrl: updates.facebookUrl }),
+    ...(updates.youtubeUrl !== undefined && { youtubeUrl: updates.youtubeUrl }),
+    ...(updates.twitterUrl !== undefined && { twitterUrl: updates.twitterUrl }),
   };
 
   payload.tagline = JSON.stringify({

@@ -47,6 +47,11 @@ export interface CafeInfo {
   about?: string;
   features?: string[];
   instagramUrl?: string;
+  googleReviewUrl?: string;
+  whatsappUrl?: string;
+  facebookUrl?: string;
+  youtubeUrl?: string;
+  twitterUrl?: string;
 }
 
 export interface MenuItem {
