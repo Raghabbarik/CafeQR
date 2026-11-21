@@ -29,12 +29,21 @@ import { OrderDisplayBoard } from './components/display/OrderDisplayBoard';
 
 // Initial resilient fallback data (eliminates blocking loading screens on Vercel)
 import { DEFAULT_CAFE, DEFAULT_CATEGORIES, DEFAULT_MENU_ITEMS } from './data/initialMenuData';
+import { GlassmorphismLoader } from './components/common/GlassmorphismLoader';
 
 import { WifiOff } from 'lucide-react';
 
 export function App() {
   // App Mode: 'customer' | 'admin' | 'staff' | 'display'
   const [mode, setMode] = useState<'customer' | 'admin' | 'staff' | 'display'>('customer');
+
+  // Render server wake-up tracker (Glassmorphism loading screen)
+  const [isServerWaking, setIsServerWaking] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return !sessionStorage.getItem('cafeqr_server_awake');
+    }
+    return true;
+  });
 
   // Online / Offline connectivity tracker
   const [isOnline, setIsOnline] = useState<boolean>(() => {
@@ -277,6 +286,14 @@ export function App() {
     }
   }, []);
 
+  // Safety auto-dismiss for glassmorphism loader after 18s max
+  useEffect(() => {
+    const autoDismiss = setTimeout(() => {
+      setIsServerWaking(false);
+    }, 18000);
+    return () => clearTimeout(autoDismiss);
+  }, []);
+
   // 2. Fetch Initial Cafe & Menu Data in Parallel (High-speed concurrent sync; never blocks screen)
   useEffect(() => {
     async function initData() {
@@ -322,12 +339,29 @@ export function App() {
         if (Array.isArray(ordersRes) && ordersRes.length) {
           setOrders(ordersRes);
         }
+
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('cafeqr_server_awake', 'true');
+        }
       } catch (err) {
         console.warn('Initial cloud sync notice (using cached/fallback menu):', err);
+      } finally {
+        setIsServerWaking(false);
       }
     }
     initData();
   }, [mode]);
+
+  const renderGlassLoader = () => {
+    if (!isServerWaking) return null;
+    return (
+      <GlassmorphismLoader
+        cafeName={cafe.name}
+        cafeLogo={cafe.logo}
+        onSkip={() => setIsServerWaking(false)}
+      />
+    );
+  };
 
   // 3. Setup Real-time WebSockets
   useEffect(() => {
@@ -1022,6 +1056,7 @@ export function App() {
   if (mode === 'display') {
     return (
       <>
+        {renderGlassLoader()}
         <ToastNotification toasts={toasts} onDismiss={removeToast} />
         <OrderDisplayBoard
           cafe={cafe}
@@ -1036,6 +1071,7 @@ export function App() {
     if (!isStaffAuthenticated) {
       return (
         <>
+          {renderGlassLoader()}
           <ToastNotification toasts={toasts} onDismiss={removeToast} />
           <StaffLoginView
             cafe={cafe}
@@ -1052,6 +1088,7 @@ export function App() {
 
     return (
       <>
+        {renderGlassLoader()}
         <ToastNotification toasts={toasts} onDismiss={removeToast} />
         <StaffDashboard
           cafe={cafe}
@@ -1080,6 +1117,7 @@ export function App() {
     if (!isAdminAuthenticated) {
       return (
         <>
+          {renderGlassLoader()}
           <ToastNotification toasts={toasts} onDismiss={removeToast} />
           <AdminLoginView
             cafe={cafe}
@@ -1095,6 +1133,7 @@ export function App() {
 
     return (
       <>
+        {renderGlassLoader()}
         <ToastNotification toasts={toasts} onDismiss={removeToast} />
         <AdminDashboard
           cafe={cafe}
@@ -1132,6 +1171,7 @@ export function App() {
   if (customerStep === 'welcome') {
     return (
       <>
+        {renderGlassLoader()}
         <ToastNotification toasts={toasts} onDismiss={removeToast} />
         <div
           className={`min-h-screen bg-stone-900 scroll-smooth w-full ${
@@ -1181,6 +1221,7 @@ export function App() {
   if (customerStep === 'bill' && currentOrder) {
     return (
       <>
+        {renderGlassLoader()}
         <ToastNotification toasts={toasts} onDismiss={removeToast} />
         <BillReceiptView
           order={currentOrder}
@@ -1235,6 +1276,7 @@ export function App() {
 
   return (
     <>
+      {renderGlassLoader()}
       <ToastNotification toasts={toasts} onDismiss={removeToast} />
       <div
         className={`min-h-screen bg-[#f8f9fa] pb-28 w-full ${
