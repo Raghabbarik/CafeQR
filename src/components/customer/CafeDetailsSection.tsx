@@ -57,7 +57,9 @@ export const CafeDetailsSection: React.FC<CafeDetailsSectionProps> = ({
         ];
 
   return (
-    <section id="cafe-details" className="w-full bg-[#faf7f2] text-stone-900 pt-10 pb-20 px-4 sm:px-6 relative select-none">
+    <section id="cafe-details" className="w-full bg-[#faf7f2] text-stone-900 pt-5 pb-20 px-4 sm:px-6 relative select-none rounded-t-[36px] sm:rounded-t-[44px]">
+      {/* Visual Sheet Pull / Drag Indicator Pill */}
+      <div className="w-12 h-1.5 bg-stone-300 rounded-full mx-auto mb-6" />
       <div className="max-w-2xl mx-auto space-y-6">
 
         {/* Cafe Header Card */}

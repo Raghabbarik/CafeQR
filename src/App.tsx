@@ -1148,15 +1148,22 @@ export function App() {
               <span>Offline Mode: Internet disconnected. Menu items are loaded from local cache.</span>
             </div>
           )}
-          <WelcomeHero
-            cafe={cafe}
-            onGetStarted={handleExploreMenu}
-            onCheckBill={() => setIsBillLookupOpen(true)}
-          />
-          <CafeDetailsSection
-            cafe={cafe}
-            onOrderNow={handleExploreMenu}
-          />
+          {/* Pinned Sticky Home Page: Stays stationary when user scrolls */}
+          <div className="sticky top-0 z-0 h-[100dvh] w-full overflow-hidden">
+            <WelcomeHero
+              cafe={cafe}
+              onGetStarted={handleExploreMenu}
+              onCheckBill={() => setIsBillLookupOpen(true)}
+            />
+          </div>
+
+          {/* Downside Page (Cafe Details Section): Slides UP over the home page */}
+          <div className="relative z-10 w-full bg-[#faf7f2] shadow-[0_-25px_60px_rgba(0,0,0,0.55)] rounded-t-[36px] sm:rounded-t-[44px]">
+            <CafeDetailsSection
+              cafe={cafe}
+              onOrderNow={handleExploreMenu}
+            />
+          </div>
           <BillLookupModal
             isOpen={isBillLookupOpen}
             onClose={() => setIsBillLookupOpen(false)}
