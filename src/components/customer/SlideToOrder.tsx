@@ -25,8 +25,10 @@ export const SlideToOrder: React.FC<SlideToOrderProps> = ({
     if (trackRef.current && handleRef.current) {
       const trackWidth = trackRef.current.clientWidth;
       const handleWidth = handleRef.current.clientWidth;
-      const padding = 6; // 6px padding on each side
-      const calculatedMax = Math.max(0, trackWidth - handleWidth - padding * 2);
+      const trackStyle = window.getComputedStyle(trackRef.current);
+      const paddingLeft = parseFloat(trackStyle.paddingLeft) || 4;
+      const paddingRight = parseFloat(trackStyle.paddingRight) || 4;
+      const calculatedMax = Math.max(0, trackWidth - handleWidth - paddingLeft - paddingRight);
       setMaxDrag(calculatedMax);
     }
   }, []);
@@ -143,13 +145,13 @@ export const SlideToOrder: React.FC<SlideToOrderProps> = ({
       <div
         ref={trackRef}
         onClick={handleTrackClick}
-        className="relative w-full h-[62px] sm:h-[66px] bg-[#111111] hover:bg-black rounded-full p-1.5 flex items-center shadow-xl shadow-black/25 overflow-hidden border border-white/10 cursor-pointer transition-colors"
+        className="relative w-full h-[48px] sm:h-[58px] md:h-[62px] bg-[#111111] hover:bg-black rounded-full p-1 sm:p-1.5 flex items-center shadow-xl shadow-black/25 overflow-hidden border border-white/10 cursor-pointer transition-colors"
       >
         {/* Fill Track Background Progress */}
         <div
           className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-emerald-800 via-emerald-600 to-emerald-500 rounded-full transition-all"
           style={{
-            width: isCompleted ? '100%' : `calc(${dragX}px + 52px)`,
+            width: isCompleted ? '100%' : `calc(${dragX}px + 42px)`,
             opacity: progressPercent > 2 || isCompleted ? 1 : 0,
             transitionDuration: !isDragging ? '320ms' : '0ms',
             transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
@@ -158,15 +160,15 @@ export const SlideToOrder: React.FC<SlideToOrderProps> = ({
 
         {/* Track Label Text & Animated Chevrons (Clear of left handle) */}
         <div
-          className="absolute inset-y-0 left-14 right-4 flex items-center justify-center pointer-events-none transition-all"
+          className="absolute inset-y-0 left-12 sm:left-14 right-3 sm:right-4 flex items-center justify-center pointer-events-none transition-all"
           style={{
             opacity: isCompleted ? 0 : Math.max(0, 1 - (progressPercent / 45)),
             transform: `translate3d(${dragX * 0.12}px, 0, 0)`,
           }}
         >
-          <div className="flex items-center gap-2 text-white font-black text-xs sm:text-sm tracking-wide uppercase truncate">
+          <div className="flex items-center gap-1.5 sm:gap-2 text-white font-black text-[11px] sm:text-xs md:text-sm tracking-wide uppercase truncate">
             <span className="truncate">{label}</span>
-            <div className="flex items-center text-white/50 text-xs animate-pulse shrink-0">
+            <div className="flex items-center text-white/50 text-[10px] sm:text-xs animate-pulse shrink-0">
               <span>›</span>
               <span>›</span>
               <span>›</span>
@@ -176,9 +178,9 @@ export const SlideToOrder: React.FC<SlideToOrderProps> = ({
 
         {/* Completion Message (Clear of right handle) */}
         {isCompleted && (
-          <div className="absolute inset-y-0 left-4 right-14 flex items-center justify-center text-white font-black text-xs sm:text-sm tracking-wider animate-in fade-in zoom-in-95 duration-200 pointer-events-none">
+          <div className="absolute inset-y-0 left-3 sm:left-4 right-12 sm:right-14 flex items-center justify-center text-white font-black text-[11px] sm:text-xs md:text-sm tracking-wider animate-in fade-in zoom-in-95 duration-200 pointer-events-none">
             <span className="flex items-center gap-1.5 text-white drop-shadow-sm">
-              <Check className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-300 stroke-[3]" />
+              <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-emerald-300 stroke-[3]" />
               <span>Opening Menu...</span>
             </span>
           </div>
@@ -191,7 +193,7 @@ export const SlideToOrder: React.FC<SlideToOrderProps> = ({
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onMouseDown={handleMouseDown}
-          className={`relative z-10 w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shadow-[0_4px_16px_rgba(0,0,0,0.4)] cursor-grab active:cursor-grabbing will-change-transform ${
+          className={`relative z-10 w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-full flex items-center justify-center shadow-[0_4px_16px_rgba(0,0,0,0.4)] cursor-grab active:cursor-grabbing will-change-transform ${
             isCompleted
               ? 'bg-emerald-500 text-white scale-105'
               : 'bg-white text-stone-900 hover:scale-105'
@@ -204,10 +206,10 @@ export const SlideToOrder: React.FC<SlideToOrderProps> = ({
           }}
         >
           {isCompleted ? (
-            <Check className="w-5 h-5 text-white stroke-[3] animate-in zoom-in-75 duration-150" />
+            <Check className="w-4 h-4 sm:w-5 sm:h-5 text-white stroke-[3] animate-in zoom-in-75 duration-150" />
           ) : (
             <div className="flex items-center justify-center relative">
-              <ArrowRight className="w-5 h-5 text-stone-950 stroke-[2.5] group-hover:translate-x-0.5 transition-transform" />
+              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-stone-950 stroke-[2.5] group-hover:translate-x-0.5 transition-transform" />
               {!isDragging && (
                 <span className="absolute -inset-1 rounded-full bg-white/30 animate-ping pointer-events-none opacity-40" />
               )}

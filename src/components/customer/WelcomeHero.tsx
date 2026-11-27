@@ -118,11 +118,11 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
       </div>
 
       {/* Center Hero Heading directly on image: Centered Cafe Logo + ✦ NEW + Headline */}
-      <div className="relative z-10 flex-1 min-h-0 flex flex-col items-center justify-center text-center px-4 pt-4 sm:pt-6 pb-2 sm:pb-4">
+      <div className="relative z-10 flex-1 min-h-0 flex flex-col items-center justify-center text-center px-3 sm:px-4 pt-2 sm:pt-6 pb-1 sm:pb-4">
         
         {/* Centered Cafe Logo */}
-        <div className="mb-2 sm:mb-2.5 flex flex-col items-center animate-in fade-in zoom-in-95 duration-500">
-          <div className="w-16 h-16 sm:w-22 sm:h-22 rounded-full p-1 bg-white/25 backdrop-blur-md border-2 border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.35)] overflow-hidden transition-transform hover:scale-105">
+        <div className="mb-1 sm:mb-2.5 flex flex-col items-center animate-in fade-in zoom-in-95 duration-500">
+          <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-full p-0.5 sm:p-1 bg-white/25 backdrop-blur-md border sm:border-2 border-white/60 shadow-[0_4px_20px_rgba(0,0,0,0.35)] overflow-hidden transition-transform hover:scale-105">
             <ImageWithSkeleton
               src={cafe.logo}
               alt={cafe.name}
@@ -130,7 +130,7 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
               containerClassName="w-full h-full rounded-full"
             />
           </div>
-          <p className="text-white/95 text-[10px] sm:text-xs font-bold uppercase tracking-[0.22em] mt-1 sm:mt-1.5 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+          <p className="text-white/95 text-[9px] sm:text-xs font-bold uppercase tracking-[0.2em] mt-0.5 sm:mt-1.5 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
             {cafe.name}
           </p>
         </div>
@@ -138,20 +138,20 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
         {/* Pastel Lime/Yellow Badge or Store Status */}
         {isCafeOpen ? (
           heroBadge && (
-            <div className="inline-flex items-center gap-1.5 bg-[#eaf49f] text-[#2c3e1e] font-black text-[11px] sm:text-xs px-3 sm:px-3.5 py-0.5 sm:py-1 rounded-full uppercase tracking-wider shadow-md mb-2 sm:mb-2.5 animate-in fade-in zoom-in-90 duration-300">
-              <Sparkles className="w-3 h-3 fill-current" />
+            <div className="inline-flex items-center gap-1 sm:gap-1.5 bg-[#eaf49f] text-[#2c3e1e] font-black text-[10px] sm:text-xs px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-full uppercase tracking-wider shadow-md mb-1 sm:mb-2.5 animate-in fade-in zoom-in-90 duration-300">
+              <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-current" />
               <span>{heroBadge}</span>
             </div>
           )
         ) : (
-          <div className="inline-flex items-center gap-1.5 bg-rose-600/90 text-white font-black text-[11px] sm:text-xs px-3 sm:px-3.5 py-0.5 sm:py-1 rounded-full uppercase tracking-wider shadow-md mb-2 sm:mb-2.5 animate-in fade-in zoom-in-90 duration-300 backdrop-blur-xs">
-            <AlertCircle className="w-3.5 h-3.5" />
+          <div className="inline-flex items-center gap-1 sm:gap-1.5 bg-rose-600/90 text-white font-black text-[10px] sm:text-xs px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-full uppercase tracking-wider shadow-md mb-1 sm:mb-2.5 animate-in fade-in zoom-in-90 duration-300 backdrop-blur-xs">
+            <AlertCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             <span>Store Closed for Orders</span>
           </div>
         )}
 
         {/* Big Crisp All-Caps Headline (Editable) */}
-        <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-white tracking-widest leading-[1.1] uppercase drop-shadow-[0_4px_16px_rgba(0,0,0,0.5)]">
+        <h1 className="text-xl sm:text-3xl md:text-5xl font-black text-white tracking-widest leading-tight sm:leading-[1.1] uppercase drop-shadow-[0_4px_16px_rgba(0,0,0,0.5)]">
           {titleLines.map((line, idx) => (
             <React.Fragment key={idx}>
               {line}
@@ -162,14 +162,14 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
       </div>
 
       {/* Bottom Sheet Card (Editable: Welcome Back / Explore our Fall menu / Order Now) */}
-      <div className="relative z-20 w-full max-w-md mx-auto shrink-0">
-        <div className="bg-white rounded-t-[32px] sm:rounded-3xl pt-3.5 sm:pt-4 pb-3 sm:pb-4 px-5 sm:px-7 shadow-[0_-12px_40px_rgba(0,0,0,0.18)] flex flex-col items-center text-center space-y-2 sm:space-y-2.5 animate-in slide-in-from-bottom duration-300">
+      <div className="relative z-20 w-full max-w-md mx-auto shrink-0 pb-[max(0.25rem,env(safe-area-inset-bottom))]">
+        <div className="bg-white rounded-t-[28px] sm:rounded-3xl pt-2.5 sm:pt-4 pb-2 sm:pb-3.5 px-4 sm:px-7 shadow-[0_-12px_40px_rgba(0,0,0,0.18)] flex flex-col items-center text-center space-y-1.5 sm:space-y-2.5 animate-in slide-in-from-bottom duration-300">
           
           <div className="space-y-0.5">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#111111] tracking-tight">
+            <h2 className="text-xl sm:text-3xl font-extrabold text-[#111111] tracking-tight leading-tight">
               {heroCardTitle}
             </h2>
-            <p className="text-xs sm:text-sm font-medium text-stone-500">
+            <p className="text-[11px] sm:text-sm font-medium text-stone-500">
               {isCafeOpen
                 ? heroCardSubtitle
                 : (cafe.closedMessage || 'Cafe is currently closed for new orders')}
@@ -177,7 +177,7 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
           </div>
 
           {/* Slide Arrow to Order Button */}
-          <div className="w-full -mt-0.5">
+          <div className="w-full">
             <SlideToOrder
               label={heroButtonText}
               onComplete={onGetStarted}
@@ -188,28 +188,28 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
           {onCheckBill && (
             <button
               onClick={onCheckBill}
-              className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-2xl bg-stone-50 hover:bg-stone-100 active:scale-[0.99] border border-stone-200 text-stone-700 font-bold text-xs shadow-2xs transition-all cursor-pointer"
+              className="w-full flex items-center justify-center gap-1.5 py-1.5 sm:py-2 px-3 sm:px-4 rounded-xl sm:rounded-2xl bg-stone-50 hover:bg-stone-100 active:scale-[0.99] border border-stone-200 text-stone-700 font-bold text-[11px] sm:text-xs shadow-2xs transition-all cursor-pointer"
             >
-              <Receipt className="w-3.5 h-3.5 text-amber-800" />
+              <Receipt className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-800" />
               <span>Check Bill / View Past Orders</span>
             </button>
           )}
 
           {/* Google Review Badge & Real Social Media Icons */}
           {(Boolean(effectiveGoogleReviewUrl) || socialLinks.length > 0) && (
-            <div className="w-full flex flex-wrap items-center justify-center gap-2 pt-1 pb-0.5">
+            <div className="w-full flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 pt-0.5">
               {/* Real Google Review Pill */}
               {effectiveGoogleReviewUrl && (
                 <a
                   href={effectiveGoogleReviewUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white hover:bg-stone-50 text-stone-800 text-xs font-bold border border-stone-200/90 shadow-xs transition-all hover:scale-105 active:scale-95 cursor-pointer group"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full bg-white hover:bg-stone-50 text-stone-800 text-[10px] sm:text-xs font-bold border border-stone-200/90 shadow-xs transition-all hover:scale-105 active:scale-95 cursor-pointer group"
                   title="Review us on Google"
                 >
-                  <GoogleIcon className="w-4 h-4 shrink-0" />
+                  <GoogleIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                   <span className="font-bold text-stone-800">Google Review</span>
-                  <span className="text-amber-500 font-extrabold flex items-center text-xs">
+                  <span className="text-amber-500 font-extrabold flex items-center text-[10px] sm:text-xs">
                     ★ 5.0
                   </span>
                 </a>
@@ -224,7 +224,7 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
                     href={s.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-7 h-7 rounded-full shadow-xs flex items-center justify-center transition-all hover:scale-115 active:scale-95 cursor-pointer overflow-hidden p-0.5 bg-white border border-stone-200 hover:shadow-sm"
+                    className="w-6 h-6 sm:w-7 sm:h-7 rounded-full shadow-xs flex items-center justify-center transition-all hover:scale-115 active:scale-95 cursor-pointer overflow-hidden p-0.5 bg-white border border-stone-200 hover:shadow-sm"
                     title={s.label}
                     aria-label={s.label}
                   >
@@ -239,11 +239,11 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
           <button
             type="button"
             onClick={handleScrollToDetails}
-            className="pt-1 inline-flex items-center gap-1.5 text-stone-500 hover:text-stone-900 text-[11px] font-bold tracking-wide transition-all cursor-pointer active:scale-95"
+            className="pt-0.5 sm:pt-1 inline-flex items-center gap-1 sm:gap-1.5 text-stone-500 hover:text-stone-900 text-[10px] sm:text-[11px] font-bold tracking-wide transition-all cursor-pointer active:scale-95"
             title="View Cafe Address, Timings & Details"
           >
             <span>Scroll down for Cafe Details & Location</span>
-            <ChevronDown className="w-3.5 h-3.5 animate-bounce text-amber-800" />
+            <ChevronDown className="w-3 h-3 sm:w-3.5 sm:h-3.5 animate-bounce text-amber-800" />
           </button>
         </div>
       </div>
