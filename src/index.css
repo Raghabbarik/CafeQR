@@ -33,9 +33,38 @@
 }
 
 /* Fluid momentum scrolling for all scrollable views */
-.overflow-y-auto, .overflow-x-auto {
+html,
+body {
+  scroll-behavior: smooth !important;
   -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
+}
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.overflow-y-auto,
+.overflow-x-auto,
+.overflow-auto,
+dialog,
+[role="dialog"],
+[data-scroll-container] {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth !important;
+  overscroll-behavior: contain;
 }
 
 /* Custom subtle, modern scrollbar for desktop */

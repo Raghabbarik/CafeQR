@@ -95,6 +95,12 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   const handleSelectTab = (tab: AdminTab) => {
     onTabChange(tab);
     setIsMobileOpen(false);
+    const lenis = (window as any).__lenis;
+    if (lenis) {
+      lenis.scrollTo(0, { duration: 0.8 });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const sidebarContent = (

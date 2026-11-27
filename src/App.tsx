@@ -63,6 +63,20 @@ export function App() {
   const [customerStep, setCustomerStep] = useState<'welcome' | 'menu' | 'bill'>('welcome');
   const [pageTransition, setPageTransition] = useState<'to-menu' | 'to-welcome' | null>(null);
 
+  // Smooth Category Select with automated gliding to products
+  const handleSelectCategory = (cat: string) => {
+    setSelectedCategory(cat);
+    const target = document.getElementById('menu-items-section');
+    if (target) {
+      const lenis = (window as any).__lenis;
+      if (lenis) {
+        lenis.scrollTo(target, { offset: -70, duration: 0.8 });
+      } else {
+        target.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
   // Real-time Toasts & Notifications
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
@@ -1297,6 +1311,25 @@ export function App() {
           initialPhone={customerPhone}
           initialName={customerName}
         />
+
+        {/* Floating Modern Scroll-to-Top Tool on Bill Page */}
+        {showScrollTop && (
+          <button
+            onClick={() => {
+              if ((window as any).__lenis) {
+                (window as any).__lenis.scrollTo(0, { duration: 1.0 });
+              } else {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
+            }}
+            className="fixed bottom-6 right-5 z-40 p-3 rounded-full bg-stone-900/90 hover:bg-black text-white shadow-xl backdrop-blur-md border border-white/20 hover:scale-110 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold animate-in fade-in zoom-in-95 duration-200"
+            title="Scroll Back to Top"
+            aria-label="Scroll Back to Top"
+          >
+            <ChevronUp className="w-4 h-4 text-amber-400" />
+            <span className="hidden sm:inline">Top</span>
+          </button>
+        )}
       </>
     );
   }
@@ -1387,7 +1420,7 @@ export function App() {
       <FilterSidebar
         categories={categories}
         selectedCategory={selectedCategory}
-        onSelectCategory={setSelectedCategory}
+        onSelectCategory={handleSelectCategory}
         filterVeg={filterVeg}
         onFilterVegChange={setFilterVeg}
         onlyBestsellers={onlyBestsellers}
@@ -1408,7 +1441,7 @@ export function App() {
           <DesktopFilterSidebar
             categories={categories}
             selectedCategory={selectedCategory}
-            onSelectCategory={setSelectedCategory}
+            onSelectCategory={handleSelectCategory}
             filterVeg={filterVeg}
             onFilterVegChange={setFilterVeg}
             onlyBestsellers={onlyBestsellers}
@@ -1423,7 +1456,7 @@ export function App() {
         </div>
 
         {/* Products Column */}
-        <div className="flex-1 min-w-0 w-full space-y-3.5">
+        <div id="menu-items-section" className="flex-1 min-w-0 w-full space-y-3.5">
           {/* Active Order Tracker Pill (If customer placed an order & is ordering more) */}
           {currentOrder && (
             <div>
@@ -1589,6 +1622,25 @@ export function App() {
         initialPhone={customerPhone}
         initialName={customerName}
       />
+
+      {/* Floating Modern Scroll-to-Top Tool on Menu Page */}
+      {showScrollTop && (
+        <button
+          onClick={() => {
+            if ((window as any).__lenis) {
+              (window as any).__lenis.scrollTo(0, { duration: 1.0 });
+            } else {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          }}
+          className="fixed bottom-6 right-5 z-40 p-3 rounded-full bg-stone-900/90 hover:bg-black text-white shadow-xl backdrop-blur-md border border-white/20 hover:scale-110 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold animate-in fade-in zoom-in-95 duration-200"
+          title="Scroll Back to Top"
+          aria-label="Scroll Back to Top"
+        >
+          <ChevronUp className="w-4 h-4 text-amber-400" />
+          <span className="hidden sm:inline">Top</span>
+        </button>
+      )}
     </>
   );
 }
