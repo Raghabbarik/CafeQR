@@ -89,9 +89,19 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
   };
 
   const handleScrollToDetails = () => {
-    const detailsEl = document.getElementById('cafe-details');
-    if (detailsEl) {
-      detailsEl.scrollIntoView({ behavior: 'smooth' });
+    const lenis = (window as any).__lenis;
+    if (lenis) {
+      lenis.scrollTo('#cafe-details', {
+        offset: 0,
+        duration: 1.2,
+      });
+    } else {
+      const detailsEl = document.getElementById('cafe-details');
+      if (detailsEl) {
+        detailsEl.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: window.innerHeight, behavior: 'smooth' });
+      }
     }
   };
 
@@ -240,15 +250,21 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
               </div>
             )}
 
-            {/* Scroll down to Cafe Details indicator */}
+            {/* Latest Modern Scrolling Tool Pill */}
             <button
               type="button"
               onClick={handleScrollToDetails}
-              className="pt-1 inline-flex items-center gap-1.5 text-stone-500 hover:text-stone-900 text-[11px] sm:text-xs font-bold tracking-wide transition-all cursor-pointer active:scale-95"
-              title="View Cafe Address, Timings & Details"
+              className="group inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-stone-100 hover:bg-stone-200 active:scale-95 border border-stone-200/90 text-stone-700 hover:text-stone-900 shadow-2xs transition-all cursor-pointer"
+              title="Click or scroll down to view Cafe Details & Location"
             >
-              <span>Scroll down for Cafe Details & Location</span>
-              <ChevronDown className="w-3.5 h-3.5 animate-bounce text-amber-800" />
+              {/* Animated Modern Mouse / Scroll Dot Indicator */}
+              <span className="w-3.5 h-5 rounded-full border border-stone-400 flex items-start justify-center p-0.5 shrink-0 group-hover:border-amber-800 transition-colors">
+                <span className="w-1 h-1.5 rounded-full bg-amber-800 animate-bounce" />
+              </span>
+              <span className="text-[11px] sm:text-xs font-bold tracking-wide">
+                Scroll for Cafe Details & Location
+              </span>
+              <ChevronDown className="w-3.5 h-3.5 text-amber-800 animate-bounce shrink-0" />
             </button>
           </div>
         </div>

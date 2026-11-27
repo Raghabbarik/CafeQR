@@ -92,7 +92,12 @@ export const CafeDetailsSection: React.FC<CafeDetailsSectionProps> = ({
   };
 
   const handleScrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const lenis = (window as any).__lenis;
+    if (lenis) {
+      lenis.scrollTo(0, { duration: 1.1 });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const defaultMapEmbed = extractCleanMapEmbedUrl(cafe.mapEmbedUrl, cafe.address);

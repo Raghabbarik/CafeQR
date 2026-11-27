@@ -31,7 +31,9 @@ import { OrderDisplayBoard } from './components/display/OrderDisplayBoard';
 import { DEFAULT_CAFE, DEFAULT_CATEGORIES, DEFAULT_MENU_ITEMS } from './data/initialMenuData';
 import { GlassmorphismLoader } from './components/common/GlassmorphismLoader';
 
-import { WifiOff } from 'lucide-react';
+import { WifiOff, ChevronUp } from 'lucide-react';
+import Lenis from 'lenis';
+import 'lenis/dist/lenis.css';
 
 export function App() {
   // App Mode: 'customer' | 'admin' | 'staff' | 'display'
@@ -63,6 +65,45 @@ export function App() {
 
   // Real-time Toasts & Notifications
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  // Track scroll position for floating back-to-top tool
+  const [showScrollTop, setShowScrollTop] = useState<boolean>(false);
+
+  // Initialize modern inertial smooth scrolling (Lenis)
+  useEffect(() => {
+    let lenisInstance: Lenis | null = null;
+    let rafId: number | null = null;
+
+    try {
+      lenisInstance = new Lenis({
+        duration: 1.15,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        smoothWheel: true,
+      });
+
+      function raf(time: number) {
+        lenisInstance?.raf(time);
+        rafId = requestAnimationFrame(raf);
+      }
+
+      rafId = requestAnimationFrame(raf);
+      (window as any).__lenis = lenisInstance;
+    } catch (e) {
+      console.warn('Lenis smooth scrolling fallback to native', e);
+    }
+
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 320);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (rafId) cancelAnimationFrame(rafId);
+      lenisInstance?.destroy();
+      delete (window as any).__lenis;
+    };
+  }, []);
   const prevOrderIdsRef = useRef<Set<string>>(new Set());
   const initialOrdersLoadedRef = useRef<boolean>(false);
   const prevAlertIdsRef = useRef<Set<string>>(new Set());
@@ -1212,6 +1253,25 @@ export function App() {
             initialPhone={customerPhone}
             initialName={customerName}
           />
+
+          {/* Floating Modern Scroll-to-Top Tool */}
+          {showScrollTop && (
+            <button
+              onClick={() => {
+                if ((window as any).__lenis) {
+                  (window as any).__lenis.scrollTo(0, { duration: 1.0 });
+                } else {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+              }}
+              className="fixed bottom-6 right-5 z-40 p-3 rounded-full bg-stone-900/90 hover:bg-black text-white shadow-xl backdrop-blur-md border border-white/20 hover:scale-110 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold animate-in fade-in zoom-in-95 duration-200"
+              title="Scroll Back to Top"
+              aria-label="Scroll Back to Top"
+            >
+              <ChevronUp className="w-4 h-4 text-amber-400" />
+              <span className="hidden sm:inline">Top</span>
+            </button>
+          )}
         </div>
       </>
     );
