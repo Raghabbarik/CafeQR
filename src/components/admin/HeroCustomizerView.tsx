@@ -177,7 +177,7 @@ export const HeroCustomizerView: React.FC<HeroCustomizerViewProps> = ({
   const previewTitleLines = formData.heroTitle.split('\n');
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6 pb-16">
       {/* Top Banner */}
       <div className="bg-stone-900 text-white rounded-3xl p-6 shadow-sm border border-stone-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3.5">

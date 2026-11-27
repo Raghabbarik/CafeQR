@@ -128,7 +128,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
+      <div data-lenis-prevent className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto overscroll-contain">
         
         {/* Top Navbar Header */}
         <header className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-stone-200 px-4 sm:px-6 py-3.5 flex items-center justify-between shadow-2xs">
@@ -232,7 +232,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </header>
 
         {/* Tab View Container */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-24">
           {adminTab === 'orders' && (
             <LiveKDSView
               orders={orders}

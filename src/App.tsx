@@ -83,8 +83,16 @@ export function App() {
   // Track scroll position for floating back-to-top tool
   const [showScrollTop, setShowScrollTop] = useState<boolean>(false);
 
-  // Initialize modern inertial smooth scrolling (Lenis)
+  // Initialize modern inertial smooth scrolling (Lenis) - Only in Customer mode to keep admin scrolling 100% responsive
   useEffect(() => {
+    if (mode !== 'customer') {
+      if ((window as any).__lenis) {
+        (window as any).__lenis.destroy();
+        delete (window as any).__lenis;
+      }
+      return;
+    }
+
     let lenisInstance: Lenis | null = null;
     let rafId: number | null = null;
 
@@ -117,7 +125,7 @@ export function App() {
       lenisInstance?.destroy();
       delete (window as any).__lenis;
     };
-  }, []);
+  }, [mode]);
   const prevOrderIdsRef = useRef<Set<string>>(new Set());
   const initialOrdersLoadedRef = useRef<boolean>(false);
   const prevAlertIdsRef = useRef<Set<string>>(new Set());
