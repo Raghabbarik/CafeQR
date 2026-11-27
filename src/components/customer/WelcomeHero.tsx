@@ -162,8 +162,8 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
       </div>
 
       {/* Bottom Sheet Card (Editable: Welcome Back / Explore our Fall menu / Order Now) */}
-      <div className="relative z-20 w-full max-w-md mx-auto shrink-0 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-        <div className="bg-white rounded-t-[32px] sm:rounded-t-[40px] pt-3 sm:pt-4 pb-5 sm:pb-7 px-5 sm:px-7 shadow-[0_-14px_45px_rgba(0,0,0,0.22)] flex flex-col items-center text-center space-y-2 sm:space-y-2.5 animate-in slide-in-from-bottom duration-300 min-h-[330px] sm:min-h-[360px] justify-between">
+      <div className="relative z-20 w-full max-w-md mx-auto shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="bg-white rounded-t-[32px] sm:rounded-t-[40px] pt-3 sm:pt-4 pb-7 sm:pb-9 px-5 sm:px-7 shadow-[0_-14px_45px_rgba(0,0,0,0.22)] flex flex-col items-center text-center space-y-2 sm:space-y-2.5 animate-in slide-in-from-bottom duration-300 min-h-[330px] sm:min-h-[360px]">
           
           {/* Subtle Mobile Handle Indicator */}
           <div className="w-10 h-1.5 bg-stone-300/80 rounded-full" />
@@ -198,56 +198,59 @@ export const WelcomeHero: React.FC<WelcomeHeroProps> = ({
             </button>
           )}
 
-          {/* Google Review Badge & Real Social Media Icons */}
-          {(Boolean(effectiveGoogleReviewUrl) || socialLinks.length > 0) && (
-            <div className="w-full flex flex-wrap items-center justify-center gap-2 pt-1 pb-0.5">
-              {/* Real Google Review Pill */}
-              {effectiveGoogleReviewUrl && (
-                <a
-                  href={effectiveGoogleReviewUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white hover:bg-stone-50 text-stone-800 text-xs font-bold border border-stone-200/90 shadow-xs transition-all hover:scale-105 active:scale-95 cursor-pointer group"
-                  title="Review us on Google"
-                >
-                  <GoogleIcon className="w-4 h-4 shrink-0" />
-                  <span className="font-bold text-stone-800">Google Review</span>
-                  <span className="text-amber-500 font-extrabold flex items-center text-xs">
-                    ★ 5.0
-                  </span>
-                </a>
-              )}
-
-              {/* Real Brand Social Icons */}
-              {socialLinks.map((s) => {
-                const IconComp = s.icon;
-                return (
+          {/* Elevated Bottom Details: Review + Social Links + Scroll Down Indicator */}
+          <div className="w-full flex flex-col items-center gap-2 pt-1 pb-1">
+            {/* Google Review Badge & Real Social Media Icons */}
+            {(Boolean(effectiveGoogleReviewUrl) || socialLinks.length > 0) && (
+              <div className="w-full flex flex-wrap items-center justify-center gap-2">
+                {/* Real Google Review Pill */}
+                {effectiveGoogleReviewUrl && (
                   <a
-                    key={s.id}
-                    href={s.url}
+                    href={effectiveGoogleReviewUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-full shadow-xs flex items-center justify-center transition-all hover:scale-115 active:scale-95 cursor-pointer overflow-hidden p-0.5 bg-white border border-stone-200 hover:shadow-sm"
-                    title={s.label}
-                    aria-label={s.label}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white hover:bg-stone-50 text-stone-800 text-xs font-bold border border-stone-200/90 shadow-xs transition-all hover:scale-105 active:scale-95 cursor-pointer group"
+                    title="Review us on Google"
                   >
-                    <IconComp className="w-full h-full" />
+                    <GoogleIcon className="w-4 h-4 shrink-0" />
+                    <span className="font-bold text-stone-800">Google Review</span>
+                    <span className="text-amber-500 font-extrabold flex items-center text-xs">
+                      ★ 5.0
+                    </span>
                   </a>
-                );
-              })}
-            </div>
-          )}
+                )}
 
-          {/* Scroll down to Cafe Details indicator */}
-          <button
-            type="button"
-            onClick={handleScrollToDetails}
-            className="pt-1 pb-0.5 inline-flex items-center gap-1.5 text-stone-500 hover:text-stone-900 text-[11px] sm:text-xs font-bold tracking-wide transition-all cursor-pointer active:scale-95"
-            title="View Cafe Address, Timings & Details"
-          >
-            <span>Scroll down for Cafe Details & Location</span>
-            <ChevronDown className="w-3.5 h-3.5 animate-bounce text-amber-800" />
-          </button>
+                {/* Real Brand Social Icons */}
+                {socialLinks.map((s) => {
+                  const IconComp = s.icon;
+                  return (
+                    <a
+                      key={s.id}
+                      href={s.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-full shadow-xs flex items-center justify-center transition-all hover:scale-115 active:scale-95 cursor-pointer overflow-hidden p-0.5 bg-white border border-stone-200 hover:shadow-sm"
+                      title={s.label}
+                      aria-label={s.label}
+                    >
+                      <IconComp className="w-full h-full" />
+                    </a>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Scroll down to Cafe Details indicator */}
+            <button
+              type="button"
+              onClick={handleScrollToDetails}
+              className="pt-1 inline-flex items-center gap-1.5 text-stone-500 hover:text-stone-900 text-[11px] sm:text-xs font-bold tracking-wide transition-all cursor-pointer active:scale-95"
+              title="View Cafe Address, Timings & Details"
+            >
+              <span>Scroll down for Cafe Details & Location</span>
+              <ChevronDown className="w-3.5 h-3.5 animate-bounce text-amber-800" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
